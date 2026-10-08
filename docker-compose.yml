@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: plant_encyclopedia_dev
+      POSTGRES_USER: plant_admin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - plant_encyclopedia_pgdata:/var/lib/postgresql/data
+
+volumes:
+  plant_encyclopedia_pgdata:

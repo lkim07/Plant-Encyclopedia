@@ -1048,3 +1048,158 @@ TODO 수정
 4. Node.js / npm
 5. Angular CLI
 6. Docker
+
+
+//////////////////////////////////////////
+예를 들어 나중에 Plant entity를 만들 때도:
+
+"Create the Plant domain entity according to DATABASE_DESIGN.md."
+
+라고 끝내지 않고,
+
+"Read DATABASE_DESIGN.md and PROJECT_INSTRUCTIONS.md first. Implement only the Plant aggregate. Do not create EF configuration, migration, API endpoints, or frontend code. Add domain tests. Run tests and report results. Stop."
+
+이런 식으로 시킬 거야.
+
+이 방식이 AI를 쓰면서도 네가 프로젝트의 주도권을 유지하는 방법이야.
+
+/////////////////////////////////
+Dependency 방향:
+                  ┌──────────────┐
+                  │     API      │
+                  └──────┬───────┘
+                         │
+                         ▼
+                ┌─────────────────┐
+                │   Application   │
+                └────────┬────────┘
+                         │
+                         ▼
+                  ┌────────────┐
+                  │   Domain   │
+                  └────────────┘
+
+                  Infrastructure
+                       │
+              ┌────────┴────────┐
+              ▼                 ▼
+        Application           Domain
+
+
+////////////////////////////////////
+Domain
+
+"Plant Encyclopedia에서 식물이란 무엇인가?"
+
+예:
+
+Plant
+PlantGroup
+Category
+
+같은 핵심 business concept.
+
+Application
+
+"사용자가 식물을 요청하면 어떤 작업을 해야 하는가?"
+
+예를 들어:
+
+GetPlantDetails
+SearchPlants
+IdentifyPlant
+GetFavorites
+
+같은 use case.
+
+Infrastructure
+
+"그 작업을 실제로 어떻게 수행하는가?"
+
+예:
+
+PostgreSQL
+Entity Framework Core
+iNaturalist API
+GBIF API
+AWS S3
+AI Provider
+
+같은 외부 세계와 연결되는 부분.
+
+API
+
+"HTTP를 통해 사용자의 요청을 어떻게 받을 것인가?"
+
+예:
+
+GET /api/plants/123
+
+같은 HTTP endpoint.
+
+그래서 큰 그림은:
+                    User
+                     │
+                     ▼
+              ┌─────────────┐
+              │     API     │
+              └──────┬──────┘
+                     │
+                     ▼
+            ┌─────────────────┐
+            │   Application   │
+            │    Use Cases    │
+            └────────┬────────┘
+                     │
+                     ▼
+              ┌────────────┐
+              │   Domain   │
+              │ Core Rules │
+              └────────────┘
+
+              Infrastructure
+              ┌─────────────┐
+              │ PostgreSQL  │
+              │ EF Core     │
+              │ iNaturalist │
+              │ GBIF        │
+              │ AWS         │
+              └─────────────┘
+
+/////////////////////////////////
+지금까지 우리가 한 일을 한 문장으로 표현하면
+
+Plant Encyclopedia의 실제 구현을 시작하기 전에, 문서에서 정의한 backend architecture를 .NET solution과 project dependency 구조로 옮기고 build까지 검증했다.
+
+이게 첫 번째 개발 milestone이야.
+
+다음 milestone부터는 진짜 C#을 배우기 시작한다.
+
+다음 단계 = PostgreSQL + Entity Framework Core + 첫 번째 Plant Domain Model 🌱
+
+
+//////////////////////////////////
+그리고 앞으로의 학습 방식은 이렇게 하자
+
+네가 요청한 내용을 반영해서 앞으로 모든 핵심 기술마다 이 순서로 갈게.
+
+① 이게 왜 필요한가?
+        ↓
+② 현실에서 어떤 문제를 해결하는가?
+        ↓
+③ 핵심 개념
+        ↓
+④ 아주 작은 예시
+        ↓
+⑤ Plant Encyclopedia에서 어떻게 쓰이는가?
+        ↓
+⑥ 면접에서 어떻게 설명할 수 있는가?
+        ↓
+⑦ Cursor에게 구현 요청
+        ↓
+⑧ 우리가 직접 검증
+///////////////////////// STEP2
+
+
+///////////////////////////////////////////
+CLAUDE.md는 navigation map + behavioral rules
