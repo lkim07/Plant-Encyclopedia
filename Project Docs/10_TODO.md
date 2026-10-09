@@ -116,8 +116,8 @@ The exact structure may change if the implementation provides a better justified
 
 ## ASP.NET Core
 
-* [ ] Create ASP.NET Core solution
-* [ ] Create backend projects according to `ARCHITECTURE.md`
+* [x] Create ASP.NET Core solution
+* [x] Create backend projects according to `ARCHITECTURE.md`
 * [ ] Establish Presentation layer
 * [ ] Establish Application layer
 * [ ] Establish Domain layer
@@ -134,8 +134,8 @@ The exact structure may change if the implementation provides a better justified
 * [ ] Establish formatting conventions
 * [ ] Establish nullable reference type policy
 * [ ] Establish analyzer/linting configuration
-* [ ] Establish test project structure
-* [ ] Add first backend test
+* [x] Establish test project structure
+* [x] Add first backend test
 
 ## Acceptance Criteria
 
@@ -143,7 +143,7 @@ The exact structure may change if the implementation provides a better justified
 * [ ] `/health` responds successfully
 * [ ] Layers have clear dependency direction
 * [ ] No unnecessary architectural complexity has been introduced
-* [ ] A basic automated test runs successfully
+* [x] A basic automated test runs successfully
 
 ---
 
@@ -151,43 +151,44 @@ The exact structure may change if the implementation provides a better justified
 
 ## Database Setup
 
-* [ ] Configure PostgreSQL
-* [ ] Configure EF Core
-* [ ] Create `DbContext`
-* [ ] Configure database connection through environment/configuration
-* [ ] Verify local database connectivity
+* [x] Configure PostgreSQL
+* [x] Configure EF Core
+* [x] Create `DbContext`
+* [x] Configure database connection through environment/configuration
+* [x] Verify local database connectivity
 
 ## Initial Domain Model
 
 Implement the minimum useful plant model first.
 
-* [ ] Plant entity
-* [ ] Plant name data
-* [ ] Plant group relationship
-* [ ] Category relationship
-* [ ] Scientific/taxonomic information
-* [ ] Basic image relationship
-* [ ] Source/provenance relationship
+* [x] Plant entity
+* [x] Plant name data
+* [x] Plant group relationship
+* [x] Category relationship
+* [x] Scientific/taxonomic information
+* [x] Basic image relationship
+* [x] Source/provenance relationship
+* [x] Plant care (Quick Care) data
 
 Do not implement every future entity before the first vertical slice works.
 
 ## Migrations
 
-* [ ] Create initial EF Core migration
-* [ ] Apply migration locally
-* [ ] Verify schema
-* [ ] Test migration on a clean database
+* [x] Create initial EF Core migration
+* [x] Apply migration locally
+* [x] Verify schema
+* [x] Test migration on a clean database
 * [ ] Commit migration files
 
 ## Database Quality
 
-* [ ] Add appropriate primary keys
-* [ ] Add foreign keys
-* [ ] Add required constraints
-* [ ] Add appropriate indexes
-* [ ] Review delete behavior
-* [ ] Verify uniqueness rules
-* [ ] Avoid unnecessary denormalization
+* [x] Add appropriate primary keys
+* [x] Add foreign keys
+* [x] Add required constraints
+* [x] Add appropriate indexes
+* [x] Review delete behavior
+* [x] Verify uniqueness rules
+* [x] Avoid unnecessary denormalization
 
 ---
 
@@ -645,7 +646,7 @@ iOS remains deferred unless the development environment changes.
 
 ## Integration Tests
 
-* [ ] Database operations
+* [-] Database operations (persistence round trips and CHECK constraints covered)
 * [ ] Plant Detail API
 * [ ] Search API
 * [ ] Favorites API
@@ -923,11 +924,11 @@ The exact steps may vary depending on feature size.
 The next practical tasks should be:
 
 1. [ ] Confirm repository structure
-2. [ ] Create ASP.NET Core solution
-3. [ ] Establish backend layers
-4. [ ] Establish PostgreSQL + EF Core
-5. [ ] Create initial Plant domain model
-6. [ ] Create initial migration
+2. [x] Create ASP.NET Core solution
+3. [x] Establish backend layers
+4. [x] Establish PostgreSQL + EF Core
+5. [x] Create initial Plant domain model
+6. [x] Create initial migration
 7. [ ] Add small development dataset
 8. [ ] Implement `GET /api/plants/{plantId}`
 9. [ ] Create Angular application foundation
@@ -997,6 +998,39 @@ Use this section for work discovered during implementation that is not yet part 
   - Related feature: [Feature]
   - Priority: [High / Medium / Low]
 ```
+
+### Discovered during the EF Core database foundation
+
+- [ ] Plant identity / duplicate-detection key for concurrent ingestion
+  - Why: `plant_sources` uniqueness prevents duplicate provenance, not duplicate Plant rows (DATABASE_DESIGN §59)
+  - Related feature: External plant data ingestion
+  - Priority: High (before ingestion)
+- [ ] Flexible name search (case, spacing, underscores/punctuation) without altering stored names
+  - Why: Names are stored exactly as written; uniqueness is case-sensitive
+  - Related feature: Search
+  - Priority: Medium
+- [ ] Application-level validation and canonical casing of language tags (e.g. `en-GB`, `zh-Hant`)
+  - Why: The database checks only the general tag shape
+  - Related feature: Plant names / ingestion
+  - Priority: Medium
+- [ ] Per-field care provenance
+  - Why: Care provenance and verification currently cover the whole PlantCare record
+  - Related feature: Plant Detail Quick Care
+  - Priority: Low
+- [ ] Decide whether `updated_at` must also be maintained for raw SQL / `ExecuteUpdate` writes
+  - Why: Timestamps are maintained only through `SaveChanges`
+  - Related feature: Data integrity
+  - Priority: Low
+- [x] Add a backend test project with database integration tests
+  - Done: `backend/PlantEncyclopedia.Tests` (xUnit 2 + Testcontainers PostgreSQL 16), 9 tests passing
+- [ ] Port the remaining one-off constraint, delete-behavior, and timestamp checks into `PlantEncyclopedia.Tests`
+  - Why: Only part of the earlier scratch validation is now repeatable
+  - Related feature: Testing
+  - Priority: Medium
+- [ ] Runtime validation for `PlantSource.RetrievedAt` (reject `default`)
+  - Why: `required` cannot prevent an explicit `default`; documented by `Required_DoesNotPreventExplicitDefaultRetrievedAt`
+  - Related feature: Ingestion / curation
+  - Priority: Medium
 
 Newly discovered work should not automatically interrupt the current task.
 

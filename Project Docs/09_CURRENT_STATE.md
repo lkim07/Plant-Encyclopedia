@@ -16,7 +16,7 @@ This document should be updated whenever the actual implementation state changes
 
 ## Overall Status
 
-**Phase: Product and Technical Foundation / Pre-Implementation**
+**Phase: Early Implementation — backend and database foundation**
 
 The product concept, UX direction, architecture, database design, API contract, and development roadmap have been defined.
 
@@ -135,9 +135,17 @@ The documentation should be treated as a coordinated system rather than independ
 
 ## Backend
 
-**Status: Not yet implemented**
+**Status: Foundation partially implemented**
 
-The intended backend architecture has been defined, but the production ASP.NET Core implementation has not yet been established.
+Implemented and verified:
+
+* ASP.NET Core solution `backend/PlantEncyclopedia.sln` (.NET 10) with Api, Application, Domain, and Infrastructure projects.
+* EF Core persistence foundation (see §8).
+* The API registers the database context. It has no controllers or endpoints yet.
+
+* Test project `backend/PlantEncyclopedia.Tests` (xUnit 2) with PostgreSQL integration tests (see §8).
+
+Not yet implemented: endpoints (including `/health`), error handling, logging configuration, API tests, authentication.
 
 Planned responsibilities include:
 
@@ -162,7 +170,31 @@ Planned responsibilities include:
 
 ## Status
 
-**Design defined; implementation pending**
+**Initial schema implemented and verified locally**
+
+Implemented:
+
+* PostgreSQL 16 via Docker Compose (host port 5433, database `plant_encyclopedia_dev`).
+* EF Core 10 with Npgsql 10.0.3 and snake_case naming (`EFCore.NamingConventions`).
+* `PlantEncyclopediaDbContext` and Fluent API configurations in Infrastructure.
+* Eight tables from the `InitialCreate` migration: `categories`, `plant_groups`, `taxonomies`, `plants`, `plant_names`, `plant_images`, `plant_sources`, `plant_care`.
+* Local connection string via ASP.NET Core User Secrets (`ConnectionStrings:PlantEncyclopedia`).
+* `dotnet-ef` 10.0.12 pinned in `backend/dotnet-tools.json`.
+
+Verified:
+
+* `InitialCreate` applied to `plant_encyclopedia_dev`; `dotnet ef migrations has-pending-model-changes` reports no changes.
+* The migration SQL applied cleanly to a fresh temporary database. 41 constraint tests passed (CHECK, UNIQUE incl. `NULLS NOT DISTINCT` and partial indexes, FK delete behavior), run inside a rolled-back transaction.
+* A one-off harness confirmed client-side UUIDv7 keys and `CreatedAt` / `UpdatedAt` maintenance through `SaveChanges`.
+
+Automated tests (`dotnet test backend/PlantEncyclopedia.sln`, requires Docker):
+
+* Run against a disposable PostgreSQL 16 container (Testcontainers) with a random password and port; the real migrations are applied to it on every run. A guard refuses `plant_encyclopedia_dev` and port 5433.
+* 9 tests, all passing: migration applied / no pending model changes / correct test database; EF round trips for `PlantName.NameType` (`Synonym`) and `PlantSource.SourceType` (`Care`) through a fresh DbContext; CHECK constraints rejecting invalid `name_type` / `source_type` text and an out-of-range enum cast; and a documented limitation test showing `required` does not prevent `RetrievedAt = default`.
+
+Not yet implemented: seed data, any data access from the API.
+
+### Design Background
 
 PostgreSQL and Entity Framework Core have been selected.
 
@@ -1170,12 +1202,12 @@ These may be reconsidered later if the project develops a clear need.
 The following major implementation areas remain:
 
 * [ ] Repository/project setup
-* [ ] ASP.NET Core backend foundation
+* [-] ASP.NET Core backend foundation (solution and layers exist; endpoints, error handling, logging, tests pending)
 * [ ] Angular frontend foundation
-* [ ] PostgreSQL database setup
-* [ ] EF Core configuration
-* [ ] Initial database migrations
-* [ ] Plant domain/data models
+* [x] PostgreSQL database setup (local Docker Compose)
+* [x] EF Core configuration
+* [x] Initial database migrations
+* [x] Plant domain/data models (initial eight entities)
 * [ ] Seed/curated plant data
 * [ ] Plant Detail API
 * [ ] Plant Detail UI
@@ -1192,7 +1224,7 @@ The following major implementation areas remain:
 * [ ] AI provider integration
 * [ ] Where to Buy
 * [ ] Similar Plants
-* [ ] Automated tests
+* [-] Automated tests (PostgreSQL persistence tests exist; API, unit, and frontend tests pending)
 * [ ] Accessibility validation
 * [ ] Docker configuration
 * [ ] GitHub Actions CI

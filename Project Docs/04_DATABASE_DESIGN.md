@@ -138,13 +138,20 @@ Plant
 Id
 DisplayName
 ScientificName
+CultivarName      (nullable)
 Description
-PlantGroupId
-TaxonomyId
+PlantGroupId      (nullable)
+TaxonomyId        (nullable)
 CreatedAt
 UpdatedAt
 Status
 ```
+
+### Implemented Rules (InitialCreate)
+
+* `plant_group_id` is nullable so drafts and unreviewed imports can exist without a curated group.
+* A Published plant must have a group: `CHECK (status <> 'Published' OR plant_group_id IS NOT NULL)`.
+* `status` is stored as text and limited to `Draft`, `Validated`, `Published`, `NeedsReview`, `Archived`.
 
 ### Responsibilities
 
@@ -169,6 +176,30 @@ Potential concepts include:
 * Synonyms
 
 The primary display name should be determined by application rules rather than assuming that the database's first string field is always the correct UI name.
+
+### Implemented Model (InitialCreate)
+
+Canonical names live on `Plant` (`DisplayName`, `ScientificName`, `CultivarName`).
+
+Alternative searchable names live in `PlantName`:
+
+```text
+PlantName
+---------
+Id
+PlantId
+Name            (stored exactly as written)
+NameType        (Common | Synonym)
+LanguageCode    (nullable, BCP 47 tag such as en, ko, zh-Hant, es-419)
+CreatedAt
+```
+
+Rules:
+
+* `Common` names require a language code; `Synonym` names may have one or `NULL`.
+* The database checks only the general shape of the language tag; canonical casing is application validation.
+* `UNIQUE (plant_id, name_type, name, language_code) NULLS NOT DISTINCT` — two identical names with a `NULL` language are duplicates.
+* Uniqueness is case-sensitive. Names keep their original capitalization; search flexibility (case, spacing, punctuation) belongs to the search implementation.
 
 ---
 
@@ -272,7 +303,7 @@ Id
 Kingdom
 Phylum
 Class
-Order
+TaxonOrder
 Family
 Genus
 Species
@@ -281,6 +312,8 @@ Variety
 ```
 
 Not every plant will necessarily have every classification level populated.
+
+The order rank is stored as `TaxonOrder` / `taxon_order` because `order` is a reserved word in SQL.
 
 ### Principle
 
@@ -392,6 +425,34 @@ Soil
 
 Additional detailed care fields may be added later if supported by reliable data.
 
+### Implemented Model (InitialCreate)
+
+`PlantCare` is one-to-one with `Plant` (`plant_id` is both primary key and foreign key; deleted with the plant).
+
+```text
+PlantCare
+---------
+PlantId
+LightSummary / LightDetails
+WaterSummary / WaterDetails
+TemperatureMinC / TemperatureMaxC   (numeric(4,1), °C)
+TemperatureDetails
+SoilSummary / SoilDetails
+VerificationStatus                  (Unverified | Verified)
+VerifiedAt
+CreatedAt
+UpdatedAt
+```
+
+Rules:
+
+* Every care field is nullable. No row means no care data; a `NULL` field means that card has no data.
+* Light, water, and soil use free-text summaries; standardized light values are deferred until filtering requires them. Soil pH is not stored.
+* Temperatures must be between -60 and 60 °C, with min ≤ max when both are present.
+* `Verified` requires `VerifiedAt`.
+* Provenance and verification are separate. Care provenance is recorded by `PlantSource` rows with `SourceType = Care`. **A source record does not mean the care data is verified**; only `VerificationStatus = Verified` does. Unverified care data must not be presented as verified.
+* Verification covers the whole care record. Per-field provenance is deferred.
+
 ---
 
 # 16. Care Information Principles
@@ -502,6 +563,21 @@ Possible providers include:
 * iNaturalist
 * GBIF
 * Other approved sources
+
+### Implemented Rules (InitialCreate)
+
+* `ExternalId` is nullable so curated sources without a provider ID can be recorded.
+* Every source must be identifiable: `CHECK (external_id IS NOT NULL OR source_url IS NOT NULL)`.
+* Uniqueness uses two partial unique indexes:
+
+```sql
+UNIQUE (plant_id, provider, external_id, source_type) WHERE external_id IS NOT NULL
+UNIQUE (plant_id, provider, source_url,  source_type) WHERE external_id IS NULL
+```
+
+* These prevent duplicate provenance for the same plant and source type. Several cultivars may cite the same species-level external taxon.
+* They do **not** prevent duplicate `Plant` rows created by concurrent ingestion; that requires a plant identity key (see §69).
+* Deleting a plant that has source rows is restricted, so provenance is never removed silently.
 
 ---
 
@@ -1016,6 +1092,8 @@ Exact indexes should be validated through query plans and real usage.
 
 Do not create indexes indiscriminately.
 
+PostgreSQL does not index foreign-key columns automatically. Foreign-key indexes are declared explicitly in the EF Core configuration unless an existing non-partial index already starts with the foreign-key column.
+
 ---
 
 # 45. Foreign Key Strategy
@@ -1397,10 +1475,13 @@ Category
 PlantGroup
 Plant
 Taxonomy
+PlantName
 PlantImage
 PlantSource
 PlantCare
 ```
+
+Implemented by the `InitialCreate` migration. External identifiers are stored in `PlantSource`; there is no separate external-identity table.
 
 ### Phase 2 — User Features
 
@@ -1541,9 +1622,16 @@ The following should be finalized during implementation:
 * Exact identification history retention
 * Production backup strategy
 * PostgreSQL hosting choice
-* Exact EF Core entity configuration
+* Plant identity / duplicate-detection key for concurrent ingestion (deferred until ingestion is designed)
+* Normalization of plant names and language tags for search and duplicate detection
+* Per-field care provenance
 
 These decisions should be documented when finalized.
+
+### Implementation Notes
+
+* `CreatedAt` / `UpdatedAt` are set by `PlantEncyclopediaDbContext.SaveChanges`. Raw SQL, `ExecuteUpdate`, and `ExecuteDelete` bypass this, and changing a child row does not update its parent's `UpdatedAt`. The `DEFAULT now()` column defaults apply only to inserts.
+* UUID primary keys are generated client-side by Npgsql (UUIDv7); the database has no default for `id` columns.
 
 ---
 

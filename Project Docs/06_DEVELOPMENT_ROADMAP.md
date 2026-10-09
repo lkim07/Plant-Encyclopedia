@@ -419,7 +419,7 @@ Establish the backend architecture and PostgreSQL foundation.
 
 Start with the minimum entities required for the encyclopedia.
 
-Potential initial entities:
+Initial entities (implemented by the `InitialCreate` migration):
 
 * Plant
 * PlantGroup
@@ -427,8 +427,8 @@ Potential initial entities:
 * Taxonomy
 * PlantName
 * PlantImage
-* Source
-* ExternalPlantIdentity
+* PlantSource (also stores external provider identifiers)
+* PlantCare
 
 Do not implement every future entity immediately.
 
