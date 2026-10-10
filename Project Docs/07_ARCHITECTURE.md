@@ -1823,6 +1823,12 @@ backend/
 
 This is a starting point, not a rigid requirement.
 
+### Implementation note: Minimal APIs instead of controllers
+
+The API uses ASP.NET Core **Minimal APIs** rather than MVC controllers (e.g. `Api/Plants/PlantEndpoints.cs` instead of `Controllers/PlantController.cs`).
+
+Reasons: less setup, no MVC dependency, and each endpoint stays a small, readable function. The layering is unchanged — an endpoint validates input, calls an Application interface (e.g. `IPlantQueries`), and maps the result to a response type. EF Core queries live in Infrastructure, never in endpoints.
+
 The actual structure should be adjusted if implementation reveals a simpler and clearer organization.
 
 ---

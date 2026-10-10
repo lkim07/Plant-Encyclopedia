@@ -141,11 +141,16 @@ Implemented and verified:
 
 * ASP.NET Core solution `backend/PlantEncyclopedia.sln` (.NET 10) with Api, Application, Domain, and Infrastructure projects.
 * EF Core persistence foundation (see §8).
-* The API registers the database context. It has no controllers or endpoints yet.
+* `GET /health` — `200 {"status":"healthy"}` when PostgreSQL is reachable, `503 {"status":"unhealthy"}` otherwise (API_SPEC §68).
+* Global exception handling — unhandled exceptions return `500` with the fixed `INTERNAL_SERVER_ERROR` body (API_SPEC §12); details are logged server-side with the default ASP.NET Core console logging.
+* Test project `backend/PlantEncyclopedia.Tests` (xUnit 2): PostgreSQL integration tests (see §8) and API tests. The API tests run the real API in memory (`WebApplicationFactory`) in a `Testing` environment, so User Secrets are never loaded, and point it only at the disposable test container.
 
-* Test project `backend/PlantEncyclopedia.Tests` (xUnit 2) with PostgreSQL integration tests (see §8).
+* `GET /api/plants/{plantId}` — Plant Detail for Published plants only (API_SPEC §14): `id`, `name`, `plantGroup`, `scientificName`, `description`, `heroImage` (always `null` for now), `quickCare` (Verified care only, numeric temperature). `404 PLANT_NOT_FOUND` for unknown or unpublished plants, `400 VALIDATION_ERROR` for a malformed ID. Minimal API endpoint → `IPlantQueries` (Application) → EF Core query (Infrastructure).
+* The backend was started locally and `GET /health` returned `healthy` against `plant_encyclopedia_dev` (manual check).
 
-Not yet implemented: endpoints (including `/health`), error handling, logging configuration, API tests, authentication.
+Verified by automated tests (23 passing in total; 7 for the Plant Detail endpoint, including an end-to-end check that a database failure returns the safe 500 body): healthy and unhealthy `/health` responses (exact JSON and status codes, no password in logs), the safe 500 error body, and that the API refuses to start without a connection string.
+
+Not yet implemented: other feature endpoints (categories, plant groups, search, …), request correlation IDs, structured logging, authentication.
 
 Planned responsibilities include:
 
@@ -192,7 +197,13 @@ Automated tests (`dotnet test backend/PlantEncyclopedia.sln`, requires Docker):
 * Run against a disposable PostgreSQL 16 container (Testcontainers) with a random password and port; the real migrations are applied to it on every run. A guard refuses `plant_encyclopedia_dev` and port 5433.
 * 9 tests, all passing: migration applied / no pending model changes / correct test database; EF round trips for `PlantName.NameType` (`Synonym`) and `PlantSource.SourceType` (`Care`) through a fresh DbContext; CHECK constraints rejecting invalid `name_type` / `source_type` text and an out-of-range enum cast; and a documented limitation test showing `required` does not prevent `RetrievedAt = default`.
 
-Not yet implemented: seed data, any data access from the API.
+Development sample data (`backend/dev-data/seed-dev-data.sql`):
+
+* Loaded into `plant_encyclopedia_dev`: 6 categories, 12 plant groups, 13 taxonomy rows, 17 plants (16 Published with a group, 1 Draft without), 12 alternative names (en, fr, de, ko common names; 2 scientific synonyms).
+* Unverified sample content: every plant description says "Development sample data — not verified." No sources, care data, or images are included.
+* Covered by 3 automated tests (applies cleanly, re-running adds nothing, refuses other databases); 16 tests pass in total.
+
+Not yet implemented: verified/curated plant data.
 
 ### Design Background
 
@@ -1202,14 +1213,14 @@ These may be reconsidered later if the project develops a clear need.
 The following major implementation areas remain:
 
 * [ ] Repository/project setup
-* [-] ASP.NET Core backend foundation (solution and layers exist; endpoints, error handling, logging, tests pending)
+* [-] ASP.NET Core backend foundation (solution, layers, `/health`, error handling, and tests exist; feature endpoints pending)
 * [ ] Angular frontend foundation
 * [x] PostgreSQL database setup (local Docker Compose)
 * [x] EF Core configuration
 * [x] Initial database migrations
 * [x] Plant domain/data models (initial eight entities)
-* [ ] Seed/curated plant data
-* [ ] Plant Detail API
+* [-] Seed/curated plant data (unverified development sample data loaded locally; curated data pending)
+* [x] Plant Detail API (`GET /api/plants/{plantId}`)
 * [ ] Plant Detail UI
 * [ ] Search API
 * [ ] Search UI

@@ -267,6 +267,19 @@ Validation errors may include field-specific details:
 }
 ```
 
+Unexpected server errors return `500 Internal Server Error` with a fixed body:
+
+```json
+{
+  "error": {
+    "code": "INTERNAL_SERVER_ERROR",
+    "message": "Something went wrong. Please try again."
+  }
+}
+```
+
+The same body is returned in every environment. Exception details are written only to server-side logs.
+
 The API must not expose:
 
 * Stack traces
@@ -320,50 +333,73 @@ Not required.
 
 Retrieve the Plant Detail data for a specific plant.
 
-### Example Response
+### Response — `200 OK` (implemented)
 
 ```json
 {
   "data": {
-    "id": "123",
+    "id": "d5e00000-0000-4000-8000-000000000001",
     "name": "Rosa 'Peace'",
-    "plantGroup": "Hybrid Tea Rose",
+    "plantGroup": "Roses",
     "scientificName": "Rosa × hybrida",
-    "heroImage": {
-      "url": "https://example.com/image.webp",
-      "altText": "Rosa 'Peace' flower"
-    },
+    "description": "Development sample data — not verified.",
+    "heroImage": null,
     "quickCare": {
       "light": {
         "value": "Full Sun",
         "description": "Requires several hours of direct sunlight."
       },
-      "water": {
-        "value": "When top 2–3 cm is dry",
-        "description": "Allow the upper soil layer to dry slightly between watering."
-      },
+      "water": null,
       "temperature": {
-        "value": "15–25°C"
+        "minC": 15.0,
+        "maxC": 25.0,
+        "description": null
       },
       "soil": {
-        "value": "Well-drained"
+        "value": "Well-drained",
+        "description": null
       }
-    },
-    "blooming": {
-      "summary": "May–October, repeat bloomer"
-    },
-    "health": {
-      "summary": "Generally vigorous with common rose disease considerations."
-    },
-    "about": {
-      "origin": "France",
-      "summary": "..."
     }
   }
 }
 ```
 
-The exact response fields will be finalized alongside the database implementation.
+Field rules:
+
+* `id` — the plant's UUID.
+* `name` — the most understandable plant/cultivar name (UX §28).
+* `plantGroup` — the plant group name.
+* `heroImage` — always `null` until the hero-image approach is decided. When set, it will be `{ "url", "altText" }`.
+* `quickCare` — `null` unless the plant's care information is **Verified**. Unverified care is never returned. Inside it, any card without a value is `null`.
+* `temperature` — numeric degrees Celsius (`minC`, `maxC`, either may be `null`); clients format the display text (e.g. "15–25°C").
+* `blooming`, `health`, and `about` are not returned yet; they will be added when their data is stored.
+
+Only `Published` plants are returned. Unknown IDs and plants in any other status return the same response:
+
+`404 Not Found`
+
+```json
+{
+  "error": {
+    "code": "PLANT_NOT_FOUND",
+    "message": "The requested plant could not be found."
+  }
+}
+```
+
+A `plantId` that is not a valid UUID returns `400 Bad Request`:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "One or more fields are invalid.",
+    "details": {
+      "plantId": "Plant ID must be a valid UUID."
+    }
+  }
+}
+```
 
 ---
 
@@ -1527,13 +1563,27 @@ Example:
 GET /health
 ```
 
-Response:
+Authentication: not required.
+
+The check verifies that the application is running and that the PostgreSQL database is reachable.
+
+Healthy response — `200 OK`:
 
 ```json
 {
   "status": "healthy"
 }
 ```
+
+Unhealthy response (for example, the database is unreachable) — `503 Service Unavailable`:
+
+```json
+{
+  "status": "unhealthy"
+}
+```
+
+The body contains only `status`. Check names, timings, exception messages, and connection details are not returned; failure details are logged server-side.
 
 The health endpoint should not expose sensitive infrastructure information.
 

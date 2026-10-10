@@ -68,7 +68,7 @@ public sealed class PostgresDatabaseFixture : IAsyncLifetime
     }
 
     // Fail fast before any database command if the connection could reach the development database.
-    private static void EnsureDisposableTestDatabase(string connectionString)
+    internal static void EnsureDisposableTestDatabase(string connectionString)
     {
         var builder = new NpgsqlConnectionStringBuilder(connectionString);
 

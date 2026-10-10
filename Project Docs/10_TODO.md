@@ -125,8 +125,8 @@ The exact structure may change if the implementation provides a better justified
 * [ ] Configure dependency injection
 * [ ] Configure application settings
 * [ ] Configure development environment
-* [ ] Add basic exception handling
-* [ ] Add API health endpoint
+* [x] Add basic exception handling
+* [x] Add API health endpoint
 * [ ] Add basic logging
 
 ## Backend Quality
@@ -139,8 +139,8 @@ The exact structure may change if the implementation provides a better justified
 
 ## Acceptance Criteria
 
-* [ ] Backend starts locally
-* [ ] `/health` responds successfully
+* [x] Backend starts locally (manual check: `/health` returned `healthy` against the dev database)
+* [x] `/health` responds successfully (verified by automated API tests)
 * [ ] Layers have clear dependency direction
 * [ ] No unnecessary architectural complexity has been introduced
 * [x] A basic automated test runs successfully
@@ -178,7 +178,7 @@ Do not implement every future entity before the first vertical slice works.
 * [x] Apply migration locally
 * [x] Verify schema
 * [x] Test migration on a clean database
-* [ ] Commit migration files
+* [x] Commit migration files
 
 ## Database Quality
 
@@ -198,15 +198,17 @@ Do not implement every future entity before the first vertical slice works.
 
 Create a small curated development dataset.
 
-* [ ] Define initial plant records
-* [ ] Add categories
-* [ ] Add plant groups
-* [ ] Add common names
-* [ ] Add scientific names
-* [ ] Add cultivar information where applicable
-* [ ] Add initial images
+Unverified sample data: `backend/dev-data/seed-dev-data.sql` (loaded locally, covered by tests).
+
+* [x] Define initial plant records (17 sample plants: 16 Published, 1 Draft)
+* [x] Add categories
+* [x] Add plant groups
+* [x] Add common names (en, fr, de, ko)
+* [x] Add scientific names (including 2 synonyms)
+* [x] Add cultivar information where applicable (roses, apples)
+* [ ] Add initial images (deferred until image licensing/storage is decided)
 * [ ] Add image provenance
-* [ ] Add basic care information
+* [ ] Add basic care information (deferred: needs sourced data; no AI-written care values)
 * [ ] Add blooming information
 * [ ] Add health information
 * [ ] Add About information
@@ -240,13 +242,13 @@ Plant Detail
 
 ## Plant Detail API
 
-* [ ] Implement `GET /api/plants/{plantId}`
-* [ ] Create response DTO
-* [ ] Implement validation
-* [ ] Implement not-found behavior
-* [ ] Add mapping from domain/data model to DTO
-* [ ] Add API tests
-* [ ] Verify response against `API_SPEC.md`
+* [x] Implement `GET /api/plants/{plantId}`
+* [x] Create response DTO
+* [x] Implement validation
+* [x] Implement not-found behavior
+* [x] Add mapping from domain/data model to DTO
+* [x] Add API tests
+* [x] Verify response against `API_SPEC.md` (§14 updated to the implemented fields)
 
 ## Plant Detail UI
 
@@ -266,8 +268,8 @@ Plant Detail
 
 ## Acceptance Criteria
 
-* [ ] A plant can be retrieved from PostgreSQL
-* [ ] API returns a stable DTO
+* [x] A plant can be retrieved from PostgreSQL
+* [x] API returns a stable DTO
 * [ ] Angular can consume the API
 * [ ] Plant Detail renders actual database data
 * [ ] Loading state works
@@ -929,8 +931,8 @@ The next practical tasks should be:
 4. [x] Establish PostgreSQL + EF Core
 5. [x] Create initial Plant domain model
 6. [x] Create initial migration
-7. [ ] Add small development dataset
-8. [ ] Implement `GET /api/plants/{plantId}`
+7. [x] Add small development dataset
+8. [x] Implement `GET /api/plants/{plantId}`
 9. [ ] Create Angular application foundation
 10. [ ] Connect Angular to the Plant Detail API
 11. [ ] Build the first Plant Detail vertical slice
@@ -1027,6 +1029,12 @@ Use this section for work discovered during implementation that is not yet part 
   - Why: Only part of the earlier scratch validation is now repeatable
   - Related feature: Testing
   - Priority: Medium
+- [ ] Verify sample plant names and taxonomy against GBIF / iNaturalist
+  - Why: `seed-dev-data.sql` content was written from general knowledge and is unverified (e.g. "Rosa × hybrida" is a horticultural name, not an accepted species)
+  - Related feature: Ingestion / curated data
+  - Priority: Low (before any sample data could be mistaken for real content)
+- [x] Integration test that an exception thrown by a real endpoint goes through `GlobalExceptionHandler`
+  - Done: `DatabaseFailure_Returns500SafeError` (Plant Detail endpoint with an unreachable database)
 - [ ] Runtime validation for `PlantSource.RetrievedAt` (reject `default`)
   - Why: `required` cannot prevent an explicit `default`; documented by `Required_DoesNotPreventExplicitDefaultRetrievedAt`
   - Related feature: Ingestion / curation
