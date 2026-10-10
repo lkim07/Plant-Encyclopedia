@@ -1,0 +1,49 @@
+<div class="brand">
+  <span class="brand-icon" aria-hidden="true">🌿</span>
+  @if (!collapsed()) {
+    <span class="brand-name">Plant Encyclopedia</span>
+  }
+</div>
+
+@if (showCollapseToggle()) {
+  <button
+    type="button"
+    class="icon-button collapse-toggle"
+    [attr.aria-expanded]="!collapsed()"
+    [attr.aria-label]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+    (click)="toggleCollapsed.emit()"
+  >
+    <span aria-hidden="true">{{ collapsed() ? '»' : '«' }}</span>
+  </button>
+}
+
+<nav aria-label="Main">
+  <ul class="nav-list">
+    @for (item of items; track item.path) {
+      <li>
+        <a
+          class="nav-item"
+          [routerLink]="item.path"
+          routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+          [attr.aria-label]="collapsed() ? item.label : null"
+          [attr.title]="collapsed() ? item.label : null"
+          (click)="navigate.emit()"
+        >
+          <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+          @if (!collapsed()) {
+            <span>{{ item.label }}</span>
+          }
+        </a>
+      </li>
+    }
+  </ul>
+</nav>
+
+<!-- Authentication is not implemented yet, so the account entry is a disabled placeholder. -->
+<button type="button" class="nav-item account" disabled [attr.aria-label]="collapsed() ? 'Login' : null">
+  <span class="nav-icon" aria-hidden="true">👤</span>
+  @if (!collapsed()) {
+    <span>Login</span>
+  }
+</button>

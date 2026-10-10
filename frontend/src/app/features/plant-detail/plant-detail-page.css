@@ -1,0 +1,128 @@
+.page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  max-width: 56rem;
+}
+
+.back {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  z-index: 1;
+  background: rgb(247 242 234 / 0.85);
+}
+
+/* Hero: image when available, otherwise a warm neutral placeholder (UX §26). */
+.hero {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-height: clamp(16rem, 45vh, 28rem);
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: linear-gradient(160deg, var(--color-surface-strong), var(--color-surface));
+}
+
+.hero-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.names {
+  position: relative;
+  padding: var(--space-6);
+}
+
+.names h1 {
+  margin: 0;
+}
+
+.group,
+.scientific {
+  margin: var(--space-1) 0 0;
+}
+
+.group {
+  font-weight: 500;
+}
+
+.scientific,
+.muted,
+.description {
+  color: var(--color-text-muted);
+}
+
+.description,
+.muted {
+  margin: 0;
+}
+
+.section h2 {
+  margin: 0 0 var(--space-3);
+  font-size: 1.25rem;
+}
+
+.care-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+@media (min-width: 48rem) {
+  .care-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.message {
+  padding-top: calc(var(--touch-target) + var(--space-4));
+}
+
+.message p {
+  margin: 0 0 var(--space-3);
+}
+
+.action {
+  align-self: flex-start;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-6);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-text);
+  color: var(--color-bg);
+  cursor: pointer;
+}
+
+/* Loading skeleton approximates the final layout (UX §42). */
+.skeleton,
+.skeleton-line {
+  background: var(--color-surface);
+  animation: pulse 1.2s ease-in-out infinite alternate;
+}
+
+.skeleton-line {
+  height: 1.25rem;
+  width: 40%;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-line.wide {
+  width: 65%;
+  height: 2rem;
+}
+
+.skeleton-card {
+  height: 5.5rem;
+  border-radius: var(--radius-md);
+}
+
+@keyframes pulse {
+  to {
+    opacity: 0.55;
+  }
+}

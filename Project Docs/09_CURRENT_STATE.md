@@ -295,7 +295,23 @@ These endpoints are contracts to implement, not evidence that the endpoints alre
 
 ## Status
 
-**Design defined; implementation pending**
+**Foundation implemented; features pending**
+
+Implemented and verified:
+
+* Angular 22 app in `frontend/` (standalone components, TypeScript, plain CSS, no SSR, no UI component or state-management library). Requires Node.js ≥ 22.22.3 or ≥ 24.15.0.
+* Application shell: collapsible desktop sidebar (Identify, Explore, Favorites; disabled Login placeholder), mobile top bar with a slide-in drawer built on a native modal `<dialog>` (focus trap, Esc and outside-tap to close), skip link, and accessible names for icon-only controls. Mobile/desktop switch at 48rem.
+* Routes: `/` → `/identify`; heading-only placeholders for `/identify`, `/explore`, `/favorites`; a not-found page for unknown URLs.
+* Design tokens (warm neutral / dark-brown palette, spacing, radii) as CSS variables in `src/styles.css`; reduced-motion respected.
+* Typed API models and `PlantApi` client for `GET /api/plants/{plantId}` (`src/app/core/api/`).
+* Plant Detail page at `/plants/:plantId`: Back button (in-app history, otherwise `/identify`), hero placeholder, naming hierarchy (name, plant group, italic scientific name), description, Quick Care cards (verified care only; expandable when a description exists; temperature shown as `15–25°C` / `From 15°C` / `Up to 25°C`) or "Care information isn't available yet.". Loading skeleton, "Plant not found" (404/400), and "Something went wrong" with Try Again. Blooming, Health, About, Where to Buy, Similar Plants, and Bookmark are not shown yet.
+* Dev-server proxy (`proxy.conf.json`) forwards `/api` and `/health` to `http://localhost:5034`; no backend CORS configuration.
+* `npm run build` succeeds without warnings; 17 unit tests pass (Vitest + jsdom, HTTP mocked).
+* Manually verified end to end (browser → dev proxy → API → `plant_encyclopedia_dev`): a Published sample plant renders; the Draft plant and a malformed ID show "Plant not found"; stopping the API shows the error state and Try Again recovers; Back and the mobile layout work.
+
+Not yet implemented: links into Plant Detail from other pages, real Identify/Explore/Favorites screens, images, animations, authentication.
+
+### Design Background
 
 The intended web frontend is Angular + TypeScript.
 
@@ -1214,14 +1230,14 @@ The following major implementation areas remain:
 
 * [ ] Repository/project setup
 * [-] ASP.NET Core backend foundation (solution, layers, `/health`, error handling, and tests exist; feature endpoints pending)
-* [ ] Angular frontend foundation
+* [x] Angular frontend foundation (app shell, routes, design tokens, dev proxy)
 * [x] PostgreSQL database setup (local Docker Compose)
 * [x] EF Core configuration
 * [x] Initial database migrations
 * [x] Plant domain/data models (initial eight entities)
 * [-] Seed/curated plant data (unverified development sample data loaded locally; curated data pending)
 * [x] Plant Detail API (`GET /api/plants/{plantId}`)
-* [ ] Plant Detail UI
+* [-] Plant Detail UI (names, description, Quick Care, loading/not-found/error states; other sections pending)
 * [ ] Search API
 * [ ] Search UI
 * [ ] Category browsing

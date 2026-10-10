@@ -88,8 +88,8 @@ Do not begin advanced AI, recommendation, retailer, or cloud infrastructure work
 ## Development Environment
 
 * [ ] Install/verify required .NET SDK
-* [ ] Install/verify Node.js
-* [ ] Install/verify Angular CLI
+* [x] Install/verify Node.js (v24.21.0)
+* [x] Install/verify Angular CLI (22.2.2, project-local via `npx` / `npm run`)
 * [ ] Install/verify PostgreSQL/Docker development environment
 * [ ] Install/verify Git
 * [ ] Confirm IDE/editor configuration
@@ -252,30 +252,30 @@ Plant Detail
 
 ## Plant Detail UI
 
-* [ ] Create Angular Plant Detail route
-* [ ] Implement back navigation
-* [ ] Implement hero
-* [ ] Implement plant naming hierarchy
-* [ ] Implement Quick Care cards
-* [ ] Implement Blooming
-* [ ] Implement Health
-* [ ] Implement About
+* [x] Create Angular Plant Detail route (`/plants/:plantId`)
+* [x] Implement back navigation
+* [-] Implement hero (placeholder block; image display ready but no images exist yet; scroll transition pending)
+* [x] Implement plant naming hierarchy
+* [x] Implement Quick Care cards
+* [ ] Implement Blooming (needs API data)
+* [ ] Implement Health (needs API data)
+* [ ] Implement About (needs API data)
 * [ ] Implement Similar Plants placeholder/initial implementation
-* [ ] Implement loading state
-* [ ] Implement error state
-* [ ] Implement responsive layout
-* [ ] Implement bookmark UI state
+* [x] Implement loading state
+* [x] Implement error state
+* [x] Implement responsive layout
+* [ ] Implement bookmark UI state (needs authentication / Favorites)
 
 ## Acceptance Criteria
 
 * [x] A plant can be retrieved from PostgreSQL
 * [x] API returns a stable DTO
-* [ ] Angular can consume the API
-* [ ] Plant Detail renders actual database data
-* [ ] Loading state works
-* [ ] Error state works
-* [ ] Back navigation works
-* [ ] Mobile and desktop layouts are usable
+* [x] Angular can consume the API (manual check through the dev proxy)
+* [x] Plant Detail renders actual database data (manual check with the development sample data)
+* [x] Loading state works (automated tests)
+* [x] Error state works (automated tests)
+* [x] Back navigation works (automated tests)
+* [x] Mobile and desktop layouts are usable (manual check)
 
 This vertical slice should validate the architecture before a large amount of functionality is built.
 
@@ -933,9 +933,9 @@ The next practical tasks should be:
 6. [x] Create initial migration
 7. [x] Add small development dataset
 8. [x] Implement `GET /api/plants/{plantId}`
-9. [ ] Create Angular application foundation
-10. [ ] Connect Angular to the Plant Detail API
-11. [ ] Build the first Plant Detail vertical slice
+9. [x] Create Angular application foundation
+10. [x] Connect Angular to the Plant Detail API
+11. [x] Build the first Plant Detail vertical slice
 12. [ ] Validate the architecture against the real implementation
 
 Do not move directly to AI identification before this foundation is stable.

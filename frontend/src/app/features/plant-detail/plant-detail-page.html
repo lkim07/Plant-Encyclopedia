@@ -1,0 +1,66 @@
+@let s = state();
+
+<article class="page" [attr.aria-busy]="s.status === 'loading'">
+  <button type="button" class="icon-button back" aria-label="Back" (click)="goBack()">
+    <span aria-hidden="true">←</span>
+  </button>
+
+  @if (s.status === 'loading') {
+    <span class="visually-hidden" role="status">Loading plant…</span>
+    <div class="hero skeleton" aria-hidden="true"></div>
+    <div class="skeleton-line wide" aria-hidden="true"></div>
+    <div class="skeleton-line" aria-hidden="true"></div>
+    <div class="care-grid" aria-hidden="true">
+      @for (card of skeletonCards; track card) {
+        <div class="skeleton skeleton-card"></div>
+      }
+    </div>
+  } @else if (s.status === 'loaded') {
+    <header class="hero">
+      @if (s.plant.heroImage; as image) {
+        <img class="hero-image" [src]="image.url" [alt]="image.altText ?? ''" />
+      }
+      <div class="names">
+        <h1>{{ s.plant.name }}</h1>
+        @if (s.plant.plantGroup) {
+          <p class="group">{{ s.plant.plantGroup }}</p>
+        }
+        <p class="scientific"><i>{{ s.plant.scientificName }}</i></p>
+      </div>
+    </header>
+
+    @if (s.plant.description) {
+      <p class="description">{{ s.plant.description }}</p>
+    }
+
+    <section class="section" aria-labelledby="quick-care-heading">
+      <h2 id="quick-care-heading">Quick Care</h2>
+      @if (careCards().length > 0) {
+        <div class="care-grid">
+          @for (card of careCards(); track card.key) {
+            <app-care-card
+              [icon]="card.icon"
+              [label]="card.label"
+              [value]="card.value"
+              [description]="card.description"
+            />
+          }
+        </div>
+      } @else {
+        <p class="muted">Care information isn't available yet.</p>
+      }
+    </section>
+  } @else if (s.status === 'not-found') {
+    <div class="message">
+      <h1>Plant not found</h1>
+      <p>We couldn't find this plant.</p>
+      <a routerLink="/explore">Go to Explore</a>
+    </div>
+  } @else {
+    <div class="message" role="alert">
+      <h1>Something went wrong</h1>
+      <p>We couldn't load this plant. Please check your connection and try again.</p>
+    </div>
+    <button type="button" class="action" (click)="retry()">Try Again</button>
+  }
+</article>

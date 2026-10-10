@@ -1,0 +1,72 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  height: 100%;
+  padding: var(--space-3);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  padding-inline: var(--space-2);
+  font-weight: 600;
+}
+
+.brand-icon,
+.nav-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 1.75rem;
+  font-size: 1.25rem;
+}
+
+.collapse-toggle {
+  align-self: flex-end;
+}
+
+.nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: var(--space-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  text-align: left;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.nav-item:hover:not(:disabled) {
+  background: var(--color-surface-strong);
+}
+
+.nav-item.active {
+  background: var(--color-surface-strong);
+  font-weight: 600;
+}
+
+.account {
+  margin-top: auto;
+}
+
+.account:disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}

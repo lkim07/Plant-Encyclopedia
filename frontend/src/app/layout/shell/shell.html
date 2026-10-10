@@ -1,0 +1,20 @@
+<button type="button" class="skip-link" (click)="skipToMain()">Skip to main content</button>
+
+<app-top-bar class="top-bar" (menuOpen)="openDrawer()" />
+
+<aside class="sidebar" [class.collapsed]="collapsed()">
+  <app-sidebar [collapsed]="collapsed()" [showCollapseToggle]="true" (toggleCollapsed)="toggleCollapsed()" />
+</aside>
+
+<dialog #drawer class="drawer" aria-label="Main menu" (click)="onDrawerClick($event)">
+  <div class="drawer-panel">
+    <button type="button" class="icon-button drawer-close" aria-label="Close menu" (click)="closeDrawer()">
+      <span aria-hidden="true">✕</span>
+    </button>
+    <app-sidebar (navigate)="closeDrawer()" />
+  </div>
+</dialog>
+
+<main #main id="main-content" class="content" tabindex="-1">
+  <router-outlet />
+</main>
