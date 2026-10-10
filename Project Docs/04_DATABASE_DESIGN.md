@@ -1412,6 +1412,8 @@ Seed Development Data
 Run API
 ```
 
+Development sample data lives in `backend/dev-data/seed-dev-data.sql` (run instructions in its header). It is unverified sample content with no sources, care data, or images, refuses to run outside `plant_encyclopedia_dev` / `plant_encyclopedia_test`, and only inserts rows with fixed IDs, so it is safe to re-run. It is deliberately not part of the EF Core migrations.
+
 ---
 
 # 63. Test Database
