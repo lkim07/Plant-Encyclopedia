@@ -141,8 +141,8 @@ The exact structure may change if the implementation provides a better justified
 
 * [x] Backend starts locally (manual check: `/health` returned `healthy` against the dev database)
 * [x] `/health` responds successfully (verified by automated API tests)
-* [ ] Layers have clear dependency direction
-* [ ] No unnecessary architectural complexity has been introduced
+* [x] Layers have clear dependency direction (architecture review, TODO #12)
+* [x] No unnecessary architectural complexity has been introduced (architecture review, TODO #12)
 * [x] A basic automated test runs successfully
 
 ---
@@ -285,15 +285,16 @@ This vertical slice should validate the architecture before a large amount of fu
 
 ## Categories
 
-* [ ] Implement `GET /api/categories`
+* [x] Implement `GET /api/categories`
+* [x] Implement `GET /api/categories/{categoryId}`
 * [ ] Implement category page
 * [ ] Display category pills
 * [ ] Implement category navigation
-* [ ] Preserve category-pure behavior
+* [-] Preserve category-pure behavior (API enforced and tested; UI pending)
 
 ## Plant Groups
 
-* [ ] Implement `GET /api/plant-groups/{plantGroupId}`
+* [x] Implement `GET /api/plant-groups/{plantGroupId}` (Published plants only, paginated)
 * [ ] Implement plant-group page
 * [ ] Display plant/cultivar image cards
 * [ ] Implement navigation to Plant Detail
@@ -936,7 +937,7 @@ The next practical tasks should be:
 9. [x] Create Angular application foundation
 10. [x] Connect Angular to the Plant Detail API
 11. [x] Build the first Plant Detail vertical slice
-12. [ ] Validate the architecture against the real implementation
+12. [x] Validate the architecture against the real implementation
 
 Do not move directly to AI identification before this foundation is stable.
 

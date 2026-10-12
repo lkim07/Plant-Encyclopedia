@@ -7,13 +7,16 @@ public static class ApiErrors
         Results.NotFound(new { error = new { code, message } });
 
     public static IResult Validation(string field, string fieldMessage) =>
+        Validation(new Dictionary<string, string> { [field] = fieldMessage });
+
+    public static IResult Validation(IReadOnlyDictionary<string, string> details) =>
         Results.BadRequest(new
         {
             error = new
             {
                 code = "VALIDATION_ERROR",
                 message = "One or more fields are invalid.",
-                details = new Dictionary<string, string> { [field] = fieldMessage }
+                details
             }
         });
 }

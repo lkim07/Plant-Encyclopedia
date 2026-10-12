@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using PlantEncyclopedia.Application.Categories;
+using PlantEncyclopedia.Application.PlantGroups;
 using PlantEncyclopedia.Application.Plants;
 using PlantEncyclopedia.Infrastructure.Persistence;
 using PlantEncyclopedia.Infrastructure.Persistence.Queries;
@@ -16,6 +18,8 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString).UseSnakeCaseNamingConvention());
 
         services.AddScoped<IPlantQueries, PlantQueries>();
+        services.AddScoped<ICategoryQueries, CategoryQueries>();
+        services.AddScoped<IPlantGroupQueries, PlantGroupQueries>();
 
         return services;
     }

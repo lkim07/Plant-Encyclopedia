@@ -146,11 +146,12 @@ Implemented and verified:
 * Test project `backend/PlantEncyclopedia.Tests` (xUnit 2): PostgreSQL integration tests (see §8) and API tests. The API tests run the real API in memory (`WebApplicationFactory`) in a `Testing` environment, so User Secrets are never loaded, and point it only at the disposable test container.
 
 * `GET /api/plants/{plantId}` — Plant Detail for Published plants only (API_SPEC §14): `id`, `name`, `plantGroup`, `scientificName`, `description`, `heroImage` (always `null` for now), `quickCare` (Verified care only, numeric temperature). `404 PLANT_NOT_FOUND` for unknown or unpublished plants, `400 VALIDATION_ERROR` for a malformed ID. Minimal API endpoint → `IPlantQueries` (Application) → EF Core query (Infrastructure).
+* `GET /api/categories`, `GET /api/categories/{categoryId}`, `GET /api/plant-groups/{plantGroupId}` (API_SPEC §17–19): category and plant-group IDs are slugs; name ordering; category-pure group lists; Published plants only with page/pageSize pagination (default 20, max 50); `CATEGORY_NOT_FOUND` / `PLANT_GROUP_NOT_FOUND` 404s and `VALIDATION_ERROR` 400s. `imageUrl` fields are `null` until images exist. Covered by 11 API tests (34 backend tests in total).
 * The backend was started locally and `GET /health` returned `healthy` against `plant_encyclopedia_dev` (manual check).
 
 Verified by automated tests (23 passing in total; 7 for the Plant Detail endpoint, including an end-to-end check that a database failure returns the safe 500 body): healthy and unhealthy `/health` responses (exact JSON and status codes, no password in logs), the safe 500 error body, and that the API refuses to start without a connection string.
 
-Not yet implemented: other feature endpoints (categories, plant groups, search, …), request correlation IDs, structured logging, authentication.
+Not yet implemented: other feature endpoints (search, explore, favorites, …), request correlation IDs, structured logging, authentication.
 
 Planned responsibilities include:
 

@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using PlantEncyclopedia.Api.Categories;
 using PlantEncyclopedia.Api.Errors;
 using PlantEncyclopedia.Api.Health;
+using PlantEncyclopedia.Api.PlantGroups;
 using PlantEncyclopedia.Api.Plants;
 using PlantEncyclopedia.Infrastructure;
 using PlantEncyclopedia.Infrastructure.Persistence;
@@ -40,6 +42,8 @@ app.MapHealthChecks("/health", new HealthCheckOptions
 });
 
 app.MapPlantEndpoints();
+app.MapCategoryEndpoints();
+app.MapPlantGroupEndpoints();
 
 app.Run();
 

@@ -226,6 +226,26 @@ The API should enforce reasonable maximum page sizes.
 
 Clients should not be able to request unlimited records.
 
+Implemented limits (currently used by `GET /api/plant-groups/{plantGroupId}`):
+
+* `page` — whole number from 1 to 10000; default 1.
+* `pageSize` — whole number from 1 to 50; default 20.
+* Any other value returns `400 VALIDATION_ERROR` with a `details` entry for each invalid parameter:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "One or more fields are invalid.",
+    "details": {
+      "pageSize": "Page size must be a whole number between 1 and 50."
+    }
+  }
+}
+```
+
+* `pagination.hasNext` is `true` when at least one more item exists after this page.
+
 ---
 
 # 11. Cursor Pagination
@@ -456,16 +476,22 @@ Not required.
     {
       "id": "flowers",
       "name": "Flowers",
-      "imageUrl": "https://example.com/flowers.webp"
+      "imageUrl": null
     },
     {
-      "id": "trees",
-      "name": "Trees",
-      "imageUrl": "https://example.com/trees.webp"
+      "id": "fruits",
+      "name": "Fruits",
+      "imageUrl": null
     }
   ]
 }
 ```
+
+Implemented rules:
+
+* `id` is the category slug (lowercase letters, digits, and hyphens).
+* Categories are ordered by name. A product-defined display order would require a schema change and is deferred.
+* `imageUrl` is always `null` until category images exist.
 
 ---
 
@@ -475,9 +501,11 @@ Not required.
 GET /api/categories/{categoryId}
 ```
 
+`categoryId` is the category slug. Authentication: not required.
+
 Returns plant groups belonging to the category.
 
-Example:
+Response — `200 OK`:
 
 ```json
 {
@@ -488,12 +516,12 @@ Example:
       {
         "id": "roses",
         "name": "Roses",
-        "imageUrl": "https://example.com/roses.webp"
+        "imageUrl": null
       },
       {
         "id": "tulips",
         "name": "Tulips",
-        "imageUrl": "https://example.com/tulips.webp"
+        "imageUrl": null
       }
     ]
   }
@@ -501,6 +529,23 @@ Example:
 ```
 
 Category results must remain category-pure.
+
+Implemented rules:
+
+* Only the category's own plant groups are returned, ordered by name.
+* Plant groups are listed even if they have no Published plants yet.
+* `imageUrl` is always `null` until plant-group images exist.
+
+Unknown category — `404 Not Found`:
+
+```json
+{
+  "error": {
+    "code": "CATEGORY_NOT_FOUND",
+    "message": "The requested category could not be found."
+  }
+}
+```
 
 ---
 
@@ -512,24 +557,56 @@ Category results must remain category-pure.
 GET /api/plant-groups/{plantGroupId}
 ```
 
+`plantGroupId` is the plant-group slug. Query: `page`, `pageSize` (see §10). Authentication: not required.
+
 Returns plants/cultivars belonging to the group.
 
-Example:
+Response — `200 OK`:
 
 ```json
 {
   "data": {
     "id": "roses",
     "name": "Roses",
-    "plants": []
+    "category": {
+      "id": "flowers",
+      "name": "Flowers"
+    },
+    "plants": [
+      {
+        "id": "d5e00000-0000-4000-8000-000000000002",
+        "name": "Rosa 'Iceberg'",
+        "imageUrl": null
+      }
+    ]
   },
   "pagination": {
     "page": 1,
     "pageSize": 20,
-    "hasNext": true
+    "hasNext": false
   }
 }
 ```
+
+Implemented rules:
+
+* Only `Published` plants are returned, ordered by name and then ID so pages are stable.
+* `category` identifies the group's category (slug and name) for page headers and back navigation.
+* Plant `id` values are UUIDs (use them with `GET /api/plants/{plantId}`); `imageUrl` is always `null` until plant images exist.
+* A group with no Published plants returns `200` with `"plants": []`.
+
+Unknown plant group — `404 Not Found`:
+
+```json
+{
+  "error": {
+    "code": "PLANT_GROUP_NOT_FOUND",
+    "message": "The requested plant group could not be found."
+  }
+}
+```
+
+Invalid `page` / `pageSize` — `400 VALIDATION_ERROR` (see §10).
 
 ---
 
