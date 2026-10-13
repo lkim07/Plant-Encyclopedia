@@ -1,0 +1,53 @@
+@let s = state();
+
+<article class="page" [attr.aria-busy]="s.status === 'loading'">
+  <header class="page-header">
+    <button type="button" class="icon-button" aria-label="Back" (click)="goBack()">
+      <span aria-hidden="true">←</span>
+    </button>
+    @if (s.status === 'loaded') {
+      <h1>{{ s.category.name }}</h1>
+    } @else if (s.status === 'not-found') {
+      <h1>Category not found</h1>
+    } @else if (s.status === 'error') {
+      <h1>Something went wrong</h1>
+    } @else {
+      <div class="skeleton-line" aria-hidden="true"></div>
+    }
+  </header>
+
+  @if (s.status === 'loading') {
+    <span class="visually-hidden" role="status">Loading category…</span>
+    <ul class="card-grid" aria-hidden="true">
+      @for (card of skeletonCards; track card) {
+        <li class="skeleton"></li>
+      }
+    </ul>
+  } @else if (s.status === 'loaded') {
+    @if (s.category.plantGroups.length > 0) {
+      <ul class="card-grid" aria-label="Plant groups">
+        @for (group of s.category.plantGroups; track group.id) {
+          <li>
+            <app-image-card
+              [name]="group.name"
+              [imageUrl]="group.imageUrl"
+              [link]="'/plant-groups/' + group.id"
+            />
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="muted">No plants available yet.</p>
+    }
+  } @else if (s.status === 'not-found') {
+    <div class="message">
+      <p>We couldn't find this category.</p>
+      <a routerLink="/explore">Go to Explore</a>
+    </div>
+  } @else {
+    <div class="message" role="alert">
+      <p>We couldn't load the plants. Please check your connection and try again.</p>
+    </div>
+    <button type="button" class="action" (click)="retry()">Try Again</button>
+  }
+</article>

@@ -1,0 +1,27 @@
+@let c = categories();
+
+<h1>Explore</h1>
+
+@if (c.status === 'loading') {
+  <span class="visually-hidden" role="status">Loading categories…</span>
+  <div class="pills" aria-hidden="true">
+    @for (pill of skeletonPills; track pill) {
+      <span class="pill skeleton"></span>
+    }
+  </div>
+} @else if (c.status === 'loaded') {
+  <nav aria-label="Categories">
+    <ul class="pills">
+      @for (category of c.categories; track category.id) {
+        <li>
+          <a class="pill" [routerLink]="'/categories/' + category.id">{{ category.name }}</a>
+        </li>
+      }
+    </ul>
+  </nav>
+} @else {
+  <div class="error" role="alert">
+    <p>We couldn't load the categories.</p>
+    <button type="button" class="retry" (click)="retry()">Try Again</button>
+  </div>
+}

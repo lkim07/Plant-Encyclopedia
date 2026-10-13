@@ -1,0 +1,56 @@
+/* Horizontal category pills with a hidden scrollbar; swipe on touch, Shift+wheel or keyboard on desktop (UX §16). */
+.pills {
+  display: flex;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-1) 0;
+  overflow-x: auto;
+  list-style: none;
+  scrollbar-width: none;
+}
+
+.pills::-webkit-scrollbar {
+  display: none;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-6);
+  border-radius: 999px;
+  background: var(--color-surface);
+  white-space: nowrap;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.pill:hover {
+  background: var(--color-surface-strong);
+}
+
+.pill.skeleton {
+  flex: none;
+  width: 7rem;
+  animation: pulse 1.2s ease-in-out infinite alternate;
+}
+
+.error p {
+  margin: 0 0 var(--space-2);
+  color: var(--color-text-muted);
+}
+
+.retry {
+  min-height: var(--touch-target);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-text);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+}
+
+@keyframes pulse {
+  to {
+    opacity: 0.55;
+  }
+}

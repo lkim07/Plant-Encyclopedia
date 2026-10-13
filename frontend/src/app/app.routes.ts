@@ -19,6 +19,17 @@ export const routes: Routes = [
     loadComponent: () => import('./features/favorites/favorites-page').then((m) => m.FavoritesPage),
   },
   {
+    path: 'categories/:categoryId',
+    title: 'Category · Plant Encyclopedia',
+    loadComponent: () => import('./features/category/category-page').then((m) => m.CategoryPage),
+  },
+  {
+    path: 'plant-groups/:plantGroupId',
+    title: 'Plant Group · Plant Encyclopedia',
+    loadComponent: () =>
+      import('./features/plant-group/plant-group-page').then((m) => m.PlantGroupPage),
+  },
+  {
     path: 'plants/:plantId',
     title: 'Plant · Plant Encyclopedia',
     loadComponent: () =>

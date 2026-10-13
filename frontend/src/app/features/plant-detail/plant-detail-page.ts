@@ -6,6 +6,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, combineLatest, map, Observable, of, startWith, Subject, switchMap } from 'rxjs';
 import { PlantApi } from '../../core/api/plant-api';
 import { PlantDetail } from '../../core/api/plant-detail.model';
+import { goBack } from '../../core/navigation/go-back';
 import { CareCard } from './care-card';
 import { formatTemperature } from './format-temperature';
 
@@ -84,12 +85,7 @@ export class PlantDetailPage {
 
   /** Back follows in-app history; a page opened directly goes to the home destination. */
   protected goBack(): void {
-    const navigationId = (this.location.getState() as { navigationId?: number } | null)?.navigationId;
-    if (navigationId !== undefined && navigationId > 1) {
-      this.location.back();
-    } else {
-      void this.router.navigateByUrl('/identify');
-    }
+    goBack(this.location, this.router, '/identify');
   }
 
   private load(plantId: string): Observable<PageState> {

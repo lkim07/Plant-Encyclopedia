@@ -287,25 +287,26 @@ This vertical slice should validate the architecture before a large amount of fu
 
 * [x] Implement `GET /api/categories`
 * [x] Implement `GET /api/categories/{categoryId}`
-* [ ] Implement category page
-* [ ] Display category pills
-* [ ] Implement category navigation
-* [-] Preserve category-pure behavior (API enforced and tested; UI pending)
+* [x] Implement category page
+* [-] Display category pills (on Explore; edge fades and desktop drag scrolling pending)
+* [x] Implement category navigation
+* [x] Preserve category-pure behavior (API enforced and tested; Category page shows only the API's groups)
 
 ## Plant Groups
 
 * [x] Implement `GET /api/plant-groups/{plantGroupId}` (Published plants only, paginated)
-* [ ] Implement plant-group page
-* [ ] Display plant/cultivar image cards
-* [ ] Implement navigation to Plant Detail
+* [x] Implement plant-group page (20 per page, "Load more")
+* [-] Display plant/cultivar image cards (placeholder image until images exist)
+* [x] Implement navigation to Plant Detail
+* [ ] Restore loaded pages and scroll position on Back navigation (UX §15, "where practical")
 
 ## Interaction
 
-* [ ] Implement image-first cards
+* [-] Implement image-first cards (shared card with image placeholder; real images pending)
 * [ ] Implement bookmark affordance
 * [ ] Implement desktop hover state
-* [ ] Implement mobile tap behavior
-* [ ] Implement masonry/grid behavior
+* [x] Implement mobile tap behavior (cards are plain links)
+* [-] Implement masonry/grid behavior (responsive grid done; masonry pending)
 
 ---
 

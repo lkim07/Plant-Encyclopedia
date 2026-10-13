@@ -1,0 +1,69 @@
+@let s = state();
+
+<article class="page" [attr.aria-busy]="s.status === 'loading'">
+  <header class="page-header">
+    <button type="button" class="icon-button" aria-label="Back" (click)="goBack()">
+      <span aria-hidden="true">←</span>
+    </button>
+    @if (s.status === 'loaded') {
+      <div>
+        <p class="eyebrow">
+          <a [routerLink]="'/categories/' + s.group.category.id">{{ s.group.category.name }}</a>
+        </p>
+        <h1>{{ s.group.name }}</h1>
+      </div>
+    } @else if (s.status === 'not-found') {
+      <h1>Plant group not found</h1>
+    } @else if (s.status === 'error') {
+      <h1>Something went wrong</h1>
+    } @else {
+      <div class="skeleton-line" aria-hidden="true"></div>
+    }
+  </header>
+
+  @if (s.status === 'loading') {
+    <span class="visually-hidden" role="status">Loading plants…</span>
+    <ul class="card-grid" aria-hidden="true">
+      @for (card of skeletonCards; track card) {
+        <li class="skeleton"></li>
+      }
+    </ul>
+  } @else if (s.status === 'loaded') {
+    @if (s.plants.length > 0) {
+      <ul class="card-grid" aria-label="Plants">
+        @for (plant of s.plants; track plant.id) {
+          <li>
+            <app-image-card
+              [name]="plant.name"
+              [imageUrl]="plant.imageUrl"
+              [link]="'/plants/' + plant.id"
+            />
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="muted">No plants available yet.</p>
+    }
+
+    @if (s.hasNext) {
+      <div class="load-more">
+        @if (s.more === 'error') {
+          <p class="muted" role="alert">We couldn't load more plants.</p>
+        }
+        <button type="button" class="action" [disabled]="s.more === 'loading'" (click)="loadMore()">
+          {{ s.more === 'loading' ? 'Loading…' : s.more === 'error' ? 'Try Again' : 'Load more' }}
+        </button>
+      </div>
+    }
+  } @else if (s.status === 'not-found') {
+    <div class="message">
+      <p>We couldn't find this plant group.</p>
+      <a routerLink="/explore">Go to Explore</a>
+    </div>
+  } @else {
+    <div class="message" role="alert">
+      <p>We couldn't load the plants. Please check your connection and try again.</p>
+    </div>
+    <button type="button" class="action" (click)="retry()">Try Again</button>
+  }
+</article>
