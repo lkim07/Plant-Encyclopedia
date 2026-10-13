@@ -9,7 +9,7 @@ namespace PlantEncyclopedia.Tests.Api;
 public class PlantDetailEndpointTests(PostgresDatabaseFixture fixture)
 {
     private static readonly string[] ExpectedFields =
-        ["id", "name", "plantGroup", "scientificName", "description", "heroImage", "quickCare"];
+        ["id", "name", "plantGroup", "plantGroupId", "scientificName", "description", "heroImage", "quickCare"];
 
     // Protects against: missing fields, or database columns leaking into the public response.
     [Fact]
@@ -31,6 +31,7 @@ public class PlantDetailEndpointTests(PostgresDatabaseFixture fixture)
         Assert.Equal(plant.Id, data.GetProperty("id").GetGuid());
         Assert.Equal(plant.DisplayName, data.GetProperty("name").GetString());
         Assert.Equal("Test Group", data.GetProperty("plantGroup").GetString());
+        Assert.Equal(plant.PlantGroup!.Slug, data.GetProperty("plantGroupId").GetString());
         Assert.Equal("Testus plantus", data.GetProperty("scientificName").GetString());
         Assert.Equal("Test description", data.GetProperty("description").GetString());
         Assert.Equal(JsonValueKind.Null, data.GetProperty("heroImage").ValueKind);

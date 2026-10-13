@@ -7,6 +7,7 @@ public sealed record PlantDetailResponse(
     Guid Id,
     string Name,
     string? PlantGroup,
+    string? PlantGroupId,
     string ScientificName,
     string? Description,
     HeroImageResponse? HeroImage,
@@ -16,6 +17,7 @@ public sealed record PlantDetailResponse(
         plant.Id,
         plant.Name,
         plant.PlantGroupName,
+        plant.PlantGroupSlug,
         plant.ScientificName,
         plant.Description,
         HeroImage: null, // Hero image selection is not decided yet.

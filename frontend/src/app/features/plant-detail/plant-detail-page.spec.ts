@@ -17,6 +17,7 @@ function plant(quickCare: QuickCare | null = null): ApiResponse<PlantDetail> {
       id: PLANT_ID,
       name: "Rosa 'Peace'",
       plantGroup: 'Roses',
+      plantGroupId: 'roses',
       scientificName: 'Rosa × hybrida',
       description: 'Development sample data — not verified.',
       heroImage: null,
@@ -141,8 +142,8 @@ describe('PlantDetailPage', () => {
     expect(page.querySelector('h1')?.textContent).toBe("Rosa 'Peace'");
   });
 
-  // Protects against: Back leaving the app when the page was opened directly.
-  it('Back goes to Identify when there is no in-app history', async () => {
+  // Protects against: Back leaving the app, or skipping the plant's group, when the page was opened directly.
+  it("Back goes to the plant's group when there is no in-app history", async () => {
     const harness = await openPlant();
     http.expectOne(URL).flush(plant());
     const page = await settle(harness);
@@ -151,7 +152,25 @@ describe('PlantDetailPage', () => {
     page.querySelector<HTMLButtonElement>('button[aria-label="Back"]')!.click();
     await settle(harness);
 
-    expect(TestBed.inject(Router).url).toBe('/identify');
+    expect(TestBed.inject(Router).url).toBe('/plant-groups/roses');
+    http.expectOne('/api/plant-groups/roses?page=1&pageSize=20').flush({
+      data: { id: 'roses', name: 'Roses', category: { id: 'flowers', name: 'Flowers' }, plants: [] },
+      pagination: { page: 1, pageSize: 20, hasNext: false },
+    });
+  });
+
+  // Protects against: Back doing nothing for a plant without a group, or one that failed to load.
+  it('Back goes to Explore when the plant has no group', async () => {
+    const harness = await openPlant();
+    http.expectOne(URL).flush({ data: { ...plant().data, plantGroup: null, plantGroupId: null } });
+    const page = await settle(harness);
+    vi.spyOn(TestBed.inject(Location), 'getState').mockReturnValue({ navigationId: 1 });
+
+    page.querySelector<HTMLButtonElement>('button[aria-label="Back"]')!.click();
+    await settle(harness);
+
+    expect(TestBed.inject(Router).url).toBe('/explore');
+    http.expectOne('/api/categories').flush({ data: [] });
   });
 
   // Protects against: Back ignoring the previous in-app screen (PRD §32).

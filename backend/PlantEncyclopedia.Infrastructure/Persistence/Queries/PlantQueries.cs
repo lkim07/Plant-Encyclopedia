@@ -15,6 +15,7 @@ internal sealed class PlantQueries(PlantEncyclopediaDbContext db) : IPlantQuerie
                 p.Id,
                 p.DisplayName,
                 p.PlantGroup != null ? p.PlantGroup.Name : null,
+                p.PlantGroup != null ? p.PlantGroup.Slug : null,
                 p.ScientificName,
                 p.Description,
                 p.Care != null && p.Care.VerificationStatus == CareVerificationStatus.Verified

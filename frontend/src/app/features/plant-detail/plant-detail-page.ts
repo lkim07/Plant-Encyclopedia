@@ -83,9 +83,11 @@ export class PlantDetailPage {
     this.retry$.next();
   }
 
-  /** Back follows in-app history; a page opened directly goes to the home destination. */
+  /** Back follows in-app history; a plant opened directly goes up to its plant group. */
   protected goBack(): void {
-    goBack(this.location, this.router, '/identify');
+    const state = this.state();
+    const groupId = state.status === 'loaded' ? state.plant.plantGroupId : null;
+    goBack(this.location, this.router, groupId ? `/plant-groups/${groupId}` : '/explore');
   }
 
   private load(plantId: string): Observable<PageState> {

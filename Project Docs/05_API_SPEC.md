@@ -361,6 +361,7 @@ Retrieve the Plant Detail data for a specific plant.
     "id": "d5e00000-0000-4000-8000-000000000001",
     "name": "Rosa 'Peace'",
     "plantGroup": "Roses",
+    "plantGroupId": "roses",
     "scientificName": "Rosa × hybrida",
     "description": "Development sample data — not verified.",
     "heroImage": null,
@@ -389,6 +390,7 @@ Field rules:
 * `id` — the plant's UUID.
 * `name` — the most understandable plant/cultivar name (UX §28).
 * `plantGroup` — the plant group name.
+* `plantGroupId` — the plant group's slug, usable with `GET /api/plant-groups/{plantGroupId}` (§19). `plantGroup` and `plantGroupId` are both `null` when the plant has no group.
 * `heroImage` — always `null` until the hero-image approach is decided. When set, it will be `{ "url", "altText" }`.
 * `quickCare` — `null` unless the plant's care information is **Verified**. Unverified care is never returned. Inside it, any card without a value is `null`.
 * `temperature` — numeric degrees Celsius (`minC`, `maxC`, either may be `null`); clients format the display text (e.g. "15–25°C").

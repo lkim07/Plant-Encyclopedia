@@ -7,6 +7,7 @@ public sealed record PlantDetail(
     Guid Id,
     string Name,
     string? PlantGroupName,
+    string? PlantGroupSlug,
     string ScientificName,
     string? Description,
     PlantCareDetail? Care);

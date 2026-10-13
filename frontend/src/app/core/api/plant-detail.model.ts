@@ -3,6 +3,8 @@ export interface PlantDetail {
   readonly id: string;
   readonly name: string;
   readonly plantGroup: string | null;
+  /** The plant group's slug; null when the plant has no group. */
+  readonly plantGroupId: string | null;
   readonly scientificName: string;
   readonly description: string | null;
   /** Always null until the hero-image approach is decided. */
