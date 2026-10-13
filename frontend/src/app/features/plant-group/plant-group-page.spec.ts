@@ -178,4 +178,29 @@ describe('PlantGroupPage', () => {
       .expectOne('/api/categories/flowers')
       .flush({ data: { id: 'flowers', name: 'Flowers', plantGroups: [] } });
   });
+
+  // Protects against: Back looping Roses → Flowers → Roses after the group was opened directly.
+  it('Back keeps walking up the hierarchy after a fallback', async () => {
+    const harness = await openGroup();
+    http.expectOne(pageUrl(1)).flush(groupPage(1, [], false));
+    let page = await settle(harness);
+    const location = TestBed.inject(Location);
+    // Only the directly opened group page lacks in-app history; later reads use the real state.
+    vi.spyOn(location, 'getState').mockReturnValueOnce({ navigationId: 1 });
+    const back = vi.spyOn(location, 'back');
+
+    page.querySelector<HTMLButtonElement>('button[aria-label="Back"]')!.click();
+    await settle(harness);
+    http
+      .expectOne('/api/categories/flowers')
+      .flush({ data: { id: 'flowers', name: 'Flowers', plantGroups: [] } });
+    page = await settle(harness);
+
+    page.querySelector<HTMLButtonElement>('button[aria-label="Back"]')!.click();
+    await settle(harness);
+
+    expect(back).not.toHaveBeenCalled();
+    expect(TestBed.inject(Router).url).toBe('/explore');
+    http.expectOne('/api/categories').flush({ data: [] });
+  });
 });
