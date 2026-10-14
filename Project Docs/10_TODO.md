@@ -330,10 +330,12 @@ This vertical slice should validate the architecture before a large amount of fu
 
 ## Suggestions
 
-* [ ] Implement `GET /api/search/suggestions`
-* [ ] Implement prefix/exact matching
-* [ ] Return database-backed suggestions
-* [ ] Avoid excessive external API requests while typing
+* [x] Implement `GET /api/search/suggestions` (max 8; 120/min per IP; 2-second timeout)
+* [x] Implement prefix/exact matching (word-start, case/accent/punctuation-insensitive)
+* [x] Return database-backed suggestions
+* [x] Avoid excessive external API requests while typing (no external calls; frontend debounce in Search UI)
+* [ ] Suggest taxonomic terms (genus, family)
+* [ ] Measure suggestion query plans with realistic data volume (trigram index use inside the combined query)
 
 ## Search UI
 

@@ -20,13 +20,7 @@ internal sealed class SearchQueries(PlantEncyclopediaDbContext db) : ISearchQuer
         int pageSize,
         CancellationToken cancellationToken)
     {
-        // The database folds the search text exactly as it folds stored names (search_key),
-        // so "CAFÉ, Mr." and "cafe mr" compare equal.
-        var folded = await db.Database
-            .SqlQuery<string>($"SELECT public.search_key({text}) AS \"Value\"")
-            .SingleAsync(cancellationToken);
-
-        var words = folded.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(MaxWords).ToArray();
+        var words = await FoldAsync(text, cancellationToken);
         if (words.Length == 0)
         {
             return new SearchPage([], HasNext: false);
@@ -66,6 +60,78 @@ internal sealed class SearchQueries(PlantEncyclopediaDbContext db) : ISearchQuer
 
         var hasNext = rows.Count > pageSize;
         return new SearchPage(hasNext ? rows.Take(pageSize).ToList() : rows, hasNext);
+    }
+
+    public async Task<IReadOnlyList<SearchSuggestion>> SuggestAsync(
+        string text,
+        int limit,
+        CancellationToken cancellationToken)
+    {
+        var key = string.Join(' ', await FoldAsync(text, cancellationToken));
+        if (key.Length < ISearchQueries.MinSuggestionLength)
+        {
+            return [];
+        }
+
+        // A name matches when it starts with the text, or one of its later words does.
+        var startsWith = EscapeLike(key) + "%";
+        var wordStartsWith = "% " + EscapeLike(key) + "%";
+        var published = PlantStatus.Published.ToString();
+        var common = PlantNameType.Common.ToString();
+
+        // One parameterized statement: every value below is sent as a bound parameter, never spliced into SQL.
+        // Candidate names are folded with search_key(), so the trigram indexes serve the LIKE filters.
+        // Names that fold to the same key are merged; the lowest type code supplies the shown text and type.
+        var rows = await db.Database.SqlQuery<SuggestionRow>($"""
+            WITH candidates AS (
+                SELECT p.display_name AS text, 1 AS type_code, public.search_key(p.display_name) AS key
+                FROM plants p WHERE p.status = {published}
+                UNION ALL
+                SELECT p.cultivar_name, 2, public.search_key(p.cultivar_name)
+                FROM plants p WHERE p.status = {published} AND p.cultivar_name IS NOT NULL
+                UNION ALL
+                SELECT p.scientific_name, 3, public.search_key(p.scientific_name)
+                FROM plants p WHERE p.status = {published}
+                UNION ALL
+                SELECT n.name, CASE WHEN n.name_type = {common} THEN 4 ELSE 5 END, public.search_key(n.name)
+                FROM plant_names n JOIN plants p ON p.id = n.plant_id WHERE p.status = {published}
+                UNION ALL
+                SELECT g.name, 6, public.search_key(g.name)
+                FROM plant_groups g
+                WHERE EXISTS (SELECT 1 FROM plants p WHERE p.plant_group_id = g.id AND p.status = {published})
+            )
+            SELECT
+                (array_agg(c.text ORDER BY c.type_code, c.text))[1] AS text,
+                min(c.type_code) AS type_code,
+                bool_or(c.key LIKE {startsWith} ESCAPE '\') AS starts_with
+            FROM candidates c
+            WHERE c.key LIKE {startsWith} ESCAPE '\' OR c.key LIKE {wordStartsWith} ESCAPE '\'
+            GROUP BY c.key
+            ORDER BY starts_with DESC, length(c.key), c.key
+            LIMIT {limit}
+            """).ToListAsync(cancellationToken);
+
+        return rows.Select(r => new SearchSuggestion(r.Text, (SuggestionType)r.TypeCode)).ToList();
+    }
+
+    /// <summary>
+    /// Folds the text in the database exactly as stored names are folded (search_key), so "CAFÉ, Mr." and
+    /// "cafe mr" compare equal, and returns its words.
+    /// </summary>
+    private async Task<string[]> FoldAsync(string text, CancellationToken cancellationToken)
+    {
+        var folded = await db.Database
+            .SqlQuery<string>($"SELECT public.search_key({text}) AS \"Value\"")
+            .SingleAsync(cancellationToken);
+
+        return folded.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(MaxWords).ToArray();
+    }
+
+    private sealed class SuggestionRow
+    {
+        public required string Text { get; init; }
+        public int TypeCode { get; init; }
+        public bool StartsWith { get; init; }
     }
 
     /// <summary>The word appears in any searchable name of the plant or its group.</summary>

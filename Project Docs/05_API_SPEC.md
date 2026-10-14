@@ -734,7 +734,7 @@ Search the application's plant database.
 
   Ties are ordered by name, then ID, so pages never overlap.
 * No matches return `200 OK` with `"data": []`.
-* Not yet: suggestions (§26), recording recent searches (§28), and external lookup when nothing is found (§27).
+* Not yet: recording recent searches (§28) and external lookup when nothing is found (§27).
 
 ### Validation and limits (implemented)
 
@@ -796,32 +796,48 @@ GET /api/search/suggestions?q={query}
 
 Suggestions should be database-backed.
 
-Potential suggestion types:
+Implemented suggestion types (`type`):
 
-* Common name
-* Scientific name
-* Cultivar
-* Plant group
-* Taxonomic term
+* `plant` — a plant's display name
+* `cultivar` — a cultivar name
+* `scientificName` — a scientific name
+* `commonName` — a common name in any language
+* `synonym` — a synonym
+* `plantGroup` — a plant group name
+* Taxonomic terms (genus, family) are not suggested yet.
 
-Example:
+Example (implemented):
 
 ```json
 {
   "data": [
     {
       "text": "Rosa 'Peace'",
-      "type": "cultivar",
-      "plantId": "123"
+      "type": "plant"
     },
     {
-      "text": "Peace Rose",
-      "type": "commonName",
-      "plantId": "123"
+      "text": "Roses",
+      "type": "plantGroup"
     }
   ]
 }
 ```
+
+### Rules (implemented)
+
+* Sources: names of `Published` plants, and names of plant groups that contain at least one `Published` plant.
+* **Word-start matching:** a name matches when it, or one of its later words, starts with `q` — ignoring case, accents and punctuation as in §24 (`pea` and `rosa pe` suggest "Rosa 'Peace'"; `eace` does not). Search (§24) still finds text inside words.
+* At most **8** suggestions. Names that start with `q` come first, then names where a later word starts with it; within each, shorter names first, then alphabetical.
+* Names that are identical after folding appear once. When one text has several sources, the type order above decides the shown text and `type`.
+* Suggestions carry no plant ID: selecting one runs a search for `text` (UX §19). A `plantId` was removed before any client used it; it can be added back without breaking clients if a direct "open this plant" action is ever needed.
+* `q` is validated exactly as in §24 (same `400 VALIDATION_ERROR` messages). Valid text shorter than **2 characters** after folding returns `"data": []`.
+* No external services are called.
+
+Abuse protection:
+
+* **Rate limit:** 120 requests per minute per client IP (IPv6 by /64), separate from the search limit. Excess requests return `429 RATE_LIMITED` with `Retry-After` (§12).
+* **Timeout:** 2 seconds, then `503 REQUEST_TIMEOUT` (§12).
+* The typed text is never written to server logs.
 
 ---
 

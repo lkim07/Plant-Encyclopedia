@@ -301,5 +301,11 @@ public class SearchEndpointTests(PostgresDatabaseFixture fixture)
             await Task.Delay(Timeout.Infinite, cancellationToken);
             throw new InvalidOperationException("Unreachable.");
         }
+
+        public async Task<IReadOnlyList<SearchSuggestion>> SuggestAsync(string text, int limit, CancellationToken cancellationToken)
+        {
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+            throw new InvalidOperationException("Unreachable.");
+        }
     }
 }

@@ -12,11 +12,18 @@ namespace PlantEncyclopedia.Api.Search;
 /// </summary>
 public static class SearchProtection
 {
+    // Search and suggestions have separate policies, so typing never uses up the search allowance.
     public const string RateLimitPolicy = "search";
     public const string TimeoutPolicy = "search";
+    public const string SuggestionsRateLimitPolicy = "search-suggestions";
+    public const string SuggestionsTimeoutPolicy = "search-suggestions";
 
     public const int RequestsPerMinute = 30;
     public static readonly TimeSpan Timeout = TimeSpan.FromSeconds(5);
+
+    // Suggestions are requested while typing; a late suggestion is useless, so the timeout is short.
+    public const int SuggestionRequestsPerMinute = 120;
+    public static readonly TimeSpan SuggestionsTimeout = TimeSpan.FromSeconds(2);
 
     public const string RateLimitedCode = "RATE_LIMITED";
     public const string RateLimitedMessage = "Too many requests. Please wait a moment and try again.";
@@ -30,27 +37,37 @@ public static class SearchProtection
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             options.OnRejected = WriteRateLimitedAsync;
 
-            options.AddPolicy(RateLimitPolicy, httpContext => RateLimitPartition.GetFixedWindowLimiter(
-                ClientPartitionKey(httpContext),
-                _ => new FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = RequestsPerMinute,
-                    Window = TimeSpan.FromMinutes(1),
-                    QueueLimit = 0 // reject immediately instead of holding requests open
-                }));
+            AddPerClientPolicy(options, RateLimitPolicy, RequestsPerMinute);
+            AddPerClientPolicy(options, SuggestionsRateLimitPolicy, SuggestionRequestsPerMinute);
         });
 
         // When the timeout fires, the request's cancellation token cancels the running database query.
-        services.AddRequestTimeouts(options => options.AddPolicy(TimeoutPolicy, new RequestTimeoutPolicy
+        services.AddRequestTimeouts(options =>
         {
-            Timeout = Timeout,
-            TimeoutStatusCode = StatusCodes.Status503ServiceUnavailable,
-            WriteTimeoutResponse = context => context.Response.WriteAsJsonAsync(
-                new { error = new { code = TimeoutCode, message = TimeoutMessage } })
-        }));
+            options.AddPolicy(TimeoutPolicy, TimeoutPolicyFor(Timeout));
+            options.AddPolicy(SuggestionsTimeoutPolicy, TimeoutPolicyFor(SuggestionsTimeout));
+        });
 
         return services;
     }
+
+    private static void AddPerClientPolicy(RateLimiterOptions options, string policyName, int requestsPerMinute) =>
+        options.AddPolicy(policyName, httpContext => RateLimitPartition.GetFixedWindowLimiter(
+            ClientPartitionKey(httpContext),
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = requestsPerMinute,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0 // reject immediately instead of holding requests open
+            }));
+
+    private static RequestTimeoutPolicy TimeoutPolicyFor(TimeSpan timeout) => new()
+    {
+        Timeout = timeout,
+        TimeoutStatusCode = StatusCodes.Status503ServiceUnavailable,
+        WriteTimeoutResponse = context => context.Response.WriteAsJsonAsync(
+            new { error = new { code = TimeoutCode, message = TimeoutMessage } })
+    };
 
     /// <summary>
     /// The client's IP address. IPv6 clients are grouped by their /64 network, because one
