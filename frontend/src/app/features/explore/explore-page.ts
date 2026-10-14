@@ -12,7 +12,7 @@ type CategoriesState =
 
 /**
  * Explore (UX §12, §16): category pills leading into category browsing.
- * Deferred: the discovery feed, the Search action, edge fades and desktop drag scrolling.
+ * Deferred: the discovery feed, edge fades and desktop drag scrolling.
  */
 @Component({
   selector: 'app-explore-page',

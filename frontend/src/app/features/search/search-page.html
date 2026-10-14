@@ -1,0 +1,103 @@
+@let s = state();
+
+<article class="page" [attr.aria-busy]="s.status === 'loading'">
+  <h1 class="visually-hidden">Search</h1>
+
+  <header class="search-header">
+    <button type="button" class="icon-button" aria-label="Back" (click)="goBack()">
+      <span aria-hidden="true">←</span>
+    </button>
+    <app-search-box [(text)]="text" (submitted)="submit($event)" />
+  </header>
+
+  @if (!text().trim()) {
+    <!-- Nothing typed: recent searches (UX §20). -->
+    @if (recent().length > 0) {
+      <section class="recent" aria-labelledby="recent-heading">
+        <h2 id="recent-heading">Recent Searches</h2>
+        <ul>
+          @for (item of recent(); track item) {
+            <li>
+              <button type="button" class="recent-text" (click)="submit(item)">{{ item }}</button>
+              <button
+                type="button"
+                class="icon-button"
+                [attr.aria-label]="'Remove ' + item + ' from recent searches'"
+                (click)="removeRecent(item)"
+              >
+                <span aria-hidden="true">×</span>
+              </button>
+            </li>
+          }
+        </ul>
+      </section>
+    } @else {
+      <p class="muted">Search by common, scientific, or cultivar name.</p>
+    }
+  } @else if (s.status === 'loading') {
+    <span class="visually-hidden" role="status">Searching…</span>
+    <ul class="card-grid" aria-hidden="true">
+      @for (card of skeletonCards; track card) {
+        <li class="skeleton"></li>
+      }
+    </ul>
+  } @else if (s.status === 'loaded') {
+    @if (s.results.length > 0) {
+      <ul class="card-grid" aria-label="Search results">
+        @for (result of s.results; track result.id) {
+          <li>
+            <app-image-card
+              [name]="result.name"
+              [imageUrl]="result.imageUrl"
+              [link]="'/plants/' + result.id"
+            />
+          </li>
+        }
+      </ul>
+
+      @if (s.hasNext && s.page < maxPage) {
+        @if (s.more === 'idle') {
+          <div #sentinel class="sentinel" aria-hidden="true"></div>
+        }
+        <div class="load-more">
+          @if (s.more === 'error') {
+            <p class="muted" role="alert">We couldn't load more plants.</p>
+          }
+          <button
+            type="button"
+            class="action"
+            [disabled]="s.more === 'loading'"
+            (click)="loadMore()"
+          >
+            {{ s.more === 'loading' ? 'Loading…' : s.more === 'error' ? 'Try Again' : 'Load more' }}
+          </button>
+        </div>
+      } @else if (s.hasNext) {
+        <p class="muted end-note">
+          Showing the first {{ resultCap }} results. Try a more specific search.
+        </p>
+      }
+    } @else {
+      <!-- UX §43 -->
+      <div class="message no-results">
+        <h2>No plants found</h2>
+        <p>We couldn't find a match for "{{ query() }}".</p>
+        <p>Try another name or search term.</p>
+        <a routerLink="/identify">Identify a plant from a photo</a>
+      </div>
+    }
+  } @else if (s.status === 'rate-limited') {
+    <div class="message" role="alert">
+      <p>You're searching too quickly. Please wait a moment and try again.</p>
+    </div>
+    <button type="button" class="action" (click)="retry()">Try Again</button>
+  } @else if (s.status === 'invalid') {
+    <p class="muted" role="alert">{{ s.message }}</p>
+  } @else if (s.status === 'error') {
+    <div class="message" role="alert">
+      <h2>Something went wrong</h2>
+      <p>We couldn't load the plants. Please check your connection and try again.</p>
+    </div>
+    <button type="button" class="action" (click)="retry()">Try Again</button>
+  }
+</article>

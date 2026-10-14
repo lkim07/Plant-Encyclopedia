@@ -339,14 +339,17 @@ This vertical slice should validate the architecture before a large amount of fu
 
 ## Search UI
 
-* [ ] Implement Explore search activation
-* [ ] Implement sticky search bar
-* [ ] Implement back navigation
-* [ ] Implement recent searches
-* [ ] Implement search result grid
-* [ ] Implement loading skeleton
-* [ ] Implement no-results state
-* [ ] Implement infinite scrolling
+* [x] Implement Explore search activation (🔍 icon → `/search`)
+* [x] Implement sticky search bar
+* [x] Implement back navigation
+* [x] Implement recent searches (browser-only localStorage, 10 max; server-side history in Phase 8)
+* [x] Implement search suggestions while typing (250 ms pause, 2+ characters, keyboard combobox)
+* [x] Implement search result grid (bookmark controls pending Favorites)
+* [x] Implement loading skeleton
+* [x] Implement no-results state
+* [x] Implement infinite scrolling (with Load more fallback; stops at page 50)
+* [ ] Restore loaded pages and scroll position on Back to search results (UX §15)
+* [ ] Move recent searches to server-side Search History when authentication exists (Phase 8)
 
 ---
 

@@ -51,6 +51,16 @@ describe('ExplorePage', () => {
     ]);
   });
 
+  // Protects against: no way into Search from Explore (UX §12, D-015).
+  it('has a Search icon linking to the Search page', async () => {
+    const harness = await openExplore();
+    http.expectOne('/api/categories').flush({ data: [] });
+    const page = await settle(harness);
+
+    expect(page.querySelector('a[aria-label="Search"]')?.getAttribute('href')).toBe('/search');
+    expect(page.querySelector('input')).toBeNull();
+  });
+
   // Protects against: a failed category request leaving Explore stuck (UX §44).
   it('shows an error with Try Again, which reloads the categories', async () => {
     const harness = await openExplore();

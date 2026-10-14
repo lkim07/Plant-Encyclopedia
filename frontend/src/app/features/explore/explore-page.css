@@ -1,3 +1,19 @@
+.explore-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.explore-header h1 {
+  margin: 0;
+}
+
+.explore-header a {
+  text-decoration: none;
+}
+
 /* Horizontal category pills with a hidden scrollbar; swipe on touch, Shift+wheel or keyboard on desktop (UX §16). */
 .pills {
   display: flex;

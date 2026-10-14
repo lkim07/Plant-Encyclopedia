@@ -1,0 +1,53 @@
+<form class="box" role="search" (submit)="onSubmit($event)">
+  <input
+    #input
+    type="search"
+    class="input"
+    placeholder="Search plants…"
+    aria-label="Search plants"
+    role="combobox"
+    aria-autocomplete="list"
+    aria-controls="search-suggestions"
+    autocomplete="off"
+    enterkeyhint="search"
+    [attr.aria-expanded]="showSuggestions()"
+    [attr.aria-activedescendant]="
+      showSuggestions() && activeIndex() >= 0 ? 'search-suggestion-' + activeIndex() : null
+    "
+    [attr.aria-invalid]="hint() ? true : null"
+    [attr.aria-describedby]="hint() ? 'search-hint' : null"
+    [maxLength]="maxLength"
+    [value]="text()"
+    (input)="onInput($any($event.target).value)"
+    (keydown)="onKeydown($event)"
+    (blur)="close()"
+  />
+  @if (text()) {
+    <button type="button" class="icon-button clear" aria-label="Clear search" (click)="clear()">
+      <span aria-hidden="true">✕</span>
+    </button>
+  }
+
+  @if (showSuggestions()) {
+    <ul id="search-suggestions" class="suggestions" role="listbox" aria-label="Suggestions">
+      @for (suggestion of suggestions(); track suggestion.text; let i = $index) {
+        <!-- mousedown is cancelled so the input keeps focus and the click still lands. -->
+        <li
+          role="option"
+          [id]="'search-suggestion-' + i"
+          [attr.aria-selected]="i === activeIndex()"
+          [class.active]="i === activeIndex()"
+          (mousedown)="$event.preventDefault()"
+          (click)="choose(suggestion.text)"
+        >
+          <span class="text">{{ suggestion.text }}</span>
+          <span class="type">{{ typeLabels[suggestion.type] }}</span>
+        </li>
+      }
+    </ul>
+  }
+</form>
+
+@if (hint(); as message) {
+  <p id="search-hint" class="hint" role="alert">{{ message }}</p>
+}

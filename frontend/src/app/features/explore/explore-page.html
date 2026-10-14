@@ -1,6 +1,12 @@
 @let c = categories();
 
-<h1>Explore</h1>
+<!-- Search is reached from an icon rather than a persistent search box (UX §12, D-015). -->
+<header class="explore-header">
+  <h1>Explore</h1>
+  <a class="icon-button" routerLink="/search" aria-label="Search">
+    <span aria-hidden="true">🔍</span>
+  </a>
+</header>
 
 @if (c.status === 'loading') {
   <span class="visually-hidden" role="status">Loading categories…</span>
