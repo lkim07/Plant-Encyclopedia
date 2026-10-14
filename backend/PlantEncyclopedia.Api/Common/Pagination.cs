@@ -22,11 +22,22 @@ public static class Pagination
     public static (PageRequest Request, IResult? Error) Parse(string? page, string? pageSize)
     {
         var details = new Dictionary<string, string>();
+        var request = Validate(page, pageSize, MaxPage, details);
+        return details.Count > 0
+            ? (default, ApiErrors.Validation(details))
+            : (request, null);
+    }
 
+    /// <summary>
+    /// Parses the page request, adding an entry to <paramref name="details"/> for each invalid parameter,
+    /// so callers can report them together with their own validation errors.
+    /// </summary>
+    public static PageRequest Validate(string? page, string? pageSize, int maxPage, IDictionary<string, string> details)
+    {
         var pageNumber = 1;
-        if (page is not null && (!int.TryParse(page, out pageNumber) || pageNumber < 1 || pageNumber > MaxPage))
+        if (page is not null && (!int.TryParse(page, out pageNumber) || pageNumber < 1 || pageNumber > maxPage))
         {
-            details["page"] = $"Page must be a whole number between 1 and {MaxPage}.";
+            details["page"] = $"Page must be a whole number between 1 and {maxPage}.";
         }
 
         var size = DefaultPageSize;
@@ -35,8 +46,6 @@ public static class Pagination
             details["pageSize"] = $"Page size must be a whole number between 1 and {MaxPageSize}.";
         }
 
-        return details.Count > 0
-            ? (default, ApiErrors.Validation(details))
-            : (new PageRequest(pageNumber, size), null);
+        return new PageRequest(pageNumber, size);
     }
 }

@@ -146,12 +146,13 @@ Implemented and verified:
 * Test project `backend/PlantEncyclopedia.Tests` (xUnit 2): PostgreSQL integration tests (see §8) and API tests. The API tests run the real API in memory (`WebApplicationFactory`) in a `Testing` environment, so User Secrets are never loaded, and point it only at the disposable test container.
 
 * `GET /api/plants/{plantId}` — Plant Detail for Published plants only (API_SPEC §14): `id`, `name`, `plantGroup`, `plantGroupId` (group slug), `scientificName`, `description`, `heroImage` (always `null` for now), `quickCare` (Verified care only, numeric temperature). `404 PLANT_NOT_FOUND` for unknown or unpublished plants, `400 VALIDATION_ERROR` for a malformed ID. Minimal API endpoint → `IPlantQueries` (Application) → EF Core query (Infrastructure).
-* `GET /api/categories`, `GET /api/categories/{categoryId}`, `GET /api/plant-groups/{plantGroupId}` (API_SPEC §17–19): category and plant-group IDs are slugs; name ordering; category-pure group lists; Published plants only with page/pageSize pagination (default 20, max 50); `CATEGORY_NOT_FOUND` / `PLANT_GROUP_NOT_FOUND` 404s and `VALIDATION_ERROR` 400s. `imageUrl` fields are `null` until images exist. Covered by 11 API tests (34 backend tests in total).
+* `GET /api/categories`, `GET /api/categories/{categoryId}`, `GET /api/plant-groups/{plantGroupId}` (API_SPEC §17–19): category and plant-group IDs are slugs; name ordering; category-pure group lists; Published plants only with page/pageSize pagination (default 20, max 50); `CATEGORY_NOT_FOUND` / `PLANT_GROUP_NOT_FOUND` 404s and `VALIDATION_ERROR` 400s. `imageUrl` fields are `null` until images exist. Covered by 11 API tests.
+* `GET /api/search` (API_SPEC §24–25): Published plants; every word must appear in a display, scientific, or cultivar name, an alternative name (any language), or the group name; case-, accent-, and punctuation-insensitive (database `search_key()` function, NFKC-normalized input); relevance ordering (exact → starts with → all words in main names → other matches), then name and ID; page ≤ 50. Input validation (required, ≤ 100 characters, no control characters, a letter or digit, ≤ 10 words), 30 requests/minute per client IP (`429 RATE_LIMITED` with `Retry-After`), 5-second timeout (`503 REQUEST_TIMEOUT`), and search text kept out of logs. Parameterized queries only; `%`, `_`, `\` are never wildcards. Covered by 28 API tests and 11 database tests (73 backend tests in total). Suggestions, recent searches, and external lookup are not implemented.
 * The backend was started locally and `GET /health` returned `healthy` against `plant_encyclopedia_dev` (manual check).
 
 Verified by automated tests (23 passing in total; 7 for the Plant Detail endpoint, including an end-to-end check that a database failure returns the safe 500 body): healthy and unhealthy `/health` responses (exact JSON and status codes, no password in logs), the safe 500 error body, and that the API refuses to start without a connection string.
 
-Not yet implemented: other feature endpoints (search, explore, favorites, …), request correlation IDs, structured logging, authentication.
+Not yet implemented: other feature endpoints (search suggestions, explore, favorites, …), request correlation IDs, structured logging, authentication.
 
 Planned responsibilities include:
 
@@ -184,6 +185,7 @@ Implemented:
 * EF Core 10 with Npgsql 10.0.3 and snake_case naming (`EFCore.NamingConventions`).
 * `PlantEncyclopediaDbContext` and Fluent API configurations in Infrastructure.
 * Eight tables from the `InitialCreate` migration: `categories`, `plant_groups`, `taxonomies`, `plants`, `plant_names`, `plant_images`, `plant_sources`, `plant_care`.
+* `AddSearchSupport` migration: `unaccent` and `pg_trgm` extensions, the `search_key()` function, and five GIN trigram indexes on name columns (DATABASE_DESIGN §43); no table changes. Applied to the Testcontainers test database on every test run (index usage verified with `EXPLAIN`) and to `plant_encyclopedia_dev` (both extensions and all five indexes present). Manually verified against the dev data: `peace rose` → Rosa 'Peace', `MR.LINCOLN` → Rosa 'Mr. Lincoln', `double` → no results (Draft only), `!!` → 400, and repeated searches → 429.
 * Local connection string via ASP.NET Core User Secrets (`ConnectionStrings:PlantEncyclopedia`).
 * `dotnet-ef` 10.0.12 pinned in `backend/dotnet-tools.json`.
 
@@ -1242,7 +1244,7 @@ The following major implementation areas remain:
 * [-] Seed/curated plant data (unverified development sample data loaded locally; curated data pending)
 * [x] Plant Detail API (`GET /api/plants/{plantId}`)
 * [-] Plant Detail UI (names, description, Quick Care, loading/not-found/error states; other sections pending)
-* [ ] Search API
+* [-] Search API (`GET /api/search` done; suggestions pending)
 * [ ] Search UI
 * [-] Category browsing (API, Explore category pills, Category page; images pending)
 * [-] Plant-group browsing (API and Plant Group page with Load more; images, bookmark, and hover pending)

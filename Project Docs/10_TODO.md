@@ -314,14 +314,19 @@ This vertical slice should validate the architecture before a large amount of fu
 
 ## Search API
 
-* [ ] Implement `GET /api/search`
-* [ ] Implement query validation
-* [ ] Search common names
-* [ ] Search scientific names
-* [ ] Search cultivar names
-* [ ] Search plant groups where appropriate
-* [ ] Implement relevance ordering
-* [ ] Add pagination/infinite-scroll support
+* [x] Implement `GET /api/search`
+* [x] Implement query validation (length, control characters, letter/digit, word count, NFKC)
+* [x] Search common names (all languages) and synonyms
+* [x] Search scientific names
+* [x] Search cultivar names
+* [x] Search plant groups where appropriate
+* [x] Implement relevance ordering
+* [x] Add pagination/infinite-scroll support (page-based, page ≤ 50)
+* [x] Case-, accent-, and punctuation-insensitive matching (`search_key()` + trigram indexes, migration `AddSearchSupport`)
+* [x] Rate limit (30/min per IP), 5-second timeout, search text excluded from logs
+* [x] Apply `AddSearchSupport` to `plant_encyclopedia_dev`
+* [ ] Configure forwarded headers with a known-proxy list when deployment is decided, so rate limits see real client IPs
+* [ ] Shared rate-limit store (e.g. Redis) if the API runs on more than one instance (the built-in limiter is per process)
 
 ## Suggestions
 
@@ -1009,10 +1014,12 @@ Use this section for work discovered during implementation that is not yet part 
   - Why: `plant_sources` uniqueness prevents duplicate provenance, not duplicate Plant rows (DATABASE_DESIGN §59)
   - Related feature: External plant data ingestion
   - Priority: High (before ingestion)
-- [ ] Flexible name search (case, spacing, underscores/punctuation) without altering stored names
-  - Why: Names are stored exactly as written; uniqueness is case-sensitive
-  - Related feature: Search
-  - Priority: Medium
+- [x] Flexible name search (case, spacing, underscores/punctuation) without altering stored names
+  - Done: `search_key()` (case, accents, punctuation) in migration `AddSearchSupport`; used by `GET /api/search`
+- [ ] External plant lookup when search finds nothing (API_SPEC §27) — plan as its own phase after Search
+  - Why: Needs the plant identity key, provider choice, licensing/attribution, and Draft-vs-Published rules first
+  - Related feature: Search / External plant data ingestion
+  - Priority: High (after Phase 6)
 - [ ] Application-level validation and canonical casing of language tags (e.g. `en-GB`, `zh-Hant`)
   - Why: The database checks only the general tag shape
   - Related feature: Plant names / ingestion

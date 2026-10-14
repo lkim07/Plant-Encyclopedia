@@ -19,6 +19,15 @@ public class PlantEncyclopediaDbContext(DbContextOptions<PlantEncyclopediaDbCont
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(PlantEncyclopediaDbContext).Assembly);
+
+        // Search support (AddSearchSupport migration): accent removal and trigram indexes.
+        // No schema argument: the snapshot generator drops it, which would leave a permanent pending change.
+        // The extensions install into the default schema (public), which search_key() references explicitly.
+        modelBuilder.HasPostgresExtension("unaccent");
+        modelBuilder.HasPostgresExtension("pg_trgm");
+        modelBuilder.HasDbFunction(typeof(SearchFunctions).GetMethod(nameof(SearchFunctions.SearchKey))!)
+            .HasSchema("public")
+            .HasName("search_key");
     }
 
     // Timestamps are maintained here, so they apply only to writes made through SaveChanges.

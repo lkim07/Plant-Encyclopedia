@@ -281,8 +281,30 @@ Validation errors may include field-specific details:
     "code": "VALIDATION_ERROR",
     "message": "One or more fields are invalid.",
     "details": {
-      "query": "Search query is required."
+      "q": "Search text is required."
     }
+  }
+}
+```
+
+Rate-limited requests return `429 Too Many Requests` with a `Retry-After` header (seconds) and:
+
+```json
+{
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "Too many requests. Please wait a moment and try again."
+  }
+}
+```
+
+Requests that exceed their time limit return `503 Service Unavailable` with:
+
+```json
+{
+  "error": {
+    "code": "REQUEST_TIMEOUT",
+    "message": "The request took too long. Please try again."
   }
 }
 ```
@@ -699,21 +721,57 @@ Not required.
 
 Search the application's plant database.
 
+### Rules (implemented)
+
+* Only `Published` plants are returned.
+* A plant matches when **every word** of `q` appears in at least one of: its display name, scientific name, cultivar name, any alternative name (common names in any language, synonyms), or its plant group's name. A word may appear inside a longer word ("rose" matches "Roses").
+* Matching ignores letter case, accents ("cafe" matches "Café"), and punctuation and spacing ("mr lincoln" matches "Mr. Lincoln"). Full-width and other compatibility characters are normalized first (Unicode NFKC). Punctuation in `q`, including `%`, `_` and `\`, only separates words; it is never a wildcard.
+* Ordering (D-016, relevance first):
+  1. a display, cultivar, or scientific name, or a common name, equals the whole search;
+  2. a display, cultivar, or scientific name starts with the search;
+  3. every word appears in the display, cultivar, or scientific name;
+  4. all other matches (found through alternative names or the plant group).
+
+  Ties are ordered by name, then ID, so pages never overlap.
+* No matches return `200 OK` with `"data": []`.
+* Not yet: suggestions (§26), recording recent searches (§28), and external lookup when nothing is found (§27).
+
+### Validation and limits (implemented)
+
+| Parameter | Rule | `details` message |
+|---|---|---|
+| `q` | required, not only spaces | `Search text is required.` |
+| `q` | at most 100 characters after trimming and normalization | `Search text must be at most 100 characters.` |
+| `q` | no control characters (for example NUL, line breaks) | `Search text must not contain control characters.` |
+| `q` | valid Unicode text | `Search text contains invalid characters.` |
+| `q` | at least one letter or digit | `Search text must contain a letter or digit.` |
+| `q` | at most 10 words | `Search text must have at most 10 words.` |
+| `page` | whole number from 1 to **50** (search stops at page 50) | `Page must be a whole number between 1 and 50.` |
+| `pageSize` | as §10 (1–50, default 20) | as §10 |
+
+All invalid parameters are reported together in one `400 VALIDATION_ERROR`.
+
+Abuse protection:
+
+* **Rate limit:** 30 requests per minute per client IP address (IPv6 clients are grouped by their /64 network). Excess requests return `429 RATE_LIMITED` with `Retry-After` (§12). Forwarded headers (`X-Forwarded-For`) are not trusted until a reverse proxy with a known-proxy list is configured.
+* **Timeout:** a search taking longer than 5 seconds is cancelled (including its database query) and returns `503 REQUEST_TIMEOUT` (§12).
+* The search text is never written to server logs.
+
 ---
 
 # 25. Search Response
 
-Example:
+Example (implemented):
 
 ```json
 {
   "data": [
     {
-      "id": "123",
+      "id": "d5e00000-0000-4000-8000-000000000001",
       "name": "Rosa 'Peace'",
-      "plantGroup": "Hybrid Tea Rose",
+      "plantGroup": "Roses",
       "scientificName": "Rosa × hybrida",
-      "imageUrl": "https://example.com/peace.webp"
+      "imageUrl": null
     }
   ],
   "pagination": {
@@ -723,6 +781,10 @@ Example:
   }
 }
 ```
+
+* `id` — the plant's UUID (use with §14).
+* `plantGroup` — the plant group name, or `null`.
+* `imageUrl` — always `null` until plant images are served.
 
 ---
 

@@ -24,7 +24,9 @@ public class MigrationTests(PostgresDatabaseFixture fixture)
     {
         await using var db = fixture.CreateDbContext();
 
-        Assert.Contains(await db.Database.GetAppliedMigrationsAsync(), m => m.EndsWith("_InitialCreate"));
+        var applied = await db.Database.GetAppliedMigrationsAsync();
+        Assert.Contains(applied, m => m.EndsWith("_InitialCreate"));
+        Assert.Contains(applied, m => m.EndsWith("_AddSearchSupport"));
         Assert.Empty(await db.Database.GetPendingMigrationsAsync());
     }
 

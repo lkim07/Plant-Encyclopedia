@@ -1063,6 +1063,13 @@ The exact indexing strategy should be determined based on actual query patterns.
 
 A dedicated search engine is not required for the initial MVP.
 
+### Implemented (migration `AddSearchSupport`)
+
+* Extensions: `unaccent` and `pg_trgm` (both "trusted" extensions: a database owner can install them without superuser rights).
+* Function `public.search_key(text)`: removes accents, lower-cases, and turns runs of whitespace and punctuation into single spaces (`'Café ''Mr. Lincoln'''` → `cafe mr lincoln`). It is `IMMUTABLE` so it can be indexed. Punctuation is listed by code point rather than `[[:punct:]]`, so letters in any script are kept whatever the database locale; letter-case folding of non-Latin scripts still relies on a UTF-8 locale (the development database uses `en_US.utf8`).
+* GIN trigram indexes on `search_key(...)` of `plants.display_name`, `plants.scientific_name`, `plants.cultivar_name`, `plant_names.name`, and `plant_groups.name`. They serve the "contains" matching of `GET /api/search` (API_SPEC §24). Words shorter than three characters cannot use trigram indexes and fall back to scanning; the search rate limit and timeout bound that cost.
+* Stored names are unchanged; only the search comparison is flexible.
+
 ---
 
 # 44. Database Indexing Principles

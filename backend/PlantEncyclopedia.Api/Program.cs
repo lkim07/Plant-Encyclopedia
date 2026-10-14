@@ -5,6 +5,7 @@ using PlantEncyclopedia.Api.Errors;
 using PlantEncyclopedia.Api.Health;
 using PlantEncyclopedia.Api.PlantGroups;
 using PlantEncyclopedia.Api.Plants;
+using PlantEncyclopedia.Api.Search;
 using PlantEncyclopedia.Infrastructure;
 using PlantEncyclopedia.Infrastructure.Persistence;
 
@@ -19,6 +20,7 @@ var connectionString = builder.Configuration.GetConnectionString("PlantEncyclope
 builder.Services.AddInfrastructure(connectionString);
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddSearchProtection();
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<PlantEncyclopediaDbContext>("database");
@@ -29,6 +31,8 @@ var app = builder.Build();
 // only runs if GlobalExceptionHandler does not handle the exception; it returns a bare 500 with no body.
 app.UseExceptionHandler(_ => { });
 app.UseHttpsRedirection();
+app.UseRateLimiter();
+app.UseRequestTimeouts();
 
 app.MapHealthChecks("/health", new HealthCheckOptions
 {
@@ -44,6 +48,7 @@ app.MapHealthChecks("/health", new HealthCheckOptions
 app.MapPlantEndpoints();
 app.MapCategoryEndpoints();
 app.MapPlantGroupEndpoints();
+app.MapSearchEndpoints();
 
 app.Run();
 
