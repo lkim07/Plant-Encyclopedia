@@ -576,7 +576,7 @@ UNIQUE (plant_id, provider, source_url,  source_type) WHERE external_id IS NULL
 ```
 
 * These prevent duplicate provenance for the same plant and source type. Several cultivars may cite the same species-level external taxon.
-* They do **not** prevent duplicate `Plant` rows created by concurrent ingestion; that requires a plant identity key (see §69).
+* They do **not** prevent duplicate `Plant` rows; the plant identity key does (§59, migration `AddPlantIdentityKey`).
 * Deleting a plant that has source rows is restricted, so provenance is never removed silently.
 
 ---
@@ -1363,6 +1363,44 @@ Both attempt to insert Plant X
 ```
 
 The database should use appropriate uniqueness constraints and/or transaction strategies to prevent duplicate entities.
+
+### Implemented: plant identity key (migration `AddPlantIdentityKey`)
+
+A plant's identity is its **normalized scientific name plus its normalized cultivar name**, enforced by a unique index across every status (a Draft duplicate is still a duplicate):
+
+```sql
+CREATE UNIQUE INDEX ux_plants_identity ON plants (
+    public.plant_scientific_identity(scientific_name),
+    public.plant_cultivar_identity(cultivar_name));
+```
+
+`plant_scientific_identity(text)` (IMMUTABLE, STRICT):
+
+1. Unicode NFC.
+2. The hybrid sign `×` becomes a separate word `x` (because `unaccent` would turn `×` into `*`).
+3. Accents removed (botanical names do not use diacritics: `Cephaëlis` = `Cephaelis`).
+4. Lower-cased with the ICU collation `und-x-icu`, so the result does not depend on the database locale.
+5. All Unicode whitespace collapsed to single spaces; trimmed.
+6. A standalone word `x` becomes `×` (`Rosa x hybrida` = `Rosa × hybrida` = `Rosa ×hybrida`; `xanthocarpa` is unchanged).
+
+Hyphens, periods and rank markers are kept (`bursa-pastoris` ≠ `bursa pastoris`; `subsp.` ≠ `var.`), and `Rosa × hybrida` ≠ `Rosa hybrida`.
+
+`plant_cultivar_identity(text)` (IMMUTABLE, **not** STRICT):
+
+1. `NULL` or blank becomes `''`. This matters: `NULL`s never collide in a unique index, so without it duplicate species-level plants would be allowed.
+2. Unicode NFC; whitespace collapsed; trimmed.
+3. One pair of wrapping quotes removed (`'Peace'`, `‘Peace’`, `"Peace"` = `Peace`).
+4. Lower-cased with `und-x-icu`.
+
+Accents and inner punctuation are kept, because cultivar names are written as published: `Ophélia` ≠ `Ophelia` and `Mr. Lincoln` ≠ `Mr Lincoln`. The rule is deliberately conservative, since blocking a genuinely different plant is worse than allowing a near-duplicate; near-duplicates are left to application-level review.
+
+Behavior:
+
+* A duplicate insert fails with `unique_violation` (SQLSTATE `23505`) naming `ux_plants_identity`. A concurrent second insert waits for the first transaction and then fails, so ingestion should catch this error and reuse the existing plant.
+* Not covered by the rule: synonyms (ingestion stores the provider's accepted name), authorship text, and the old `cv.` prefix; ingestion normalizes those before saving.
+* The functions and the index live in migration SQL, not in the EF model.
+* If PostgreSQL's ICU library is upgraded, PostgreSQL reports a collation version change; rebuild the index (`REINDEX INDEX ux_plants_identity`).
+* Before the migration, the development data had 17 plants with 17 distinct identities (no collisions).
 
 ---
 

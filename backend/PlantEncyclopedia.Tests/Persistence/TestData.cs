@@ -4,11 +4,14 @@ namespace PlantEncyclopedia.Tests.Persistence;
 
 internal static class TestData
 {
-    /// <summary>A minimal Draft plant with a unique name, so tests never share rows.</summary>
+    /// <summary>
+    /// A minimal Draft plant with unique names, so tests never share rows. The scientific name is unique too,
+    /// because one plant per scientific name + cultivar is enforced by ux_plants_identity.
+    /// </summary>
     public static Plant NewPlant() => new()
     {
         DisplayName = $"Test plant {Guid.NewGuid():N}",
-        ScientificName = "Testus plantus"
+        ScientificName = NewScientificName()
     };
 
     /// <summary>A category with a unique name and slug; <paramref name="label"/> controls name ordering.</summary>
@@ -30,8 +33,11 @@ internal static class TestData
     public static Plant NewPlant(PlantGroup group, string name, PlantStatus status = PlantStatus.Published) => new()
     {
         DisplayName = name,
-        ScientificName = "Testus plantus",
+        ScientificName = NewScientificName(),
         PlantGroup = group,
         Status = status
     };
+
+    /// <summary>A unique scientific name, so each test plant has its own identity (ux_plants_identity).</summary>
+    public static string NewScientificName() => $"Testus plantus {Guid.NewGuid():N}";
 }

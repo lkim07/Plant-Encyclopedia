@@ -27,6 +27,7 @@ public class MigrationTests(PostgresDatabaseFixture fixture)
         var applied = await db.Database.GetAppliedMigrationsAsync();
         Assert.Contains(applied, m => m.EndsWith("_InitialCreate"));
         Assert.Contains(applied, m => m.EndsWith("_AddSearchSupport"));
+        Assert.Contains(applied, m => m.EndsWith("_AddPlantIdentityKey"));
         Assert.Empty(await db.Database.GetPendingMigrationsAsync());
     }
 

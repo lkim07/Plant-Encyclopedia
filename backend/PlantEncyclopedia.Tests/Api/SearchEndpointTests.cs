@@ -48,7 +48,7 @@ public class SearchEndpointTests(PostgresDatabaseFixture fixture)
         Assert.Equal(["id", "name", "plantGroup", "scientificName", "imageUrl"], item.EnumerateObject().Select(p => p.Name));
         Assert.Equal($"Display{m}", item.GetProperty("name").GetString());
         Assert.Equal($"Group{m}", item.GetProperty("plantGroup").GetString());
-        Assert.Equal("Testus plantus", item.GetProperty("scientificName").GetString());
+        Assert.Equal(byDisplay.ScientificName, item.GetProperty("scientificName").GetString());
         Assert.Equal(JsonValueKind.Null, item.GetProperty("imageUrl").ValueKind);
     }
 

@@ -32,7 +32,7 @@ public class PlantDetailEndpointTests(PostgresDatabaseFixture fixture)
         Assert.Equal(plant.DisplayName, data.GetProperty("name").GetString());
         Assert.Equal("Test Group", data.GetProperty("plantGroup").GetString());
         Assert.Equal(plant.PlantGroup!.Slug, data.GetProperty("plantGroupId").GetString());
-        Assert.Equal("Testus plantus", data.GetProperty("scientificName").GetString());
+        Assert.Equal(plant.ScientificName, data.GetProperty("scientificName").GetString());
         Assert.Equal("Test description", data.GetProperty("description").GetString());
         Assert.Equal(JsonValueKind.Null, data.GetProperty("heroImage").ValueKind);
         Assert.Equal(JsonValueKind.Null, data.GetProperty("quickCare").ValueKind);

@@ -491,7 +491,7 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 
 * [ ] Validate external records before persistence
 * [ ] Detect likely duplicates
-* [ ] Prevent duplicate cultivars/plants
+* [x] Prevent duplicate cultivars/plants (database identity key `ux_plants_identity`; ingestion handling pending)
 * [ ] Handle incomplete provider data
 
 ## Search Integration
@@ -1015,10 +1015,16 @@ Use this section for work discovered during implementation that is not yet part 
 
 ### Discovered during the EF Core database foundation
 
-- [ ] Plant identity / duplicate-detection key for concurrent ingestion
-  - Why: `plant_sources` uniqueness prevents duplicate provenance, not duplicate Plant rows (DATABASE_DESIGN §59)
-  - Related feature: External plant data ingestion
-  - Priority: High (before ingestion)
+- [x] Plant identity / duplicate-detection key for concurrent ingestion
+  - Done: unique index `ux_plants_identity` on normalized scientific + cultivar name (migration `AddPlantIdentityKey`, DATABASE_DESIGN §59)
+- [ ] Handle `unique_violation` on `ux_plants_identity` during ingestion by reusing the existing plant
+  - Why: Concurrent imports of the same plant must not fail the user's request
+  - Related feature: External plant data ingestion (11b)
+  - Priority: High
+- [ ] Soft near-duplicate warning for imports (e.g. `Mr Lincoln` vs `Mr. Lincoln`, `Ophelia` vs `Ophélia`) using `search_key`
+  - Why: The identity key is deliberately conservative and does not block near-duplicates
+  - Related feature: External plant data ingestion (11b) / review
+  - Priority: Medium
 - [x] Flexible name search (case, spacing, underscores/punctuation) without altering stored names
   - Done: `search_key()` (case, accents, punctuation) in migration `AddSearchSupport`; used by `GET /api/search`
 - [ ] External plant lookup when search finds nothing (API_SPEC §27) — plan as its own phase after Search
