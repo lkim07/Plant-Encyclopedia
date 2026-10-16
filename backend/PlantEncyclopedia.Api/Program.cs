@@ -6,7 +6,9 @@ using PlantEncyclopedia.Api.Health;
 using PlantEncyclopedia.Api.PlantGroups;
 using PlantEncyclopedia.Api.Plants;
 using PlantEncyclopedia.Api.Search;
+using PlantEncyclopedia.Application.ExternalData;
 using PlantEncyclopedia.Infrastructure;
+using PlantEncyclopedia.Infrastructure.ExternalData.Gbif;
 using PlantEncyclopedia.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +20,17 @@ var connectionString = builder.Configuration.GetConnectionString("PlantEncyclope
         "Set it with User Secrets or the ConnectionStrings__PlantEncyclopedia environment variable.");
 
 builder.Services.AddInfrastructure(connectionString);
+
+// External plant import (not exposed by any endpoint yet). Tests never call external services.
+var gbif = builder.Configuration.GetSection(GbifOptions.SectionName).Get<GbifOptions>() ?? new GbifOptions();
+if (builder.Environment.IsEnvironment("Testing"))
+{
+    gbif.Enabled = false;
+}
+
+builder.Services.AddExternalPlantData(
+    gbif,
+    new GenusPlantGroupMap(builder.Configuration.GetSection("ExternalPlantData:GenusPlantGroups").Get<Dictionary<string, string>>()));
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddSearchProtection();

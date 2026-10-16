@@ -1,9 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using PlantEncyclopedia.Application.Categories;
+using PlantEncyclopedia.Application.ExternalData;
 using PlantEncyclopedia.Application.PlantGroups;
 using PlantEncyclopedia.Application.Plants;
 using PlantEncyclopedia.Application.Search;
+using PlantEncyclopedia.Infrastructure.ExternalData;
+using PlantEncyclopedia.Infrastructure.ExternalData.Gbif;
 using PlantEncyclopedia.Infrastructure.Persistence;
 using PlantEncyclopedia.Infrastructure.Persistence.Queries;
 
@@ -22,6 +26,39 @@ public static class DependencyInjection
         services.AddScoped<ICategoryQueries, CategoryQueries>();
         services.AddScoped<IPlantGroupQueries, PlantGroupQueries>();
         services.AddScoped<ISearchQueries, SearchQueries>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// External plant import (ARCHITECTURE §21–23). When GBIF is disabled, lookups return Unavailable
+    /// and no HTTP client is registered. Invalid settings fail here, at startup.
+    /// </summary>
+    public static IServiceCollection AddExternalPlantData(
+        this IServiceCollection services,
+        GbifOptions gbif,
+        GenusPlantGroupMap genusPlantGroups)
+    {
+        gbif.Validate();
+
+        services.AddSingleton(genusPlantGroups);
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddScoped<IPlantImportStore, PlantImportStore>();
+        services.AddScoped<PlantIngestionService>();
+
+        if (!gbif.Enabled)
+        {
+            services.AddSingleton<IPlantDataProvider, UnavailablePlantDataProvider>();
+            return services;
+        }
+
+        services.AddSingleton(gbif);
+        services.AddHttpClient<IPlantDataProvider, GbifPlantDataProvider>(client =>
+                GbifPlantDataProvider.ConfigureClient(client, gbif))
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false })
+            // The default handlers log request URLs, which contain the searched name. Their query-string
+            // redaction can be switched off by configuration, so they are removed rather than relied on.
+            .RemoveAllLoggers();
 
         return services;
     }

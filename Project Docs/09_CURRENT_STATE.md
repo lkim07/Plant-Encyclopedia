@@ -149,6 +149,25 @@ Implemented and verified:
 * `GET /api/categories`, `GET /api/categories/{categoryId}`, `GET /api/plant-groups/{plantGroupId}` (API_SPEC §17–19): category and plant-group IDs are slugs; name ordering; category-pure group lists; Published plants only with page/pageSize pagination (default 20, max 50); `CATEGORY_NOT_FOUND` / `PLANT_GROUP_NOT_FOUND` 404s and `VALIDATION_ERROR` 400s. `imageUrl` fields are `null` until images exist. Covered by 11 API tests.
 * `GET /api/search` (API_SPEC §24–25): Published plants; every word must appear in a display, scientific, or cultivar name, an alternative name (any language), or the group name; case-, accent-, and punctuation-insensitive (database `search_key()` function, NFKC-normalized input); relevance ordering (exact → starts with → all words in main names → other matches), then name and ID; page ≤ 50. Input validation (required, ≤ 100 characters, no control characters, a letter or digit, ≤ 10 words), 30 requests/minute per client IP (`429 RATE_LIMITED` with `Retry-After`), 5-second timeout (`503 REQUEST_TIMEOUT`), and search text kept out of logs. Parameterized queries only; `%`, `_`, `\` are never wildcards. Covered by 28 API tests and 11 database tests. Recent searches and external lookup are not implemented.
 * `GET /api/search/suggestions` (API_SPEC §26): up to 8 database-backed suggestions (`plant`, `cultivar`, `scientificName`, `commonName`, `synonym`, `plantGroup`) from Published plants and groups with Published plants; word-start matching with the same folding as search; starts-with first, then shorter, then alphabetical; identical texts merged; items are `{ text, type }` (no plant ID: selecting a suggestion runs a search); text under 2 characters returns `[]`. Same text validation as search; its own limit of 120 requests/minute per IP; 2-second timeout; typed text kept out of logs. One parameterized SQL statement (no SQL built from user text). The trigram indexes were confirmed usable for each name source with `EXPLAIN` on the development data; whether the planner chooses them inside the full query depends on data volume and has not been measured at scale. Covered by 17 API tests.
+* External plant import, Phase 11b (ARCHITECTURE §21–23, DATABASE_DESIGN §20/§23). **Backend only. No endpoint uses it yet, and GBIF is disabled by default** (`ExternalPlantData:Gbif:Enabled = false`, always off in `Testing`).
+  * **Adapter:** `IPlantDataProvider` is implemented by `GbifPlantDataProvider`, which calls the GBIF v2 species match API against Catalogue of Life XR (`checklistKey 7ddf754f-…`).
+    * Limits: HTTPS to `api.gbif.org` only, no redirects or retries, 3-second timeout, 1 MB limit.
+    * User-Agent: the project URL.
+    * Every failure returns `Unavailable`, and the searched name is never logged.
+  * **Import rules:** `PlantIngestionService` imports only exact matches of accepted Plantae species, subspecies or varieties.
+    * The import reuses existing plants (by identity or provider taxon), never overwrites them, and returns the winner on a concurrent `ux_plants_identity` conflict.
+    * A new plant is `Published` only if its genus is in the configured 11-genus list (no `Solanum`) and that group exists, and no near-duplicate `search_key` name exists. Otherwise it is `NeedsReview`.
+  * **What gets stored:** the display name is the scientific name. Provenance is a `gbif-col-xr` Taxonomy source with the COL XR ID and no URL. Common names are not imported, because the taxon details endpoint returned 404.
+  * **Package:** `Microsoft.Extensions.Http` 10.0.12 was added to Infrastructure.
+  * **Live requests:** 8 read-only GBIF requests were made once on 2026-10-16 and recorded under `PlantEncyclopedia.Tests/Fixtures/Gbif`. Tests use only these recordings and fakes.
+  * **Tests:** 86 new tests:
+    * adapter request shape and mapping
+    * each recorded match accepted or rejected as documented
+    * HTTP failures, timeout, cancellation and log redaction
+    * acceptance policy, genus map and options validation
+    * ingestion on the test database: publish / NeedsReview rules, reuse without a provider call, nothing saved on rejection or failure, concurrent imports creating one plant, and recorded GBIF matches end to end
+    * startup wiring
+  * **Total:** 219 backend tests pass with 0 build warnings. No migration was added; the schema is unchanged.
 * The backend was started locally and `GET /health` returned `healthy` against `plant_encyclopedia_dev` (manual check).
 
 Verified by automated tests (23 passing in total; 7 for the Plant Detail endpoint, including an end-to-end check that a database failure returns the safe 500 body): healthy and unhealthy `/health` responses (exact JSON and status codes, no password in logs), the safe 500 error body, and that the API refuses to start without a connection string.

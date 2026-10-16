@@ -40,4 +40,8 @@ internal static class TestData
 
     /// <summary>A unique scientific name, so each test plant has its own identity (ux_plants_identity).</summary>
     public static string NewScientificName() => $"Testus plantus {Guid.NewGuid():N}";
+
+    /// <summary>A unique, valid genus name (one capitalized word of letters), e.g. "Testgenusmqkt...".</summary>
+    public static string NewGenus() =>
+        "Testgenus" + string.Concat(Guid.NewGuid().ToString("N").Select(c => (char)('k' + (c % 10))));
 }

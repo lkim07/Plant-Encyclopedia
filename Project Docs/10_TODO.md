@@ -471,28 +471,39 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 
 ## Provider Abstraction
 
-* [ ] Define plant data provider interface
-* [ ] Implement iNaturalist provider
-* [ ] Implement GBIF provider
-* [ ] Isolate provider-specific response models
-* [ ] Implement provider error handling
+* [x] Define plant data provider interface (`IPlantDataProvider`, 11b)
+* [ ] Implement iNaturalist provider (11d)
+* [x] Implement GBIF provider (11b: v2 species match against Catalogue of Life XR; disabled by default, not used by any endpoint yet)
+* [x] Isolate provider-specific response models (GBIF types are `internal` to Infrastructure)
+* [x] Implement provider error handling (timeouts, HTTP errors, redirects, invalid or oversized responses, network errors → `Unavailable`)
+* [ ] Import common (vernacular) names
+  - Why: The planned GBIF taxon details request (`/v2/taxon/{checklistKey}/{id}/info`) returned 404 on 2026-10-16, so imported plants are named by their scientific name
+  - Next: find the documented endpoint; any new live request needs approval first
+  - Priority: High (before imports are user-visible in 11c)
+* [ ] Follow synonyms to the accepted name (e.g. `Lycopersicon esculentum` → `Solanum lycopersicum`)
+  - Why: 11b rejects synonym matches
+  - Priority: Medium
+* [ ] Verify the public COL XR taxon page URL pattern, then fill `plant_sources.source_url` for imports
+  - Priority: Medium
+* [ ] Verify the Catalogue of Life licence and exact citation (CC BY 4.0 "unless otherwise indicated"; per-release DOI) before public release
+  - Priority: High (before public release)
 
 ## Normalization
 
-* [ ] Normalize names
-* [ ] Normalize taxonomy
-* [ ] Normalize plant groups
+* [x] Normalize names (scientific names: NFC, whitespace, authorship removed, hybrid sign and rank markers kept)
+* [x] Normalize taxonomy (kingdom → genus, plus the full species / subspecies / variety name)
+* [x] Normalize plant groups (configured genus → plant group list, `ExternalPlantData:GenusPlantGroups`)
 * [ ] Normalize images
-* [ ] Store external identifiers
-* [ ] Store provenance
-* [ ] Store retrieval timestamps
+* [x] Store external identifiers (`plant_sources.external_id`, provider `gbif-col-xr`)
+* [x] Store provenance (Taxonomy source; no source URL yet)
+* [x] Store retrieval timestamps
 
 ## Validation
 
-* [ ] Validate external records before persistence
-* [ ] Detect likely duplicates
-* [x] Prevent duplicate cultivars/plants (database identity key `ux_plants_identity`; ingestion handling pending)
-* [ ] Handle incomplete provider data
+* [x] Validate external records before persistence (`ExternalTaxonPolicy`: exact, accepted Plantae species/subspecies/variety; column limits)
+* [x] Detect likely duplicates (same `search_key`, different identity → `NeedsReview`)
+* [x] Prevent duplicate cultivars/plants (identity key `ux_plants_identity`; imports reuse the existing plant, including after a concurrent conflict)
+* [x] Handle incomplete provider data (missing or malformed fields are rejected and nothing is saved)
 
 ## Search Integration
 
@@ -1017,14 +1028,10 @@ Use this section for work discovered during implementation that is not yet part 
 
 - [x] Plant identity / duplicate-detection key for concurrent ingestion
   - Done: unique index `ux_plants_identity` on normalized scientific + cultivar name (migration `AddPlantIdentityKey`, DATABASE_DESIGN §59)
-- [ ] Handle `unique_violation` on `ux_plants_identity` during ingestion by reusing the existing plant
-  - Why: Concurrent imports of the same plant must not fail the user's request
-  - Related feature: External plant data ingestion (11b)
-  - Priority: High
-- [ ] Soft near-duplicate warning for imports (e.g. `Mr Lincoln` vs `Mr. Lincoln`, `Ophelia` vs `Ophélia`) using `search_key`
-  - Why: The identity key is deliberately conservative and does not block near-duplicates
-  - Related feature: External plant data ingestion (11b) / review
-  - Priority: Medium
+- [x] Handle `unique_violation` on `ux_plants_identity` during ingestion by reusing the existing plant
+  - Done (11b): `PlantImportStore.InsertAsync` returns the winning plant; covered by a concurrent-import test
+- [x] Soft near-duplicate warning for imports (e.g. `Mr Lincoln` vs `Mr. Lincoln`, `Ophelia` vs `Ophélia`) using `search_key`
+  - Done (11b): an import whose scientific name has the same `search_key` as another plant but a different identity is saved as `NeedsReview` instead of `Published`
 - [x] Flexible name search (case, spacing, underscores/punctuation) without altering stored names
   - Done: `search_key()` (case, accents, punctuation) in migration `AddSearchSupport`; used by `GET /api/search`
 - [ ] External plant lookup when search finds nothing (API_SPEC §27) — plan as its own phase after Search

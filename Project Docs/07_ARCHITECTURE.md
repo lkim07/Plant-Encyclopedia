@@ -655,6 +655,23 @@ Provider Adapter
 
 Provider-specific response formats must stop at the infrastructure boundary.
 
+### Implemented (Phase 11b): GBIF / Catalogue of Life adapter
+
+* **Interface:** `IPlantDataProvider` (Application/ExternalData) has one operation, `MatchAsync(scientificName)`. It returns `Found` with a provider-neutral `ExternalTaxon`, `NotFound`, or `Unavailable`. GBIF response types are `internal` to Infrastructure.
+* **Adapter:** `GbifPlantDataProvider` (Infrastructure/ExternalData/Gbif) makes one call per lookup: `GET https://api.gbif.org/v2/species/match?scientificName=…&checklistKey=…&kingdom=Plantae`.
+* **Checklist:** Catalogue of Life eXtended Release (COL XR), `7ddf754f-d193-4cc9-b351-99906754a03b`. The GBIF Backbone has been frozen since 2023, and the API falls back to it when `checklistKey` is omitted, so the key is required configuration.
+* **Stored name:** `usage.name` minus `usage.authorship`, e.g. "Mentha × piperita" or "Brassica oleracea var. capitata". `canonicalName` is not used, because it drops the hybrid sign and rank markers. If the authorship is not a suffix of the name, the match is treated as not found.
+* **HTTP limits:**
+  * typed `HttpClient` with a fixed base address `https://api.gbif.org/`
+  * redirects not followed, no retries
+  * 3-second timeout, 1 MB response limit, JSON responses only
+  * User-Agent `PlantEncyclopedia/<version> (+<Contact>)`
+* **Logging:** the default HttpClientFactory request logging is removed, because it logs URLs. The adapter logs only the status code or error kind, never the name.
+* **Configuration:** `ExternalPlantData:Gbif` has `Enabled` (default `false`), `ChecklistKey` and `Contact` (the project URL), and is validated at startup. The `Testing` environment always disables it. When it is disabled, `UnavailablePlantDataProvider` answers every lookup with `Unavailable`.
+* **Not connected yet:** no endpoint uses the adapter (Phase 11c).
+* **Common names are not imported yet:** the taxon details request (`/v2/taxon/{checklistKey}/{id}/info`) returned 404 when recorded on 2026-10-16.
+* **Tests** use responses recorded once on that date (`PlantEncyclopedia.Tests/Fixtures/Gbif`, with a README) and stub handlers. They never call GBIF.
+
 ---
 
 # 22. Data Ingestion
@@ -685,6 +702,30 @@ A plant record should be able to answer:
 * which external identifier was used?
 * when was it retrieved?
 * what source provided the information?
+
+### Implemented (Phase 11b): conservative import
+
+**Acceptance (`ExternalTaxonPolicy`).** A match is imported only if all of these hold:
+* the match is exact
+* the name is accepted, not a synonym
+* the rank is species, subspecies or variety
+* the returned classification's kingdom is `Plantae` (the `kingdom=Plantae` request parameter is only a hint)
+* the data is well-formed:
+  * text is NFC-normalized with whitespace collapsed
+  * the name has at least two words, starts with its genus, and is at most 100 characters (the length of the taxonomy rank columns)
+  * the external ID is a short token
+
+Fuzzy matches, higher-rank fallbacks, synonyms and non-plants are rejected, and nothing is saved.
+
+**Flow (`PlantIngestionService.ImportAsync`):**
+1. Normalize the requested name. If a species-level plant with the same identity (DATABASE_DESIGN §59) already exists, return it without an external request.
+2. Ask the provider and apply the policy.
+3. If a plant is already linked to the same provider taxon, or has the provider's spelling of the name, return it. Existing plants are never modified.
+4. Choose the plant group from `ExternalPlantData:GenusPlantGroups`. This is an exact, case-sensitive list of 11 genera validated at startup. `Solanum` is deliberately left out as ambiguous.
+5. Set the status. The plant is `Published` only when the genus maps to an existing group and no near-duplicate exists. A near-duplicate is another plant with the same `search_key` but a different identity, e.g. "Mentha piperita" next to "Mentha × piperita". Otherwise the status is `NeedsReview`.
+6. Insert the `Plant`, its `Taxonomy` and a `Taxonomy` `PlantSource` in one `SaveChanges` transaction. If a concurrent import wins on `ux_plants_identity`, the loser saves nothing and returns the winner's plant.
+
+**What an imported plant contains:** the display name is the scientific name. No description, care, images or common names are imported.
 
 ---
 
@@ -720,6 +761,19 @@ Graceful error / fallback
 ```
 
 The frontend should receive a controlled application error rather than an external provider exception.
+
+### Implemented (Phase 11b)
+
+The GBIF adapter never throws for provider failures. All of these become `Unavailable`:
+* timeouts
+* any status other than 200, including 429 and redirects
+* non-JSON or invalid JSON responses
+* bodies over 1 MB
+* network errors
+
+Only the caller's own cancellation is rethrown. `Unavailable` is kept distinct from `NotFound`, so that a failure is never cached as "no such plant".
+
+Still to do in Phase 11c: rate limits, negative caching, and the search fallback with its error response.
 
 ---
 

@@ -579,6 +579,20 @@ UNIQUE (plant_id, provider, source_url,  source_type) WHERE external_id IS NULL
 * They do **not** prevent duplicate `Plant` rows; the plant identity key does (§59, migration `AddPlantIdentityKey`).
 * Deleting a plant that has source rows is restricted, so provenance is never removed silently.
 
+### Implemented: GBIF / Catalogue of Life provenance (Phase 11b)
+
+An imported plant gets one source row:
+
+| Column | Value |
+|---|---|
+| `provider` | `gbif-col-xr` |
+| `external_id` | the COL XR taxon ID, e.g. `4TCZM` |
+| `source_type` | `Taxonomy` |
+| `source_url` | `NULL` |
+| `retrieved_at` | the import time |
+
+`source_url` stays empty until the public taxon page URL pattern has been verified. No schema change was needed.
+
 ---
 
 # 21. Source Types
@@ -646,6 +660,14 @@ Database
 The ingestion process should be idempotent where practical.
 
 Running the same ingestion operation twice should not unnecessarily create duplicate entities.
+
+### Implemented (Phase 11b)
+
+`PlantIngestionService` with the EF `PlantImportStore` (ARCHITECTURE §22):
+
+* **Idempotent:** a repeated import returns the existing plant, found by identity (§59) or by the same provider taxon. It never overwrites the plant.
+* **One transaction:** the plant, its own `taxonomies` row and its source are inserted together, with `species` holding the full binomial as in the seed data.
+* **Concurrent imports:** a concurrent duplicate fails on `ux_plants_identity`, its rows are rolled back, and the existing plant is returned.
 
 ---
 
