@@ -473,7 +473,7 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 
 * [x] Define plant data provider interface (`IPlantDataProvider`, 11b)
 * [ ] Implement iNaturalist provider (11d)
-* [x] Implement GBIF provider (11b: v2 species match against Catalogue of Life XR; disabled by default, not used by any endpoint yet)
+* [x] Implement GBIF provider (11b: v2 species match against Catalogue of Life XR; enabled only in Development; used by `POST /api/search/external` since 11c)
 * [x] Isolate provider-specific response models (GBIF types are `internal` to Infrastructure)
 * [x] Implement provider error handling (timeouts, HTTP errors, redirects, invalid or oversized responses, network errors → `Unavailable`)
 * [ ] Import common (vernacular) names
@@ -507,10 +507,18 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 
 ## Search Integration
 
-* [ ] Query local DB first
-* [ ] Query external providers only when appropriate
-* [ ] Persist validated results
-* [ ] Return application-owned data
+* [x] Query local DB first (search never calls GBIF; the lookup checks stored plants before any external request)
+* [x] Query external providers only when appropriate (user click, name-shaped text, 5/min per IP, 30/min and 1,000/day app-wide, 24-hour negative cache)
+* [x] Persist validated results (through `PlantIngestionService`)
+* [x] Return application-owned data (`found` / `pendingReview` / `notFound`; no provider details)
+* [ ] Manually verify the Catalogue of Life lookup end to end in the browser (Development, real GBIF)
+  - Priority: High (before treating 11c as done)
+* [ ] Review tool for `NeedsReview` imports
+  - Why: Imports without a mapped plant group, or with a near-duplicate name, stay hidden ("pendingReview") until someone can publish them
+  - Priority: Medium
+* [ ] Shared store for rate limits, the GBIF call budget and the negative cache
+  - Why: All are in memory per API instance
+  - Priority: Before running more than one instance
 
 ---
 
@@ -1034,10 +1042,8 @@ Use this section for work discovered during implementation that is not yet part 
   - Done (11b): an import whose scientific name has the same `search_key` as another plant but a different identity is saved as `NeedsReview` instead of `Published`
 - [x] Flexible name search (case, spacing, underscores/punctuation) without altering stored names
   - Done: `search_key()` (case, accents, punctuation) in migration `AddSearchSupport`; used by `GET /api/search`
-- [ ] External plant lookup when search finds nothing (API_SPEC §27) — plan as its own phase after Search
-  - Why: Needs the plant identity key, provider choice, licensing/attribution, and Draft-vs-Published rules first
-  - Related feature: Search / External plant data ingestion
-  - Priority: High (after Phase 6)
+- [x] External plant lookup when search finds nothing (API_SPEC §27)
+  - Done (11a–11c): `POST /api/search/external` and the "Search Catalogue of Life" button on the Search page
 - [ ] Application-level validation and canonical casing of language tags (e.g. `en-GB`, `zh-Hant`)
   - Why: The database checks only the general tag shape
   - Related feature: Plant names / ingestion

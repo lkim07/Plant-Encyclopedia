@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+using PlantEncyclopedia.Application.Plants;
 using PlantEncyclopedia.Application.Search;
 
 namespace PlantEncyclopedia.Api.Search;
@@ -16,7 +18,25 @@ public sealed record SearchResultResponse(
         result.PlantGroupName,
         result.ScientificName,
         ImageUrl: null); // Plant images are not served yet.
+
+    public static SearchResultResponse From(PlantSummary plant) => new(
+        plant.Id,
+        plant.Name,
+        plant.PlantGroupName,
+        plant.ScientificName,
+        ImageUrl: null);
 }
+
+/// <summary>Request body of POST /api/search/external (API_SPEC §27).</summary>
+public sealed record ExternalLookupRequest(string? Q);
+
+/// <summary>
+/// JSON contract for POST /api/search/external: status "found" (with the plant), "pendingReview" or
+/// "notFound". Provider details and rejection reasons are never included.
+/// </summary>
+public sealed record ExternalLookupResponse(
+    string Status,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] SearchResultResponse? Plant);
 
 /// <summary>JSON contract for one GET /api/search/suggestions item (API_SPEC §26).</summary>
 public sealed record SearchSuggestionResponse(string Text, string Type)

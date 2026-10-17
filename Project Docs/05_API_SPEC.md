@@ -309,6 +309,28 @@ Requests that exceed their time limit return `503 Service Unavailable` with:
 }
 ```
 
+When an external provider cannot answer (§27, §53), the endpoint returns `503 Service Unavailable` with:
+
+```json
+{
+  "error": {
+    "code": "EXTERNAL_LOOKUP_UNAVAILABLE",
+    "message": "External plant lookup is unavailable right now. Please try again later."
+  }
+}
+```
+
+A request body larger than an endpoint accepts returns `413 Payload Too Large` with:
+
+```json
+{
+  "error": {
+    "code": "PAYLOAD_TOO_LARGE",
+    "message": "The request body is too large."
+  }
+}
+```
+
 Unexpected server errors return `500 Internal Server Error` with a fixed body:
 
 ```json
@@ -402,7 +424,8 @@ Retrieve the Plant Detail data for a specific plant.
         "value": "Well-drained",
         "description": null
       }
-    }
+    },
+    "attributions": []
   }
 }
 ```
@@ -416,6 +439,9 @@ Field rules:
 * `heroImage` — always `null` until the hero-image approach is decided. When set, it will be `{ "url", "altText" }`.
 * `quickCare` — `null` unless the plant's care information is **Verified**. Unverified care is never returned. Inside it, any card without a value is `null`.
 * `temperature` — numeric degrees Celsius (`minC`, `maxC`, either may be `null`); clients format the display text (e.g. "15–25°C").
+* `attributions` — credits for external sources, shown on Plant Detail. Each item is `{ "type", "text" }`, for example `{ "type": "taxonomy", "text": "Catalogue of Life, via GBIF" }` for a plant imported through §27. The array is empty for curated plants.
+  * Sources from providers without reviewed attribution text are not listed.
+  * The exact Catalogue of Life citation must be verified before public release.
 * `blooming`, `health`, and `about` are not returned yet; they will be added when their data is stored.
 
 Only `Published` plants are returned. Unknown IDs and plants in any other status return the same response:
@@ -734,7 +760,8 @@ Search the application's plant database.
 
   Ties are ordered by name, then ID, so pages never overlap.
 * No matches return `200 OK` with `"data": []`.
-* Not yet: recording recent searches (§28) and external lookup when nothing is found (§27).
+* Search itself never calls external services. When it finds nothing, the client may offer the separate Catalogue of Life lookup (§27).
+* Not yet: recording recent searches on the server (§28).
 
 ### Validation and limits (implemented)
 
@@ -866,6 +893,56 @@ Return
 ```
 
 The frontend should not call iNaturalist or GBIF directly.
+
+## 27.1 Catalogue of Life lookup (implemented)
+
+```http
+POST /api/search/external
+Content-Type: application/json
+
+{ "q": "Rosa canina" }
+```
+
+### Authentication
+
+Not required.
+
+### Purpose
+
+The user asked to look up a name that `GET /api/search` did not find. The lookup is a separate request, sent only when the user clicks "Search Catalogue of Life" (UX §43), never automatically. If the name qualifies, the backend imports the plant (ARCHITECTURE §22) and reports what the user may see. It is a `POST` because it can create a plant.
+
+### Response — `200 OK`
+
+| `status` | When | Body |
+|---|---|---|
+| `found` | The plant is Published: newly imported into a mapped plant group, or already stored | `{"data":{"status":"found","plant":{id,name,plantGroup,scientificName,imageUrl}}}`, with `plant` shaped like a §25 search result |
+| `pendingReview` | The plant exists but is not Published (imported as `NeedsReview`, or stored as Draft/Validated/NeedsReview) | `{"data":{"status":"pendingReview"}}` |
+| `notFound` | No exact, accepted Plantae match; the match was rejected; the plant is Archived; or `q` is not name-shaped | `{"data":{"status":"notFound"}}` |
+
+* No plant data is returned for plants that are not Published, and rejection reasons and provider details are never returned.
+* **Name-shaped** means 2–4 words of letters, starting with a letter. A word may contain `.` or `-` (`var.`, `bursa-pastoris`) or be `×`. Other text returns `notFound` without an external request.
+* The name is sent in botanical casing: genus capitalized, the rest lower-case (`rosa CANINA` → `Rosa canina`).
+* A plant already stored (same identity) is answered from the database without an external request.
+
+### Errors
+
+* `400 VALIDATION_ERROR`:
+  * `q` is validated as in §24, with the same `details` messages.
+  * A body that is not JSON returns `details.body` = `Request body must be JSON.`.
+  * Malformed JSON returns `details.body` = `Request body must be valid JSON.`.
+* `413 PAYLOAD_TOO_LARGE`: the body is larger than 1 KB.
+* `429 RATE_LIMITED`: more than **5 lookups per minute** per client IP (IPv6 by /64), with `Retry-After`.
+* `503 EXTERNAL_LOOKUP_UNAVAILABLE`: the provider is disabled, over its app-wide limit, timed out or failed (§12).
+* `503 REQUEST_TIMEOUT`: the whole request took longer than 5 seconds.
+
+### Protection
+
+* GBIF is called with a 3-second timeout.
+* App-wide, at most **30 GBIF calls per minute and 1,000 per day**, whoever asks.
+* Names that cannot be imported (no match or a rejected match) are remembered for **24 hours**, so repeating them does not call GBIF again. Provider failures are never remembered.
+* All of this is in memory, per API instance.
+* The text is never written to server logs.
+* The endpoint uses no cookies or credentials. CORS is not enabled, so other sites cannot send this JSON `POST` from a browser.
 
 ---
 

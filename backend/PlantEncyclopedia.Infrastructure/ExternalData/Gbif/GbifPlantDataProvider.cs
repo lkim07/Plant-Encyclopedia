@@ -19,7 +19,7 @@ internal sealed partial class GbifPlantDataProvider(
     ILogger<GbifPlantDataProvider> logger) : IPlantDataProvider
 {
     /// <summary>Stored in plant_sources.provider.</summary>
-    public const string ProviderName = "gbif-col-xr";
+    public const string ProviderName = KnownProviders.GbifCatalogueOfLife;
 
     public static readonly Uri BaseAddress = new("https://api.gbif.org/");
     public static readonly TimeSpan Timeout = TimeSpan.FromSeconds(3);

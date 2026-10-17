@@ -83,6 +83,11 @@ export class PlantDetailPage {
     this.retry$.next();
   }
 
+  /** "taxonomy" → "Taxonomy": the label in front of a source credit. */
+  protected attributionLabel(type: string): string {
+    return type.charAt(0).toUpperCase() + type.slice(1);
+  }
+
   /** Back follows in-app history; a plant opened directly goes up to its plant group. */
   protected goBack(): void {
     const state = this.state();

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using PlantEncyclopedia.Application.ExternalData;
 using PlantEncyclopedia.Infrastructure;
+using PlantEncyclopedia.Infrastructure.ExternalData;
 using PlantEncyclopedia.Infrastructure.ExternalData.Gbif;
 using PlantEncyclopedia.Tests.Api;
 
@@ -214,7 +215,7 @@ public class GbifPlantDataProviderTests
         await using var provider = services.BuildServiceProvider();
 
         var gbif = provider.GetRequiredService<IPlantDataProvider>();
-        Assert.IsType<GbifPlantDataProvider>(gbif);
+        Assert.IsType<GuardedPlantDataProvider>(gbif);
         var result = await gbif.MatchAsync(marker, CancellationToken.None);
 
         Assert.Equal(TaxonLookupStatus.Unavailable, result.Status);

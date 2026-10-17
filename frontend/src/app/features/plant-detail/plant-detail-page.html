@@ -50,6 +50,15 @@
         <p class="muted">Care information isn't available yet.</p>
       }
     </section>
+
+    @if (s.plant.attributions.length > 0) {
+      <!-- Credits for external data (e.g. Catalogue of Life, CC BY). -->
+      <footer class="attributions muted">
+        @for (credit of s.plant.attributions; track credit.type + credit.text) {
+          <p>{{ attributionLabel(credit.type) }}: {{ credit.text }}</p>
+        }
+      </footer>
+    }
   } @else if (s.status === 'not-found') {
     <div class="message">
       <h1>Plant not found</h1>

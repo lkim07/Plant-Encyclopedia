@@ -147,9 +147,28 @@ Implemented and verified:
 
 * `GET /api/plants/{plantId}` — Plant Detail for Published plants only (API_SPEC §14): `id`, `name`, `plantGroup`, `plantGroupId` (group slug), `scientificName`, `description`, `heroImage` (always `null` for now), `quickCare` (Verified care only, numeric temperature). `404 PLANT_NOT_FOUND` for unknown or unpublished plants, `400 VALIDATION_ERROR` for a malformed ID. Minimal API endpoint → `IPlantQueries` (Application) → EF Core query (Infrastructure).
 * `GET /api/categories`, `GET /api/categories/{categoryId}`, `GET /api/plant-groups/{plantGroupId}` (API_SPEC §17–19): category and plant-group IDs are slugs; name ordering; category-pure group lists; Published plants only with page/pageSize pagination (default 20, max 50); `CATEGORY_NOT_FOUND` / `PLANT_GROUP_NOT_FOUND` 404s and `VALIDATION_ERROR` 400s. `imageUrl` fields are `null` until images exist. Covered by 11 API tests.
-* `GET /api/search` (API_SPEC §24–25): Published plants; every word must appear in a display, scientific, or cultivar name, an alternative name (any language), or the group name; case-, accent-, and punctuation-insensitive (database `search_key()` function, NFKC-normalized input); relevance ordering (exact → starts with → all words in main names → other matches), then name and ID; page ≤ 50. Input validation (required, ≤ 100 characters, no control characters, a letter or digit, ≤ 10 words), 30 requests/minute per client IP (`429 RATE_LIMITED` with `Retry-After`), 5-second timeout (`503 REQUEST_TIMEOUT`), and search text kept out of logs. Parameterized queries only; `%`, `_`, `\` are never wildcards. Covered by 28 API tests and 11 database tests. Recent searches and external lookup are not implemented.
+* `GET /api/search` (API_SPEC §24–25): Published plants; every word must appear in a display, scientific, or cultivar name, an alternative name (any language), or the group name; case-, accent-, and punctuation-insensitive (database `search_key()` function, NFKC-normalized input); relevance ordering (exact → starts with → all words in main names → other matches), then name and ID; page ≤ 50. Input validation (required, ≤ 100 characters, no control characters, a letter or digit, ≤ 10 words), 30 requests/minute per client IP (`429 RATE_LIMITED` with `Retry-After`), 5-second timeout (`503 REQUEST_TIMEOUT`), and search text kept out of logs. Parameterized queries only; `%`, `_`, `\` are never wildcards. Covered by 28 API tests and 11 database tests. Search itself never calls external services (see the Catalogue of Life lookup below). Server-side recent searches are not implemented.
 * `GET /api/search/suggestions` (API_SPEC §26): up to 8 database-backed suggestions (`plant`, `cultivar`, `scientificName`, `commonName`, `synonym`, `plantGroup`) from Published plants and groups with Published plants; word-start matching with the same folding as search; starts-with first, then shorter, then alphabetical; identical texts merged; items are `{ text, type }` (no plant ID: selecting a suggestion runs a search); text under 2 characters returns `[]`. Same text validation as search; its own limit of 120 requests/minute per IP; 2-second timeout; typed text kept out of logs. One parameterized SQL statement (no SQL built from user text). The trigram indexes were confirmed usable for each name source with `EXPLAIN` on the development data; whether the planner chooses them inside the full query depends on data volume and has not been measured at scale. Covered by 17 API tests.
-* External plant import, Phase 11b (ARCHITECTURE §21–23, DATABASE_DESIGN §20/§23). **Backend only. No endpoint uses it yet, and GBIF is disabled by default** (`ExternalPlantData:Gbif:Enabled = false`, always off in `Testing`).
+* `POST /api/search/external` — Catalogue of Life lookup, Phase 11c (API_SPEC §27.1, ARCHITECTURE §23–24).
+  * **Behaviour:** body `{ "q" }`, validated like search, max 1 KB. Only name-shaped text (2–4 words of letters) reaches GBIF, sent in botanical casing.
+  * **Responses:** `found` with a search-result-shaped plant (only if Published), `pendingReview`, or `notFound`. When GBIF is unavailable, the response is `503 EXTERNAL_LOOKUP_UNAVAILABLE`.
+  * **Limits:**
+    * per client IP: 5 per minute
+    * app-wide: 30 GBIF calls per minute and 1,000 per day
+    * a 24-hour in-memory cache of names that cannot be imported (never failures)
+    * a 5-second request timeout
+    * the text is never logged
+  * **Attribution:** `GET /api/plants/{id}` now returns `attributions` (e.g. Taxonomy: "Catalogue of Life, via GBIF"); it is empty for curated plants.
+  * **Configuration:** GBIF is enabled only in `appsettings.Development.json`. It is still off in `appsettings.json` and forced off in `Testing`.
+  * **Tests:** 49 new backend tests:
+    * endpoint statuses, validation, 413, 429, 503 and no logging
+    * the name check
+    * call budget windows
+    * the cache (what is stored, 24-hour expiry, keyed by exact name, hits do not use the budget)
+    * Plant Detail attributions
+  * **Total:** 268 backend tests pass with 0 build warnings. No migration; no live GBIF requests were made in 11c.
+  * **Not verified yet:** a manual end-to-end check against real GBIF from the browser.
+* External plant import, Phase 11b (ARCHITECTURE §21–23, DATABASE_DESIGN §20/§23). Since 11c it is used by `POST /api/search/external`; before that it had no endpoint.
   * **Adapter:** `IPlantDataProvider` is implemented by `GbifPlantDataProvider`, which calls the GBIF v2 species match API against Catalogue of Life XR (`checklistKey 7ddf754f-…`).
     * Limits: HTTPS to `api.gbif.org` only, no redirects or retries, 3-second timeout, 1 MB limit.
     * User-Agent: the project URL.
@@ -334,7 +353,11 @@ Implemented and verified:
 * Back fallback (shared by all pages with a Back button): the fallback page replaces the current history entry instead of adding one, and Back from a fallback page uses its own fallback. A directly opened page therefore walks up the hierarchy (Roses → Flowers → Explore) instead of looping back to the page just left.
 * Plant Detail page at `/plants/:plantId`: Back button (in-app history, otherwise the plant's group page, or `/explore` if it has no group), hero placeholder, naming hierarchy (name, plant group, italic scientific name), description, Quick Care cards (verified care only; expandable when a description exists; temperature shown as `15–25°C` / `From 15°C` / `Up to 25°C`) or "Care information isn't available yet.". Loading skeleton, "Plant not found" (404/400), and "Something went wrong" with Try Again. Blooming, Health, About, Where to Buy, Similar Plants, and Bookmark are not shown yet.
 * Dev-server proxy (`proxy.conf.json`) forwards `/api` and `/health` to `http://localhost:5034`; no backend CORS configuration.
-* `npm run build` succeeds without warnings; 58 unit tests pass (Vitest + jsdom, HTTP mocked).
+* Catalogue of Life lookup on the Search page (Phase 11c, UX §43). When a name-shaped search (2–4 words of letters) finds nothing, a "Search Catalogue of Life" button is offered. It calls `POST /api/search/external` only on click.
+  * States: loading, found (the plant as a card plus "Taxonomy: Catalogue of Life, via GBIF"), pending review, no match, unavailable, rate-limited, and error. Unavailable, rate-limited and error each have Try Again.
+  * A new search resets the lookup.
+* Plant Detail shows credits for external sources ("Taxonomy: Catalogue of Life, via GBIF") when `attributions` is not empty.
+* `npm run build` succeeds without warnings; 74 unit tests pass (Vitest + jsdom, HTTP mocked).
 * Manually verified end to end (browser → dev proxy → API → `plant_encyclopedia_dev`): a Published sample plant renders; the Draft plant and a malformed ID show "Plant not found"; stopping the API shows the error state and Try Again recovers; Back and the mobile layout work.
 
 Not yet implemented: real Identify and Favorites screens, the Explore feed, images, animations, authentication.

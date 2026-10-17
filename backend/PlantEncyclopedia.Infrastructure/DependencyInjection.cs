@@ -45,6 +45,7 @@ public static class DependencyInjection
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<IPlantImportStore, PlantImportStore>();
         services.AddScoped<PlantIngestionService>();
+        services.AddScoped<ExternalPlantLookupService>();
 
         if (!gbif.Enabled)
         {
@@ -53,12 +54,17 @@ public static class DependencyInjection
         }
 
         services.AddSingleton(gbif);
-        services.AddHttpClient<IPlantDataProvider, GbifPlantDataProvider>(client =>
+        services.AddHttpClient<GbifPlantDataProvider>(client =>
                 GbifPlantDataProvider.ConfigureClient(client, gbif))
             .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false })
             // The default handlers log request URLs, which contain the searched name. Their query-string
             // redaction can be switched off by configuration, so they are removed rather than relied on.
             .RemoveAllLoggers();
+
+        // Shared by every request: the cache and the app-wide budget must outlive a single lookup.
+        services.AddSingleton<NegativeLookupCache>();
+        services.AddSingleton<ExternalCallBudget>();
+        services.AddTransient<IPlantDataProvider, GuardedPlantDataProvider>();
 
         return services;
     }

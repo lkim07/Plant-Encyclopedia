@@ -9,7 +9,7 @@ namespace PlantEncyclopedia.Tests.Api;
 public class PlantDetailEndpointTests(PostgresDatabaseFixture fixture)
 {
     private static readonly string[] ExpectedFields =
-        ["id", "name", "plantGroup", "plantGroupId", "scientificName", "description", "heroImage", "quickCare"];
+        ["id", "name", "plantGroup", "plantGroupId", "scientificName", "description", "heroImage", "quickCare", "attributions"];
 
     // Protects against: missing fields, or database columns leaking into the public response.
     [Fact]
@@ -36,6 +36,25 @@ public class PlantDetailEndpointTests(PostgresDatabaseFixture fixture)
         Assert.Equal("Test description", data.GetProperty("description").GetString());
         Assert.Equal(JsonValueKind.Null, data.GetProperty("heroImage").ValueKind);
         Assert.Equal(JsonValueKind.Null, data.GetProperty("quickCare").ValueKind);
+        Assert.Equal(0, data.GetProperty("attributions").GetArrayLength());
+    }
+
+    // Protects against: imported taxonomy shown without crediting its source (Catalogue of Life is CC BY),
+    // or raw provider keys of unreviewed providers being shown to users.
+    [Fact]
+    public async Task ImportedPlant_CreditsItsTaxonomySource()
+    {
+        var plant = await CreatePublishedPlantAsync(care: null,
+            Source("gbif-col-xr", PlantSourceType.Taxonomy),
+            Source("unreviewed-provider", PlantSourceType.Description));
+        await using var factory = new TestApiFactory(fixture.ConnectionString);
+        using var client = factory.CreateClient();
+
+        using var json = JsonDocument.Parse(await client.GetStringAsync($"/api/plants/{plant.Id}"));
+
+        Assert.Equal(
+            """[{"type":"taxonomy","text":"Catalogue of Life, via GBIF"}]""",
+            json.RootElement.GetProperty("data").GetProperty("attributions").GetRawText());
     }
 
     // Protects against: unknown IDs returning anything other than the documented 404 error.
@@ -162,7 +181,15 @@ public class PlantDetailEndpointTests(PostgresDatabaseFixture fixture)
         Assert.Contains(factory.Logs.Entries, entry => entry.Contains("Unhandled exception while processing GET /api/plants/"));
     }
 
-    private async Task<Plant> CreatePublishedPlantAsync(PlantCare? care)
+    private static PlantSource Source(string provider, PlantSourceType type) => new()
+    {
+        Provider = provider,
+        ExternalId = Guid.NewGuid().ToString("N"),
+        SourceType = type,
+        RetrievedAt = DateTimeOffset.UtcNow
+    };
+
+    private async Task<Plant> CreatePublishedPlantAsync(PlantCare? care, params PlantSource[] sources)
     {
         await using var db = fixture.CreateDbContext();
         var suffix = Guid.NewGuid().ToString("N");
@@ -179,6 +206,7 @@ public class PlantDetailEndpointTests(PostgresDatabaseFixture fixture)
         plant.Status = PlantStatus.Published;
         plant.Description = "Test description";
         plant.Care = care;
+        plant.Sources.AddRange(sources);
 
         db.Plants.Add(plant);
         await db.SaveChangesAsync();

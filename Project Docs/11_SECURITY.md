@@ -329,6 +329,22 @@ Anonymous access may receive stricter limits than authenticated access.
 
 Exact limits should be chosen based on measured usage and provider costs rather than arbitrary numbers.
 
+### Implemented limits
+
+| Endpoint | Per client IP (IPv6 by /64) | Timeout |
+|---|---|---|
+| `GET /api/search` | 30 / minute | 5 s |
+| `GET /api/search/suggestions` | 120 / minute | 2 s |
+| `POST /api/search/external` | 5 / minute | 5 s |
+
+On top of the per-client limits, external lookup (API_SPEC §27) has app-wide protection:
+* At most 30 GBIF calls per minute and 1,000 per day, whoever asks. Over the limit, the endpoint returns 503.
+* A 24-hour cache of names that cannot be imported.
+* A 1 KB request-body limit.
+* Only name-shaped text is sent to GBIF.
+
+All limits are in memory and per instance. A shared store is needed before running several instances. Forwarded headers are not trusted until a proxy is configured. Searched text is never logged.
+
 ---
 
 # 14. Secrets Management

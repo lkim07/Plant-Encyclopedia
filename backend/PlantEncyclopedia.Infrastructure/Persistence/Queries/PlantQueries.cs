@@ -29,6 +29,23 @@ internal sealed class PlantQueries(PlantEncyclopediaDbContext db) : IPlantQuerie
                         p.Care.TemperatureDetails,
                         p.Care.SoilSummary,
                         p.Care.SoilDetails)
-                    : null))
+                    : null,
+                p.Sources
+                    .OrderBy(s => s.SourceType)
+                    .ThenBy(s => s.Provider)
+                    .Select(s => new PlantSourceInfo(s.Provider, s.SourceType))
+                    .ToList()))
+            .SingleOrDefaultAsync(cancellationToken);
+
+    public Task<PlantSummary?> GetPlantSummaryAsync(Guid plantId, CancellationToken cancellationToken) =>
+        db.Plants
+            .AsNoTracking()
+            .Where(p => p.Id == plantId)
+            .Select(p => new PlantSummary(
+                p.Id,
+                p.DisplayName,
+                p.PlantGroup != null ? p.PlantGroup.Name : null,
+                p.ScientificName,
+                p.Status))
             .SingleOrDefaultAsync(cancellationToken);
 }

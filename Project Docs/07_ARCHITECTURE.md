@@ -668,7 +668,7 @@ Provider-specific response formats must stop at the infrastructure boundary.
   * User-Agent `PlantEncyclopedia/<version> (+<Contact>)`
 * **Logging:** the default HttpClientFactory request logging is removed, because it logs URLs. The adapter logs only the status code or error kind, never the name.
 * **Configuration:** `ExternalPlantData:Gbif` has `Enabled` (default `false`), `ChecklistKey` and `Contact` (the project URL), and is validated at startup. The `Testing` environment always disables it. When it is disabled, `UnavailablePlantDataProvider` answers every lookup with `Unavailable`.
-* **Not connected yet:** no endpoint uses the adapter (Phase 11c).
+* **Used by:** `POST /api/search/external` (Phase 11c, see §23), behind the negative cache and the app-wide call budget.
 * **Common names are not imported yet:** the taxon details request (`/v2/taxon/{checklistKey}/{id}/info`) returned 404 when recorded on 2026-10-16.
 * **Tests** use responses recorded once on that date (`PlantEncyclopedia.Tests/Fixtures/Gbif`, with a README) and stub handlers. They never call GBIF.
 
@@ -773,7 +773,20 @@ The GBIF adapter never throws for provider failures. All of these become `Unavai
 
 Only the caller's own cancellation is rethrown. `Unavailable` is kept distinct from `NotFound`, so that a failure is never cached as "no such plant".
 
-Still to do in Phase 11c: rate limits, negative caching, and the search fallback with its error response.
+### Implemented (Phase 11c): search fallback
+
+```text
+Search (no results) → user clicks "Search Catalogue of Life"
+  → POST /api/search/external → ExternalPlantLookupService
+      → name-shape check (else notFound, no external call)
+      → PlantIngestionService: stored plant? → answer from the database
+      → GuardedPlantDataProvider: negative cache → app-wide budget → GbifPlantDataProvider
+  → found (Published plant) / pendingReview / notFound / 503 EXTERNAL_LOOKUP_UNAVAILABLE
+```
+
+* `Unavailable` (provider disabled, over the app-wide budget, timed out or failed) becomes `503 EXTERNAL_LOOKUP_UNAVAILABLE`. The frontend shows a retryable "can't be reached" message, never "not found".
+* The app-wide budget (`ExternalCallBudget`) allows 30 GBIF calls per minute and 1,000 per day, counting only real calls. On top of it, each client IP may make 5 lookups per minute.
+* GBIF is enabled only in `appsettings.Development.json`. It is off in `appsettings.json` and forced off in `Testing`.
 
 ---
 
@@ -806,6 +819,16 @@ Potential cached data:
 Cache TTLs should be chosen according to data volatility.
 
 Avoid caching everything by default.
+
+### Implemented (Phase 11c): negative lookup cache
+
+`NegativeLookupCache` is an in-memory cache, for at most 10,000 names, keyed by the exact name sent to GBIF.
+
+* **Stored for 24 hours:** provider answers that cannot lead to an import, i.e. no match, or a match the import policy rejects (fuzzy, synonym, wrong rank, not a plant).
+* **Never stored:** `Unavailable`, so an outage is not remembered as "no such plant", and successful matches, because the imported plant is found in the database next time.
+* **Budget:** a cache hit does not use the app-wide GBIF budget.
+
+The cache is per instance and lost on restart, which is acceptable for a cost guard.
 
 ---
 

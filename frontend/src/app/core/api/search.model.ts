@@ -14,5 +14,14 @@ export interface SearchSuggestion {
   readonly type: SuggestionType;
 }
 
+/**
+ * POST /api/search/external result (API_SPEC §27). Only "found" carries a plant; plants that are
+ * not published yet are reported as "pendingReview" without any plant data.
+ */
+export type ExternalLookupResult =
+  | { readonly status: 'found'; readonly plant: SearchResultItem }
+  | { readonly status: 'pendingReview' }
+  | { readonly status: 'notFound' };
+
 export type SuggestionType =
   'plant' | 'cultivar' | 'scientificName' | 'commonName' | 'synonym' | 'plantGroup';

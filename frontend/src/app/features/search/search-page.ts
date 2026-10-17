@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
   afterNextRender,
   Component,
+  computed,
   DestroyRef,
   effect,
   ElementRef,
@@ -26,12 +27,23 @@ import {
 } from 'rxjs';
 import { ApiErrorResponse, PagedResponse } from '../../core/api/api-response.model';
 import { SEARCH_MAX_PAGE, SEARCH_PAGE_SIZE, SearchApi } from '../../core/api/search-api';
-import { SearchResultItem } from '../../core/api/search.model';
+import { ExternalLookupResult, SearchResultItem } from '../../core/api/search.model';
 import { goBack } from '../../core/navigation/go-back';
 import { RecentSearches } from '../../core/storage/recent-searches';
 import { ImageCard } from '../../shared/image-card/image-card';
 import { SearchBox } from './search-box';
-import { validateSearchText } from './search-text';
+import { isNameShaped, validateSearchText } from './search-text';
+
+/** The "Search Catalogue of Life" action shown when the local search finds nothing (API_SPEC §27). */
+type ExternalLookupState =
+  | { readonly status: 'idle' }
+  | { readonly status: 'loading' }
+  | { readonly status: 'found'; readonly plant: SearchResultItem }
+  | { readonly status: 'pending-review' }
+  | { readonly status: 'not-found' }
+  | { readonly status: 'unavailable' }
+  | { readonly status: 'rate-limited' }
+  | { readonly status: 'error' };
 
 interface LoadedState {
   readonly status: 'loaded';
@@ -71,6 +83,7 @@ export class SearchPage {
   private readonly searchBox = viewChild.required(SearchBox);
   private readonly sentinel = viewChild<ElementRef<HTMLElement>>('sentinel');
   private loadMoreSubscription?: Subscription;
+  private lookupSubscription?: Subscription;
 
   protected readonly maxPage = SEARCH_MAX_PAGE;
   protected readonly resultCap = (SEARCH_MAX_PAGE * SEARCH_PAGE_SIZE).toLocaleString('en-US');
@@ -82,6 +95,9 @@ export class SearchPage {
   /** What is in the search box, which may differ from the submitted search while typing. */
   protected readonly text = signal('');
   protected readonly state = signal<ResultsState>({ status: 'idle' });
+  protected readonly external = signal<ExternalLookupState>({ status: 'idle' });
+  /** The Catalogue of Life action is offered only for text that could be a scientific name. */
+  protected readonly canLookUp = computed(() => isNameShaped(this.query()));
 
   constructor() {
     combineLatest([
@@ -90,8 +106,10 @@ export class SearchPage {
     ])
       .pipe(
         tap(([q]) => {
-          // A pending "load more" belongs to the previous search; drop it.
+          // A pending "load more" or external lookup belongs to the previous search; drop it.
           this.loadMoreSubscription?.unsubscribe();
+          this.lookupSubscription?.unsubscribe();
+          this.external.set({ status: 'idle' });
           this.query.set(q);
           this.text.set(q);
         }),
@@ -144,6 +162,22 @@ export class SearchPage {
     this.retry$.next();
   }
 
+  /** Asks the backend to look the searched name up in Catalogue of Life. Only on the user's click. */
+  protected lookUpExternally(): void {
+    if (this.external().status === 'loading') {
+      return;
+    }
+
+    this.external.set({ status: 'loading' });
+    this.lookupSubscription = this.searchApi
+      .lookUpExternally(this.query())
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (result) => this.external.set(toLookupState(result)),
+        error: (error: unknown) => this.external.set(toLookupErrorState(error)),
+      });
+  }
+
   protected goBack(): void {
     goBack(this.location, this.router, '/explore');
   }
@@ -192,6 +226,27 @@ export class SearchPage {
       startWith<ResultsState>({ status: 'loading' }),
     );
   }
+}
+
+function toLookupState(result: ExternalLookupResult): ExternalLookupState {
+  switch (result.status) {
+    case 'found':
+      return { status: 'found', plant: result.plant };
+    case 'pendingReview':
+      return { status: 'pending-review' };
+    default:
+      return { status: 'not-found' };
+  }
+}
+
+function toLookupErrorState(error: unknown): ExternalLookupState {
+  if (error instanceof HttpErrorResponse && error.status === 429) {
+    return { status: 'rate-limited' };
+  }
+  if (error instanceof HttpErrorResponse && error.status === 503) {
+    return { status: 'unavailable' };
+  }
+  return { status: 'error' };
 }
 
 function toErrorState(error: unknown): ResultsState {

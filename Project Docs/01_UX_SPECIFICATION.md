@@ -1097,6 +1097,30 @@ Try another name or search term.
 
 If appropriate, offer image identification as an alternative.
 
+### Catalogue of Life lookup (implemented, Phase 11c)
+
+When the search could be a scientific name (2–4 words of letters, e.g. "Rosa canina"), the no-results message offers an external lookup instead of "Try another name or search term.":
+
+```text
+If this is a scientific name, it may be listed in Catalogue of Life.
+
+[ Search Catalogue of Life ]
+```
+
+* The lookup runs only when the user clicks the button, never automatically.
+* While it runs, the page shows "Searching Catalogue of Life…" and the button is disabled.
+* **Found:** the no-results message is replaced by "Found in Catalogue of Life" with the plant as a normal card that opens Plant Detail, and the line "Taxonomy: Catalogue of Life, via GBIF".
+* **Pending review:** "We found "[query]" in Catalogue of Life. It will appear here after review."
+* **No match:** "Catalogue of Life has no exact match either. Check the spelling of the scientific name."
+* **Errors**, each with a Try Again button:
+  * Unavailable: "Catalogue of Life can't be reached right now. Please try again later."
+  * Rate-limited: "You're looking up plants too quickly. Please wait a moment and try again."
+  * Network or other errors: "Something went wrong. Please check your connection and try again."
+* The Identify link stays in every state except Found.
+* A new search resets the lookup.
+
+Plant Detail credits external sources at the bottom of the page, e.g. "Taxonomy: Catalogue of Life, via GBIF".
+
 ## Category
 
 ```text

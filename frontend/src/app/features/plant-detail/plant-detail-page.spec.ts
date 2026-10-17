@@ -6,12 +6,15 @@ import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { routes } from '../../app.routes';
 import { ApiResponse } from '../../core/api/api-response.model';
-import { PlantDetail, QuickCare } from '../../core/api/plant-detail.model';
+import { Attribution, PlantDetail, QuickCare } from '../../core/api/plant-detail.model';
 
 const PLANT_ID = 'd5e00000-0000-4000-8000-000000000001';
 const URL = `/api/plants/${PLANT_ID}`;
 
-function plant(quickCare: QuickCare | null = null): ApiResponse<PlantDetail> {
+function plant(
+  quickCare: QuickCare | null = null,
+  attributions: Attribution[] = [],
+): ApiResponse<PlantDetail> {
   return {
     data: {
       id: PLANT_ID,
@@ -22,6 +25,7 @@ function plant(quickCare: QuickCare | null = null): ApiResponse<PlantDetail> {
       description: 'Development sample data — not verified.',
       heroImage: null,
       quickCare,
+      attributions,
     },
   };
 }
@@ -73,6 +77,20 @@ describe('PlantDetailPage', () => {
     expect(page.querySelector('.hero-image')).toBeNull();
     expect(page.textContent).toContain("Care information isn't available yet.");
     expect(page.querySelector('article')?.getAttribute('aria-busy')).toBe('false');
+    expect(page.querySelector('.attributions')).toBeNull();
+  });
+
+  // Protects against: imported taxonomy shown without crediting Catalogue of Life (CC BY).
+  it('credits external sources', async () => {
+    const harness = await openPlant();
+    http
+      .expectOne(URL)
+      .flush(plant(null, [{ type: 'taxonomy', text: 'Catalogue of Life, via GBIF' }]));
+    const page = await settle(harness);
+
+    expect(page.querySelector('.attributions')?.textContent?.trim()).toBe(
+      'Taxonomy: Catalogue of Life, via GBIF',
+    );
   });
 
   // Protects against: verified care not shown, or cards not expanding (UX §29).

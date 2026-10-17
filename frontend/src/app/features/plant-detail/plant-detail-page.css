@@ -126,3 +126,11 @@
     opacity: 0.55;
   }
 }
+
+.attributions {
+  font-size: 0.875rem;
+}
+
+.attributions p {
+  margin: 0;
+}

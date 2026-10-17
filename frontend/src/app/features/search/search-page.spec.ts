@@ -335,6 +335,114 @@ describe('SearchPage', () => {
     expect(page.textContent).toContain('We couldn\'t find a match for "xyz".');
     expect(page.textContent).toContain('Try another name or search term.');
     expect(page.querySelector('.no-results a')?.getAttribute('href')).toBe('/identify');
+    // "xyz" cannot be a scientific name, so Catalogue of Life is not offered.
+    expect(page.querySelector('.external-lookup')).toBeNull();
+  });
+
+  describe('Catalogue of Life lookup', () => {
+    const lookupRequest = (): TestRequest =>
+      http.expectOne((r) => r.method === 'POST' && r.url === '/api/search/external');
+    const lookupButton = (page: HTMLElement) =>
+      page.querySelector<HTMLButtonElement>('.external-lookup .action')!;
+
+    async function openNoResults(q: string): Promise<[RouterTestingHarness, HTMLElement]> {
+      const harness = await open(`/search?q=${encodeURIComponent(q)}`);
+      searchRequest(q).flush(resultsPage(1, [], false));
+      return [harness, await settle(harness)];
+    }
+
+    // Protects against: calling the external lookup without the user asking (cost, D-005).
+    it('is offered for name-shaped searches and runs only when clicked', async () => {
+      const [harness, page] = await openNoResults('Rosa canina');
+
+      expect(page.textContent).toContain('it may be listed in Catalogue of Life');
+      expect(lookupButton(page).textContent?.trim()).toBe('Search Catalogue of Life');
+      http.expectNone('/api/search/external');
+
+      lookupButton(page).click();
+      const request = lookupRequest();
+      expect(request.request.body).toEqual({ q: 'Rosa canina' });
+      expect((await settle(harness)).textContent).toContain('Searching Catalogue of Life…');
+
+      request.flush({ data: { status: 'notFound' } });
+      expect((await settle(harness)).textContent).toContain(
+        'Catalogue of Life has no exact match either.',
+      );
+    });
+
+    // Protects against: an imported plant not being reachable, or shown without its source.
+    it('shows a found plant as a card with its source', async () => {
+      const [harness, page] = await openNoResults('Rosa canina');
+
+      lookupButton(page).click();
+      lookupRequest().flush({
+        data: { status: 'found', plant: { ...result(7), name: 'Rosa canina' } },
+      });
+      const updated = await settle(harness);
+
+      expect(updated.querySelector('.no-results')).toBeNull();
+      expect(updated.querySelector('#external-heading')?.textContent).toBe(
+        'Found in Catalogue of Life',
+      );
+      expect(cardNames(updated)).toEqual(['Rosa canina']);
+      expect(updated.querySelector('app-image-card a')?.getAttribute('href')).toBe(
+        `/plants/${result(7).id}`,
+      );
+      expect(updated.querySelector('.attribution')?.textContent).toBe(
+        'Taxonomy: Catalogue of Life, via GBIF',
+      );
+    });
+
+    it('explains that an unreviewed plant will appear later', async () => {
+      const [harness, page] = await openNoResults('Rosa canina');
+
+      lookupButton(page).click();
+      lookupRequest().flush({ data: { status: 'pendingReview' } });
+
+      expect((await settle(harness)).textContent).toContain(
+        'We found "Rosa canina" in Catalogue of Life. It will appear here after review.',
+      );
+    });
+
+    // Protects against: provider outages or rate limits looking like "no such plant" (API_SPEC §53).
+    it('distinguishes unavailable and rate-limited lookups, and can retry', async () => {
+      const [harness, page] = await openNoResults('Rosa canina');
+
+      lookupButton(page).click();
+      lookupRequest().flush(
+        { error: { code: 'EXTERNAL_LOOKUP_UNAVAILABLE', message: 'unavailable' } },
+        { status: 503, statusText: 'Service Unavailable' },
+      );
+      let updated = await settle(harness);
+      expect(updated.querySelector('.external-lookup [role="alert"]')?.textContent).toBe(
+        "Catalogue of Life can't be reached right now. Please try again later.",
+      );
+
+      lookupButton(updated).click();
+      lookupRequest().flush(null, { status: 429, statusText: 'Too Many Requests' });
+      updated = await settle(harness);
+      expect(updated.querySelector('.external-lookup [role="alert"]')?.textContent).toBe(
+        "You're looking up plants too quickly. Please wait a moment and try again.",
+      );
+
+      lookupButton(updated).click();
+      lookupRequest().flush({ data: { status: 'pendingReview' } });
+      expect((await settle(harness)).textContent).toContain('It will appear here after review.');
+    });
+
+    // Protects against: a lookup result from the previous search showing under a new one.
+    it('resets when the search changes', async () => {
+      const [harness, page] = await openNoResults('Rosa canina');
+      lookupButton(page).click();
+      lookupRequest().flush({ data: { status: 'notFound' } });
+      await settle(harness);
+
+      await harness.navigateByUrl('/search?q=Mentha%20spicata');
+      searchRequest('Mentha spicata').flush(resultsPage(1, [], false));
+      const updated = await settle(harness);
+
+      expect(lookupButton(updated).textContent?.trim()).toBe('Search Catalogue of Life');
+    });
   });
 
   // Protects against: failures leaving the user stuck, or rate limiting looking like a crash (UX §44).

@@ -78,13 +78,72 @@
         </p>
       }
     } @else {
-      <!-- UX §43 -->
-      <div class="message no-results">
-        <h2>No plants found</h2>
-        <p>We couldn't find a match for "{{ query() }}".</p>
-        <p>Try another name or search term.</p>
-        <a routerLink="/identify">Identify a plant from a photo</a>
-      </div>
+      @let lookup = external();
+      @if (lookup.status === 'found') {
+        <!-- Imported from Catalogue of Life after the user asked (UX §43). -->
+        <section class="external-found" aria-labelledby="external-heading">
+          <h2 id="external-heading">Found in Catalogue of Life</h2>
+          <ul class="card-grid" aria-label="Catalogue of Life result">
+            <li>
+              <app-image-card
+                [name]="lookup.plant.name"
+                [imageUrl]="lookup.plant.imageUrl"
+                [link]="'/plants/' + lookup.plant.id"
+              />
+            </li>
+          </ul>
+          <p class="muted attribution">Taxonomy: Catalogue of Life, via GBIF</p>
+        </section>
+      } @else {
+        <!-- UX §43 -->
+        <div class="message no-results">
+          <h2>No plants found</h2>
+          <p>We couldn't find a match for "{{ query() }}".</p>
+
+          @if (canLookUp()) {
+            <div class="external-lookup">
+              @switch (lookup.status) {
+                @case ('idle') {
+                  <p>If this is a scientific name, it may be listed in Catalogue of Life.</p>
+                  <button type="button" class="action" (click)="lookUpExternally()">
+                    Search Catalogue of Life
+                  </button>
+                }
+                @case ('loading') {
+                  <p role="status">Searching Catalogue of Life…</p>
+                  <button type="button" class="action" disabled>Searching…</button>
+                }
+                @case ('pending-review') {
+                  <p role="status">
+                    We found "{{ query() }}" in Catalogue of Life. It will appear here after review.
+                  </p>
+                }
+                @case ('not-found') {
+                  <p role="status">
+                    Catalogue of Life has no exact match either. Check the spelling of the scientific name.
+                  </p>
+                }
+                @case ('unavailable') {
+                  <p role="alert">Catalogue of Life can't be reached right now. Please try again later.</p>
+                  <button type="button" class="action" (click)="lookUpExternally()">Try Again</button>
+                }
+                @case ('rate-limited') {
+                  <p role="alert">You're looking up plants too quickly. Please wait a moment and try again.</p>
+                  <button type="button" class="action" (click)="lookUpExternally()">Try Again</button>
+                }
+                @case ('error') {
+                  <p role="alert">Something went wrong. Please check your connection and try again.</p>
+                  <button type="button" class="action" (click)="lookUpExternally()">Try Again</button>
+                }
+              }
+            </div>
+          } @else {
+            <p>Try another name or search term.</p>
+          }
+
+          <a routerLink="/identify">Identify a plant from a photo</a>
+        </div>
+      }
     }
   } @else if (s.status === 'rate-limited') {
     <div class="message" role="alert">

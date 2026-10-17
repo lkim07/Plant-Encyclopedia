@@ -17,6 +17,8 @@ public static class SearchProtection
     public const string TimeoutPolicy = "search";
     public const string SuggestionsRateLimitPolicy = "search-suggestions";
     public const string SuggestionsTimeoutPolicy = "search-suggestions";
+    public const string ExternalLookupRateLimitPolicy = "search-external";
+    public const string ExternalLookupTimeoutPolicy = "search-external";
 
     public const int RequestsPerMinute = 30;
     public static readonly TimeSpan Timeout = TimeSpan.FromSeconds(5);
@@ -24,6 +26,11 @@ public static class SearchProtection
     // Suggestions are requested while typing; a late suggestion is useless, so the timeout is short.
     public const int SuggestionRequestsPerMinute = 120;
     public static readonly TimeSpan SuggestionsTimeout = TimeSpan.FromSeconds(2);
+
+    // Each external lookup may call GBIF (whose own timeout is 3 seconds) and create a plant, so the
+    // per-client allowance is small. The app-wide GBIF budget is enforced separately (ExternalCallBudget).
+    public const int ExternalLookupRequestsPerMinute = 5;
+    public static readonly TimeSpan ExternalLookupTimeout = TimeSpan.FromSeconds(5);
 
     public const string RateLimitedCode = "RATE_LIMITED";
     public const string RateLimitedMessage = "Too many requests. Please wait a moment and try again.";
@@ -39,6 +46,7 @@ public static class SearchProtection
 
             AddPerClientPolicy(options, RateLimitPolicy, RequestsPerMinute);
             AddPerClientPolicy(options, SuggestionsRateLimitPolicy, SuggestionRequestsPerMinute);
+            AddPerClientPolicy(options, ExternalLookupRateLimitPolicy, ExternalLookupRequestsPerMinute);
         });
 
         // When the timeout fires, the request's cancellation token cancels the running database query.
@@ -46,6 +54,7 @@ public static class SearchProtection
         {
             options.AddPolicy(TimeoutPolicy, TimeoutPolicyFor(Timeout));
             options.AddPolicy(SuggestionsTimeoutPolicy, TimeoutPolicyFor(SuggestionsTimeout));
+            options.AddPolicy(ExternalLookupTimeoutPolicy, TimeoutPolicyFor(ExternalLookupTimeout));
         });
 
         return services;

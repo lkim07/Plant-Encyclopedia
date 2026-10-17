@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { ApiResponse, PagedResponse } from './api-response.model';
-import { SearchResultItem, SearchSuggestion } from './search.model';
+import { ExternalLookupResult, SearchResultItem, SearchSuggestion } from './search.model';
 
 /** Results per page. */
 export const SEARCH_PAGE_SIZE = 20;
@@ -26,6 +26,16 @@ export class SearchApi {
   suggest(q: string): Observable<readonly SearchSuggestion[]> {
     return this.http
       .get<ApiResponse<readonly SearchSuggestion[]>>('/api/search/suggestions', { params: { q } })
+      .pipe(map((response) => response.data));
+  }
+
+  /**
+   * POST /api/search/external: looks the name up in Catalogue of Life (through the backend, never directly)
+   * and imports it if it qualifies. 503 when the lookup is unavailable, 429 when rate-limited.
+   */
+  lookUpExternally(q: string): Observable<ExternalLookupResult> {
+    return this.http
+      .post<ApiResponse<ExternalLookupResult>>('/api/search/external', { q })
       .pipe(map((response) => response.data));
   }
 }

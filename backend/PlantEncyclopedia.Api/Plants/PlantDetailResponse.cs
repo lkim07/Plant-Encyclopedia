@@ -1,3 +1,5 @@
+using System.Text.Json;
+using PlantEncyclopedia.Application.ExternalData;
 using PlantEncyclopedia.Application.Plants;
 
 namespace PlantEncyclopedia.Api.Plants;
@@ -11,7 +13,8 @@ public sealed record PlantDetailResponse(
     string ScientificName,
     string? Description,
     HeroImageResponse? HeroImage,
-    QuickCareResponse? QuickCare)
+    QuickCareResponse? QuickCare,
+    IReadOnlyList<AttributionResponse> Attributions)
 {
     public static PlantDetailResponse From(PlantDetail plant) => new(
         plant.Id,
@@ -21,7 +24,27 @@ public sealed record PlantDetailResponse(
         plant.ScientificName,
         plant.Description,
         HeroImage: null, // Hero image selection is not decided yet.
-        QuickCareResponse.From(plant.Care));
+        QuickCareResponse.From(plant.Care),
+        AttributionResponse.From(plant.Sources));
+}
+
+/// <summary>A credit line for an external source, e.g. type "taxonomy", text "Catalogue of Life, via GBIF".</summary>
+public sealed record AttributionResponse(string Type, string Text)
+{
+    // Display names of providers. Sources from other providers are not listed: a raw provider key means
+    // nothing to users, and every provider needs its attribution text reviewed before it is shown.
+    private static readonly Dictionary<string, string> ProviderNames = new(StringComparer.Ordinal)
+    {
+        [KnownProviders.GbifCatalogueOfLife] = "Catalogue of Life, via GBIF"
+    };
+
+    public static IReadOnlyList<AttributionResponse> From(IEnumerable<PlantSourceInfo> sources) => sources
+        .Where(s => ProviderNames.ContainsKey(s.Provider))
+        .Select(s => new AttributionResponse(
+            JsonNamingPolicy.CamelCase.ConvertName(s.SourceType.ToString()),
+            ProviderNames[s.Provider]))
+        .Distinct()
+        .ToList();
 }
 
 public sealed record HeroImageResponse(string Url, string? AltText);

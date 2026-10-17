@@ -82,6 +82,16 @@ internal sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
     public override DateTimeOffset GetUtcNow() => now;
 }
 
+/// <summary>A clock that only moves when the test calls <see cref="Advance"/>.</summary>
+internal sealed class ManualTimeProvider : TimeProvider
+{
+    private DateTimeOffset _now = new(2026, 10, 16, 12, 0, 0, TimeSpan.Zero);
+
+    public override DateTimeOffset GetUtcNow() => _now;
+
+    public void Advance(TimeSpan by) => _now += by;
+}
+
 internal static class ExternalTaxa
 {
     /// <summary>An exact, accepted Plantae species, as a provider would return it.</summary>

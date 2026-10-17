@@ -11,6 +11,13 @@ export interface PlantDetail {
   readonly heroImage: HeroImage | null;
   /** Null unless the plant's care information is verified. */
   readonly quickCare: QuickCare | null;
+  /** Credits for external sources, e.g. { type: "taxonomy", text: "Catalogue of Life, via GBIF" }. */
+  readonly attributions: readonly Attribution[];
+}
+
+export interface Attribution {
+  readonly type: string;
+  readonly text: string;
 }
 
 export interface HeroImage {
