@@ -33,7 +33,8 @@ public sealed record PlantImportResult(
 /// Imports one plant from an external taxonomy provider (ARCHITECTURE §22–23). Existing plants are
 /// reused and never overwritten. A new plant is Published only when its genus maps to an existing
 /// plant group and no near-duplicate name exists; otherwise it is saved as NeedsReview.
-/// The display name is the scientific name: common names are not imported yet.
+/// Common names in the app's languages are imported with it; the display name is the English name chosen
+/// by <see cref="CommonNamePolicy"/>, or the scientific name when there is none.
 /// </summary>
 public sealed class PlantIngestionService(
     IPlantDataProvider provider,
@@ -88,10 +89,16 @@ public sealed class PlantIngestionService(
         var nearDuplicate = await store.HasNearDuplicateAsync(taxon.ScientificName, cancellationToken);
         var status = plantGroupId is not null && !nearDuplicate ? PlantStatus.Published : PlantStatus.NeedsReview;
 
+        // Only for plants about to be created: existing plants are never changed.
+        var commonNames = CommonNamePolicy.Select(await provider.GetCommonNamesAsync(taxon, cancellationToken));
+
         var plant = new Plant
         {
-            DisplayName = taxon.ScientificName,
+            DisplayName = commonNames.EnglishDisplayName ?? taxon.ScientificName,
             ScientificName = taxon.ScientificName,
+            Names = commonNames.Names
+                .Select(n => new PlantName { Name = n.Name, NameType = PlantNameType.Common, LanguageCode = n.LanguageCode })
+                .ToList(),
             PlantGroupId = plantGroupId,
             Status = status,
             Taxonomy = ToTaxonomy(taxon),

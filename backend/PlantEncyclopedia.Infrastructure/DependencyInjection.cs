@@ -7,6 +7,7 @@ using PlantEncyclopedia.Application.PlantGroups;
 using PlantEncyclopedia.Application.Plants;
 using PlantEncyclopedia.Application.Search;
 using PlantEncyclopedia.Infrastructure.ExternalData;
+using PlantEncyclopedia.Infrastructure.ExternalData.ChecklistBank;
 using PlantEncyclopedia.Infrastructure.ExternalData.Gbif;
 using PlantEncyclopedia.Infrastructure.Persistence;
 using PlantEncyclopedia.Infrastructure.Persistence.Queries;
@@ -59,6 +60,10 @@ public static class DependencyInjection
             .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false })
             // The default handlers log request URLs, which contain the searched name. Their query-string
             // redaction can be switched off by configuration, so they are removed rather than relied on.
+            .RemoveAllLoggers();
+        services.AddHttpClient<ChecklistBankCommonNameClient>(client =>
+                ChecklistBankCommonNameClient.ConfigureClient(client, gbif))
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false })
             .RemoveAllLoggers();
 
         // Shared by every request: the cache and the app-wide budget must outlive a single lookup.

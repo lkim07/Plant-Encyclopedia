@@ -338,10 +338,12 @@ Exact limits should be chosen based on measured usage and provider costs rather 
 | `POST /api/search/external` | 5 / minute | 5 s |
 
 On top of the per-client limits, external lookup (API_SPEC §27) has app-wide protection:
-* At most 30 GBIF calls per minute and 1,000 per day, whoever asks. Over the limit, the endpoint returns 503.
+* At most 30 external calls per minute and 1,000 per day, whoever asks, shared by GBIF and ChecklistBank (common names). Over the limit, the lookup returns 503, or a new plant is imported without common names.
 * A 24-hour cache of names that cannot be imported.
 * A 1 KB request-body limit.
-* Only name-shaped text is sent to GBIF.
+* Only name-shaped text is sent to GBIF. ChecklistBank receives only the COL taxon ID that GBIF returned and the policy accepted, never the user's text.
+* Both clients call fixed HTTPS hosts (`api.gbif.org`, `api.checklistbank.org`) without following redirects, and cap responses at 1 MB.
+* Imported common names are untrusted text: they are normalized, length-checked and stored as plain text, and Angular escapes them when shown.
 
 All limits are in memory and per instance. A shared store is needed before running several instances. Forwarded headers are not trusted until a proxy is configured. Searched text is never logged.
 

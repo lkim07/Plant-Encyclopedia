@@ -223,6 +223,13 @@ public class GbifPlantDataProviderTests
         Assert.Contains(logs.Entries, e => e.Contains("GBIF match returned HTTP 500"));
         Assert.DoesNotContain(logs.Entries, e => e.Contains(marker.Split(' ')[1]));
         Assert.DoesNotContain(logs.Entries, e => e.Contains("System.Net.Http.HttpClient"));
+
+        // The ChecklistBank client is registered the same way.
+        var taxon = ExternalTaxa.Species("Rosa", "canina", "4TCZM") with { Provider = KnownProviders.GbifCatalogueOfLife };
+        Assert.Empty(await gbif.GetCommonNamesAsync(taxon, CancellationToken.None));
+        Assert.Equal("api.checklistbank.org", handler.Requests[^1].RequestUri!.Host);
+        Assert.Contains(logs.Entries, e => e.Contains("ChecklistBank common names returned HTTP 500"));
+        Assert.DoesNotContain(logs.Entries, e => e.Contains("System.Net.Http.HttpClient"));
     }
 
     private static Task<TaxonLookupResult> MatchFixtureAsync(string fixture) =>

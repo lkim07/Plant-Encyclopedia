@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
 using PlantEncyclopedia.Application.ExternalData;
+using PlantEncyclopedia.Infrastructure.ExternalData.ChecklistBank;
 using PlantEncyclopedia.Infrastructure.ExternalData.Gbif;
 using PlantEncyclopedia.Tests.Api;
 
@@ -59,6 +60,28 @@ internal static class GbifFixtures
     }
 }
 
+/// <summary>Recorded ChecklistBank responses in Fixtures/ChecklistBank (see the README there).</summary>
+internal static class ChecklistBankFixtures
+{
+    public const string RosaCanina = "vernacular-rosa-canina.json";
+    public const string MenthaHybrid = "vernacular-mentha-x-piperita.json";
+
+    public static string Read(string name) =>
+        File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", "ChecklistBank", name));
+
+    public static HttpResponseMessage Response(string fixture) => GbifFixtures.Json(Read(fixture));
+
+    /// <summary>The real client, configured as in production, talking to <paramref name="handler"/>.</summary>
+    public static ChecklistBankCommonNameClient Client(HttpMessageHandler handler, CapturingLoggerProvider? logs = null)
+    {
+        var client = new HttpClient(handler);
+        ChecklistBankCommonNameClient.ConfigureClient(client, GbifFixtures.Options());
+
+        var loggerFactory = LoggerFactory.Create(b => b.AddProvider(logs ?? new CapturingLoggerProvider()));
+        return new ChecklistBankCommonNameClient(client, loggerFactory.CreateLogger<ChecklistBankCommonNameClient>());
+    }
+}
+
 /// <summary>A provider with scripted answers, counting calls.</summary>
 internal sealed class FakePlantDataProvider(Func<string, CancellationToken, Task<TaxonLookupResult>> match) : IPlantDataProvider
 {
@@ -70,10 +93,21 @@ internal sealed class FakePlantDataProvider(Func<string, CancellationToken, Task
 
     public int Calls => _calls;
 
+    /// <summary>Returned by <see cref="GetCommonNamesAsync"/>; none by default.</summary>
+    public IReadOnlyList<ExternalCommonName> CommonNames { get; init; } = [];
+
+    public int CommonNameCalls { get; private set; }
+
     public Task<TaxonLookupResult> MatchAsync(string scientificName, CancellationToken cancellationToken)
     {
         Interlocked.Increment(ref _calls);
         return match(scientificName, cancellationToken);
+    }
+
+    public Task<IReadOnlyList<ExternalCommonName>> GetCommonNamesAsync(ExternalTaxon taxon, CancellationToken cancellationToken)
+    {
+        CommonNameCalls++;
+        return Task.FromResult(CommonNames);
     }
 }
 

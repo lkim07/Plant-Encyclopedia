@@ -154,7 +154,7 @@ Implemented and verified:
   * **Responses:** `found` with a search-result-shaped plant (only if Published), `pendingReview`, or `notFound`. When GBIF is unavailable, the response is `503 EXTERNAL_LOOKUP_UNAVAILABLE`.
   * **Limits:**
     * per client IP: 5 per minute
-    * app-wide: 30 GBIF calls per minute and 1,000 per day
+    * app-wide: 30 external calls (GBIF and ChecklistBank together) per minute and 1,000 per day
     * a 24-hour in-memory cache of names that cannot be imported (never failures)
     * a 5-second request timeout
     * the text is never logged
@@ -168,6 +168,17 @@ Implemented and verified:
     * Plant Detail attributions
   * **Total:** 268 backend tests pass with 0 build warnings. No migration; no live GBIF requests were made in 11c.
   * **Not verified yet:** a manual end-to-end check against real GBIF from the browser.
+* Common names for imported plants, Phase 11c.1 (ARCHITECTURE §21–22).
+  * **Source:** ChecklistBank, `GET https://api.checklistbank.org/dataset/3LXR/taxon/{COL ID}/vernacular`, called by `ChecklistBankCommonNameClient` only for a plant about to be created. The GBIF taxon details endpoint returned 404, so it is not used.
+    * Limits: HTTPS to `api.checklistbank.org` only, no redirects or retries, 1.5-second timeout, 1 MB limit, the same User-Agent, no request logging.
+    * Every failure returns no names, and the plant is imported under its scientific name.
+    * Each call uses the shared app-wide budget.
+  * **What gets stored:** names in en, fr, de and ko, whichever exist, as `plant_names` Common rows (normalized, case duplicates once, at most 40). Other languages are dropped.
+  * **Display name:** the English name the source lists most often (case, hyphen and spacing variants count as one); a tie goes to the only referenced one; otherwise the scientific name. Recorded results: Rosa canina → "Dog rose", Mentha × piperita → "Peppermint". The detail page shows it with the scientific name below.
+  * **Live requests:** 2 read-only ChecklistBank requests (Rosa canina, Mentha × piperita), approved and made once on 2026-10-17, recorded under `PlantEncyclopedia.Tests/Fixtures/ChecklistBank`. Neither plant has Korean names there.
+  * **Tests:** 25 new backend tests: client request shape, recorded parsing, failures, timeout, cancellation, dot IDs; name selection on both recordings and edge cases; budget sharing; ingestion with names, without an English name, and end to end on both recordings; no request logging.
+  * **Total:** 293 backend tests pass with 0 build warnings. No migration, no new package, no frontend change.
+  * **Not done:** plants imported before 11c.1 keep their scientific display name (no backfill). Not yet checked in the browser.
 * External plant import, Phase 11b (ARCHITECTURE §21–23, DATABASE_DESIGN §20/§23). Since 11c it is used by `POST /api/search/external`; before that it had no endpoint.
   * **Adapter:** `IPlantDataProvider` is implemented by `GbifPlantDataProvider`, which calls the GBIF v2 species match API against Catalogue of Life XR (`checklistKey 7ddf754f-…`).
     * Limits: HTTPS to `api.gbif.org` only, no redirects or retries, 3-second timeout, 1 MB limit.
@@ -176,7 +187,7 @@ Implemented and verified:
   * **Import rules:** `PlantIngestionService` imports only exact matches of accepted Plantae species, subspecies or varieties.
     * The import reuses existing plants (by identity or provider taxon), never overwrites them, and returns the winner on a concurrent `ux_plants_identity` conflict.
     * A new plant is `Published` only if its genus is in the configured 11-genus list (no `Solanum`) and that group exists, and no near-duplicate `search_key` name exists. Otherwise it is `NeedsReview`.
-  * **What gets stored:** the display name is the scientific name. Provenance is a `gbif-col-xr` Taxonomy source with the COL XR ID and no URL. Common names are not imported, because the taxon details endpoint returned 404.
+  * **What gets stored:** the display name is the scientific name (since 11c.1, an English common name when one stands out, see above). Provenance is a `gbif-col-xr` Taxonomy source with the COL XR ID and no URL.
   * **Package:** `Microsoft.Extensions.Http` 10.0.12 was added to Infrastructure.
   * **Live requests:** 8 read-only GBIF requests were made once on 2026-10-16 and recorded under `PlantEncyclopedia.Tests/Fixtures/Gbif`. Tests use only these recordings and fakes.
   * **Tests:** 86 new tests:

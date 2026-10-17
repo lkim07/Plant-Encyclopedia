@@ -476,10 +476,12 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 * [x] Implement GBIF provider (11b: v2 species match against Catalogue of Life XR; enabled only in Development; used by `POST /api/search/external` since 11c)
 * [x] Isolate provider-specific response models (GBIF types are `internal` to Infrastructure)
 * [x] Implement provider error handling (timeouts, HTTP errors, redirects, invalid or oversized responses, network errors → `Unavailable`)
-* [ ] Import common (vernacular) names
-  - Why: The planned GBIF taxon details request (`/v2/taxon/{checklistKey}/{id}/info`) returned 404 on 2026-10-16, so imported plants are named by their scientific name
-  - Next: find the documented endpoint; any new live request needs approval first
-  - Priority: High (before imports are user-visible in 11c)
+* [x] Import common (vernacular) names (11c.1: ChecklistBank `3LXR` vernacular endpoint; en, fr, de, ko; English display name when one stands out)
+* [ ] Verify the ChecklistBank API terms of use before public release
+  - Why: Common names are fetched from `api.checklistbank.org`; only the Catalogue of Life data licence has been noted so far
+  - Priority: High (before public release)
+* [ ] Backfill common names for plants imported before 11c.1
+  - Priority: Low (only development imports exist)
 * [ ] Follow synonyms to the accepted name (e.g. `Lycopersicon esculentum` → `Solanum lycopersicum`)
   - Why: 11b rejects synonym matches
   - Priority: Medium

@@ -81,13 +81,13 @@ public static partial class ExternalTaxonPolicy
     }
 
     // NFC, whitespace runs collapsed to one space, trimmed. Null or blank stays null.
-    private static string? NormalizeText(string? value)
+    internal static string? NormalizeText(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return null;
         return Whitespace().Replace(value.Normalize(NormalizationForm.FormC), " ").Trim();
     }
 
-    private static bool IsValidText(string? value, int maxLength) =>
+    internal static bool IsValidText(string? value, int maxLength) =>
         value is not null && value.Length <= maxLength && !value.Any(char.IsControl);
 
     private static bool IsValidOptionalRank(string? value) => value is null || IsValidText(value, RankMaxLength);

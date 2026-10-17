@@ -9,6 +9,12 @@ public interface IPlantDataProvider
 {
     /// <summary>Looks up the best match for a scientific name. Whether it is usable is decided by <see cref="ExternalTaxonPolicy"/>.</summary>
     Task<TaxonLookupResult> MatchAsync(string scientificName, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Common names for a taxon this provider matched. Optional data: when they cannot be fetched the
+    /// result is empty and the import continues with the scientific name. Selected by <see cref="CommonNamePolicy"/>.
+    /// </summary>
+    Task<IReadOnlyList<ExternalCommonName>> GetCommonNamesAsync(ExternalTaxon taxon, CancellationToken cancellationToken);
 }
 
 public enum TaxonLookupStatus

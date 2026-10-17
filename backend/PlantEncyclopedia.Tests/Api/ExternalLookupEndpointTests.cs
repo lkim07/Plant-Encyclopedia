@@ -274,5 +274,8 @@ public class ExternalLookupEndpointTests(PostgresDatabaseFixture fixture)
             _names.Enqueue(scientificName);
             return Task.FromResult(result);
         }
+
+        public Task<IReadOnlyList<ExternalCommonName>> GetCommonNamesAsync(ExternalTaxon taxon, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<ExternalCommonName>>([]);
     }
 }

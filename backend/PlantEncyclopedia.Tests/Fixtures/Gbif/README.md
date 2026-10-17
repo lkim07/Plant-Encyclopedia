@@ -27,8 +27,8 @@ What the recordings showed:
   and without it matches an animal. The adapter therefore always checks the returned classification.
 - `canonicalName` drops the hybrid sign and rank markers (`Mentha piperita`, `Brassica oleracea capitata`);
   `name` minus `authorship` keeps them, so that is what the adapter stores.
-- The taxon details endpoint used for vernacular (common) names returned 404 at the path tried, so common
-  names are not imported yet.
+- The GBIF taxon details endpoint (documented as returning vernacular names) returned 404 at the path tried, so common
+  names are fetched from ChecklistBank instead (see `Fixtures/ChecklistBank`).
 
 Licence: the responses contain Catalogue of Life data, published under CC BY 4.0 unless otherwise
 indicated. The exact citation required for public release has not been verified yet (see TODO, Phase 11).

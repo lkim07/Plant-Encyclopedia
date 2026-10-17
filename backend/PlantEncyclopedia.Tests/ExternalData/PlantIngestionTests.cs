@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PlantEncyclopedia.Application.ExternalData;
 using PlantEncyclopedia.Domain.Plants;
+using PlantEncyclopedia.Infrastructure.ExternalData;
 using PlantEncyclopedia.Infrastructure.Persistence;
 using PlantEncyclopedia.Tests.Persistence;
 
@@ -49,6 +50,43 @@ public class PlantIngestionTests(PostgresDatabaseFixture fixture)
         var source = Assert.Single(plant.Sources);
         Assert.Equal(("test-provider", taxon.ExternalId, PlantSourceType.Taxonomy, (string?)null, Now),
             (source.Provider, source.ExternalId, source.SourceType, source.SourceUrl, source.RetrievedAt));
+    }
+
+    // Protects against: losing the provider's common names, or showing the scientific name when an
+    // English name was selected.
+    [Fact]
+    public async Task Import_StoresCommonNames_AndShowsTheEnglishName()
+    {
+        var genus = TestData.NewGenus();
+        var provider = new FakePlantDataProvider(TaxonLookupResult.Found(ExternalTaxa.Species(genus)))
+        {
+            CommonNames = [new("hedge plant", "eng", true), new("Heckenpflanze", "deu", false), new("haie", "spa", false)]
+        };
+
+        var result = await ImportAsync(provider, $"{genus} vulgaris");
+
+        var plant = await LoadAsync(result.PlantId!.Value);
+        Assert.Equal("Hedge plant", plant.DisplayName);
+        Assert.Equal($"{genus} vulgaris", plant.ScientificName);
+        Assert.Equal(
+            [("Heckenpflanze", PlantNameType.Common, "de"), ("hedge plant", PlantNameType.Common, "en")],
+            plant.Names.Select(n => (n.Name, n.NameType, n.LanguageCode)).OrderBy(n => n.LanguageCode));
+    }
+
+    // Protects against: a plant with no usable common names failing to import.
+    [Fact]
+    public async Task Import_UsesScientificName_WhenThereIsNoEnglishName()
+    {
+        var genus = TestData.NewGenus();
+        var provider = new FakePlantDataProvider(TaxonLookupResult.Found(ExternalTaxa.Species(genus)))
+        {
+            CommonNames = [new("Heckenpflanze", "deu", false)]
+        };
+
+        var plant = await LoadAsync((await ImportAsync(provider, $"{genus} vulgaris")).PlantId!.Value);
+
+        Assert.Equal($"{genus} vulgaris", plant.DisplayName);
+        Assert.Equal("Heckenpflanze", Assert.Single(plant.Names).Name);
     }
 
     // Protects against: auto-publishing without an explicit, existing group mapping (ARCHITECTURE §22).
@@ -104,6 +142,7 @@ public class PlantIngestionTests(PostgresDatabaseFixture fixture)
 
         Assert.Equal(new PlantImportResult(PlantImportStatus.AlreadyExists, existing.Id), result);
         Assert.Equal(0, provider.Calls);
+        Assert.Equal(0, provider.CommonNameCalls);
         await AssertUnchangedAsync(existing);
     }
 
@@ -258,6 +297,40 @@ public class PlantIngestionTests(PostgresDatabaseFixture fixture)
         Assert.Equal(("Lamiaceae", "Mentha", "Mentha × piperita"), (plant.Taxonomy!.Family, plant.Taxonomy.Genus, plant.Taxonomy.Species));
         var source = Assert.Single(plant.Sources);
         Assert.Equal(("gbif-col-xr", "72ZGR"), (source.Provider, source.ExternalId));
+    }
+
+    // End to end on recorded GBIF and ChecklistBank responses, through the guarded provider used in production.
+    // Protects against: the COL XR taxon ID not being the one looked up for names, or the names not
+    // reaching the database.
+    [Fact]
+    public async Task RecordedGbifMatchAndNames_ImportDogRose()
+    {
+        var group = await NewGroupAsync();
+        var handler = new StubHttpMessageHandler((request, _) => Task.FromResult(request.RequestUri!.Host switch
+        {
+            "api.gbif.org" => GbifFixtures.Response(GbifFixtures.RosaCanina),
+            "api.checklistbank.org" => ChecklistBankFixtures.Response(ChecklistBankFixtures.RosaCanina),
+            _ => new HttpResponseMessage(System.Net.HttpStatusCode.NotFound)
+        }));
+        var time = new ManualTimeProvider();
+        var provider = new GuardedPlantDataProvider(
+            GbifFixtures.Provider(handler),
+            ChecklistBankFixtures.Client(handler),
+            new NegativeLookupCache(time),
+            new ExternalCallBudget(time),
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<GuardedPlantDataProvider>.Instance);
+
+        var result = await ImportAsync(provider, "Rosa canina", Map("Rosa", group.Slug));
+
+        Assert.Equal((PlantImportStatus.Created, PlantStatus.Published), (result.Status, result.PlantStatus));
+        Assert.Equal(
+            ["https://api.gbif.org/", "https://api.checklistbank.org/dataset/3LXR/taxon/4TCZM/vernacular"],
+            handler.Requests.Select(r => r.RequestUri!.Host == "api.gbif.org" ? "https://api.gbif.org/" : r.RequestUri.AbsoluteUri));
+
+        var plant = await LoadAsync(result.PlantId!.Value);
+        Assert.Equal(("Dog rose", "Rosa canina"), (plant.DisplayName, plant.ScientificName));
+        Assert.Equal(17, plant.Names.Count);
+        Assert.Contains(plant.Names, n => (n.Name, n.LanguageCode) == ("Hundsrose", "de"));
     }
 
     [Fact]

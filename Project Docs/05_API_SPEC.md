@@ -923,6 +923,7 @@ The user asked to look up a name that `GET /api/search` did not find. The lookup
 * **Name-shaped** means 2–4 words of letters, starting with a letter. A word may contain `.` or `-` (`var.`, `bursa-pastoris`) or be `×`. Other text returns `notFound` without an external request.
 * The name is sent in botanical casing: genus capitalized, the rest lower-case (`rosa CANINA` → `Rosa canina`).
 * A plant already stored (same identity) is answered from the database without an external request.
+* A newly imported plant's `name` is its English common name when one stands out in the source, e.g. `Dog rose` for Rosa canina; otherwise it is the scientific name. Its common names in en, fr, de and ko are stored too, so `GET /api/search` finds them (ARCHITECTURE §22).
 
 ### Errors
 
@@ -937,8 +938,8 @@ The user asked to look up a name that `GET /api/search` did not find. The lookup
 
 ### Protection
 
-* GBIF is called with a 3-second timeout.
-* App-wide, at most **30 GBIF calls per minute and 1,000 per day**, whoever asks.
+* GBIF is called with a 3-second timeout. For a new plant, common names are then fetched from ChecklistBank with a 1.5-second timeout; if that fails, the plant is imported without them.
+* App-wide, at most **30 external calls per minute and 1,000 per day** (GBIF and ChecklistBank together), whoever asks.
 * Names that cannot be imported (no match or a rejected match) are remembered for **24 hours**, so repeating them does not call GBIF again. Provider failures are never remembered.
 * All of this is in memory, per API instance.
 * The text is never written to server logs.

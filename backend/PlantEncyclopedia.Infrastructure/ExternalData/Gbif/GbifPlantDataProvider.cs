@@ -89,6 +89,13 @@ internal sealed partial class GbifPlantDataProvider(
         }
     }
 
+    /// <summary>
+    /// None: GBIF's v2 taxon details endpoint, which would have them, returned 404. The guarded provider
+    /// fetches them from ChecklistBank instead (<see cref="GuardedPlantDataProvider"/>).
+    /// </summary>
+    public Task<IReadOnlyList<ExternalCommonName>> GetCommonNamesAsync(ExternalTaxon taxon, CancellationToken cancellationToken) =>
+        Task.FromResult<IReadOnlyList<ExternalCommonName>>([]);
+
     private TaxonLookupResult ToResult(GbifMatchResponse? body)
     {
         var usage = body?.Usage;

@@ -657,7 +657,11 @@ Provider-specific response formats must stop at the infrastructure boundary.
 
 ### Implemented (Phase 11b): GBIF / Catalogue of Life adapter
 
-* **Interface:** `IPlantDataProvider` (Application/ExternalData) has one operation, `MatchAsync(scientificName)`. It returns `Found` with a provider-neutral `ExternalTaxon`, `NotFound`, or `Unavailable`. GBIF response types are `internal` to Infrastructure.
+* **Interface:** `IPlantDataProvider` (Application/ExternalData) has two operations:
+  * `MatchAsync(scientificName)` returns `Found` with a provider-neutral `ExternalTaxon`, `NotFound`, or `Unavailable`.
+  * `GetCommonNamesAsync(taxon)` (Phase 11c.1) returns the taxon's common names as `ExternalCommonName` values, or none when they cannot be fetched.
+
+  Provider response types are `internal` to Infrastructure.
 * **Adapter:** `GbifPlantDataProvider` (Infrastructure/ExternalData/Gbif) makes one call per lookup: `GET https://api.gbif.org/v2/species/match?scientificName=…&checklistKey=…&kingdom=Plantae`.
 * **Checklist:** Catalogue of Life eXtended Release (COL XR), `7ddf754f-d193-4cc9-b351-99906754a03b`. The GBIF Backbone has been frozen since 2023, and the API falls back to it when `checklistKey` is omitted, so the key is required configuration.
 * **Stored name:** `usage.name` minus `usage.authorship`, e.g. "Mentha × piperita" or "Brassica oleracea var. capitata". `canonicalName` is not used, because it drops the hybrid sign and rank markers. If the authorship is not a suffix of the name, the match is treated as not found.
@@ -669,7 +673,12 @@ Provider-specific response formats must stop at the infrastructure boundary.
 * **Logging:** the default HttpClientFactory request logging is removed, because it logs URLs. The adapter logs only the status code or error kind, never the name.
 * **Configuration:** `ExternalPlantData:Gbif` has `Enabled` (default `false`), `ChecklistKey` and `Contact` (the project URL), and is validated at startup. The `Testing` environment always disables it. When it is disabled, `UnavailablePlantDataProvider` answers every lookup with `Unavailable`.
 * **Used by:** `POST /api/search/external` (Phase 11c, see §23), behind the negative cache and the app-wide call budget.
-* **Common names are not imported yet:** the taxon details request (`/v2/taxon/{checklistKey}/{id}/info`) returned 404 when recorded on 2026-10-16.
+* **Common names (Phase 11c.1)** come from ChecklistBank, not GBIF. The GBIF v2 taxon details endpoint is documented as returning them, but `/v2/taxon/{checklistKey}/{id}/info` returned 404 on 2026-10-16.
+  * `ChecklistBankCommonNameClient` (Infrastructure/ExternalData/ChecklistBank) makes one call per import: `GET https://api.checklistbank.org/dataset/3LXR/taxon/{id}/vernacular`. Dataset `3LXR` is the latest COL XR release, and the IDs GBIF returns for COL XR are COL IDs, so the same ID is used.
+  * The limits match the GBIF client: a fixed base address, no redirects or retries, a 1 MB limit, JSON only, the same User-Agent, and default request logging removed. The timeout is 1.5 seconds, so GBIF's 3 seconds plus this stay under the lookup endpoint's 5.
+  * Common names are optional: every failure (including 404 for an unknown ID) returns no names, and the plant is imported under its scientific name.
+  * It is enabled together with GBIF (`ExternalPlantData:Gbif:Enabled`) and reuses its `Contact`.
+* **Tests** for common names use responses recorded once on 2026-10-17 (`PlantEncyclopedia.Tests/Fixtures/ChecklistBank`, with a README).
 * **Tests** use responses recorded once on that date (`PlantEncyclopedia.Tests/Fixtures/Gbif`, with a README) and stub handlers. They never call GBIF.
 
 ---
@@ -723,9 +732,16 @@ Fuzzy matches, higher-rank fallbacks, synonyms and non-plants are rejected, and 
 3. If a plant is already linked to the same provider taxon, or has the provider's spelling of the name, return it. Existing plants are never modified.
 4. Choose the plant group from `ExternalPlantData:GenusPlantGroups`. This is an exact, case-sensitive list of 11 genera validated at startup. `Solanum` is deliberately left out as ambiguous.
 5. Set the status. The plant is `Published` only when the genus maps to an existing group and no near-duplicate exists. A near-duplicate is another plant with the same `search_key` but a different identity, e.g. "Mentha piperita" next to "Mentha × piperita". Otherwise the status is `NeedsReview`.
-6. Insert the `Plant`, its `Taxonomy` and a `Taxonomy` `PlantSource` in one `SaveChanges` transaction. If a concurrent import wins on `ux_plants_identity`, the loser saves nothing and returns the winner's plant.
+6. Fetch common names (Phase 11c.1) and select them with `CommonNamePolicy` (below). This happens only for a plant about to be created.
+7. Insert the `Plant`, its `Taxonomy`, its common names and a `Taxonomy` `PlantSource` in one `SaveChanges` transaction. If a concurrent import wins on `ux_plants_identity`, the loser saves nothing and returns the winner's plant.
 
-**What an imported plant contains:** the display name is the scientific name. No description, care, images or common names are imported.
+**Common names (`CommonNamePolicy`, Phase 11c.1):**
+* Only the app's languages are kept: en, fr, de and ko (ISO 639-3 codes such as `eng` are mapped to them). A plant may have names in some, one or none of them; missing languages are normal.
+* Each name is NFC-normalized with whitespace collapsed, must contain a letter, and must fit 200 characters with no control characters. Names that differ only in case are stored once, preferring a spelling with a cited reference. At most 40 names are stored per plant.
+* The source marks no preferred name, so the **English display name** is the English name listed most often. Spellings that differ only in case, hyphens or spacing count as one name ("Dog-rose", "dog rose"). A tie goes to the only tied name with a cited reference. If that does not settle it, there is no English name. The chosen name gets a capital first letter ("Dog rose").
+* Recorded results: Rosa canina → "Dog rose" (listed twice), Mentha × piperita → "Peppermint" (the only referenced English name).
+
+**What an imported plant contains:** the display name is the chosen English name, or the scientific name when there is none. The common names are stored as `plant_names` rows of type `Common`, so search finds them. No description, care or images are imported.
 
 ---
 
@@ -781,11 +797,12 @@ Search (no results) → user clicks "Search Catalogue of Life"
       → name-shape check (else notFound, no external call)
       → PlantIngestionService: stored plant? → answer from the database
       → GuardedPlantDataProvider: negative cache → app-wide budget → GbifPlantDataProvider
+      → (new plant only) app-wide budget → ChecklistBankCommonNameClient
   → found (Published plant) / pendingReview / notFound / 503 EXTERNAL_LOOKUP_UNAVAILABLE
 ```
 
 * `Unavailable` (provider disabled, over the app-wide budget, timed out or failed) becomes `503 EXTERNAL_LOOKUP_UNAVAILABLE`. The frontend shows a retryable "can't be reached" message, never "not found".
-* The app-wide budget (`ExternalCallBudget`) allows 30 GBIF calls per minute and 1,000 per day, counting only real calls. On top of it, each client IP may make 5 lookups per minute.
+* The app-wide budget (`ExternalCallBudget`) allows 30 external calls per minute and 1,000 per day, counting only real calls. GBIF and ChecklistBank calls share it, so an import that creates a plant uses two. When the budget is used up before the common-names call, the plant is imported without common names. On top of it, each client IP may make 5 lookups per minute.
 * GBIF is enabled only in `appsettings.Development.json`. It is off in `appsettings.json` and forced off in `Testing`.
 
 ---

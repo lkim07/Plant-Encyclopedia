@@ -169,11 +169,40 @@ public class GuardedPlantDataProviderTests
         Assert.Single(handler.Requests);
     }
 
+    // Protects against: common-name requests bypassing the app-wide budget.
+    [Fact]
+    public async Task CommonNames_UseTheBudget_AndAreSkippedWhenItIsUsedUp()
+    {
+        var (provider, handler) = Create(() => ChecklistBankFixtures.Response(ChecklistBankFixtures.RosaCanina));
+        var taxon = ExternalTaxa.Species("Rosa", "canina", "4TCZM") with { Provider = KnownProviders.GbifCatalogueOfLife };
+
+        Assert.NotEmpty(await provider.GetCommonNamesAsync(taxon, CancellationToken.None));
+        for (var i = 1; i < ExternalCallBudget.PerMinute; i++)
+        {
+            await provider.GetCommonNamesAsync(taxon, CancellationToken.None);
+        }
+
+        Assert.Empty(await provider.GetCommonNamesAsync(taxon, CancellationToken.None));
+        Assert.Equal(ExternalCallBudget.PerMinute, handler.Requests.Count);
+        Assert.All(handler.Requests, r => Assert.Equal("api.checklistbank.org", r.RequestUri!.Host));
+    }
+
+    // Protects against: looking up another provider's ID in Catalogue of Life, where it means a different taxon.
+    [Fact]
+    public async Task CommonNames_OnlyForCatalogueOfLifeTaxa()
+    {
+        var (provider, handler) = Create(() => ChecklistBankFixtures.Response(ChecklistBankFixtures.RosaCanina));
+
+        Assert.Empty(await provider.GetCommonNamesAsync(ExternalTaxa.Species("Rosa", "canina", "4TCZM"), CancellationToken.None));
+        Assert.Empty(handler.Requests);
+    }
+
     private (GuardedPlantDataProvider Provider, StubHttpMessageHandler Handler) Create(Func<HttpResponseMessage> response)
     {
         var handler = StubHttpMessageHandler.Returning(response);
         var provider = new GuardedPlantDataProvider(
             GbifFixtures.Provider(handler),
+            ChecklistBankFixtures.Client(handler),
             new NegativeLookupCache(_time),
             new ExternalCallBudget(_time),
             NullLogger<GuardedPlantDataProvider>.Instance);
