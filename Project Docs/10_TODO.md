@@ -472,7 +472,14 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 ## Provider Abstraction
 
 * [x] Define plant data provider interface (`IPlantDataProvider`, 11b)
-* [ ] Implement iNaturalist provider (11d)
+* [-] Implement iNaturalist provider (11d-1: taxon photos as an image source; not wired into imports yet)
+* [-] Automatic plant images (photo and botanical illustration)
+  - Done (11d-1): sources (iNaturalist, Wikipedia, Commons), licence policy (PD, CC0, CC BY, CC BY-SA), automatic choice
+  - Next (11d-2): `kind` column on `plant_images` (migration, approved), download from approved hosts with a size cap, check the bytes, re-encode to WebP sizes with SkiaSharp (drops location data), local storage, fetch after import without slowing the lookup, app-wide budget, API fields, cards and detail hero with credits, fill existing plants
+  - Next (11d-3): Cloudflare R2 storage (developer creates the account)
+* [ ] Verify the iNaturalist photo page URL pattern before linking credits to it
+  - Why: The API returns no photo page URL; none is invented
+  - Priority: Medium
 * [x] Implement GBIF provider (11b: v2 species match against Catalogue of Life XR; enabled only in Development; used by `POST /api/search/external` since 11c)
 * [x] Isolate provider-specific response models (GBIF types are `internal` to Infrastructure)
 * [x] Implement provider error handling (timeouts, HTTP errors, redirects, invalid or oversized responses, network errors → `Unavailable`)
@@ -513,8 +520,7 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 * [x] Query external providers only when appropriate (user click, name-shaped text, 5/min per IP, 30/min and 1,000/day app-wide, 24-hour negative cache)
 * [x] Persist validated results (through `PlantIngestionService`)
 * [x] Return application-owned data (`found` / `pendingReview` / `notFound`; no provider details)
-* [ ] Manually verify the Catalogue of Life lookup end to end in the browser (Development, real GBIF)
-  - Priority: High (before treating 11c as done)
+* [x] Manually verify the Catalogue of Life lookup end to end in the browser (Development, real GBIF and ChecklistBank; confirmed by the developer on 2026-10-17)
 * [ ] Review tool for `NeedsReview` imports
   - Why: Imports without a mapped plant group, or with a near-duplicate name, stay hidden ("pendingReview") until someone can publish them
   - Priority: Medium

@@ -23,6 +23,8 @@
     <None Include="..\dev-data\seed-dev-data.sql" Link="DevData\seed-dev-data.sql" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Fixtures/Gbif/*.json" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Fixtures/ChecklistBank/*.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Fixtures/INaturalist/*.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Fixtures/Wikimedia/*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

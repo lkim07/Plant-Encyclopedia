@@ -681,6 +681,19 @@ Provider-specific response formats must stop at the infrastructure boundary.
 * **Tests** for common names use responses recorded once on 2026-10-17 (`PlantEncyclopedia.Tests/Fixtures/ChecklistBank`, with a README).
 * **Tests** use responses recorded once on that date (`PlantEncyclopedia.Tests/Fixtures/Gbif`, with a README) and stub handlers. They never call GBIF.
 
+### Implemented (Phase 11d-1): image sources
+
+Not wired into imports yet: nothing is downloaded or stored, and no endpoint uses them (Phase 11d-2).
+
+* **Interface:** `IPlantImageSource` (Application/ExternalData/Images) has a `Kind` (`Photo` or `Illustration`) and `GetCandidatesAsync(scientificName)`, which returns provider-neutral `ExternalImageCandidate`s: download URL, size, file type, licence code, author and file page. Failures return no candidates. Response types are `internal` to Infrastructure.
+* **Sources, in the order they are asked:**
+  1. **iNaturalist photos** (`INaturalistPhotoSource`). `GET https://api.inaturalist.org/v1/taxa?q=…&is_active=true&per_page=10`, then `GET /v1/taxa/{id}` for the exact, active Plantae taxon (rank species, hybrid, subspecies or variety). It offers that taxon's own photos in curator order, only from the open-data bucket `inaturalist-open-data.s3.amazonaws.com`, using the original file.
+  2. **Wikipedia photo** (`WikipediaPhotoSource`). The English article's main image (`prop=pageimages`, redirects followed, except to the genus article), then its licence on Commons.
+  3. **Commons illustrations** (`CommonsIllustrationSource`). Up to 10 files from `Category:{scientific name} - botanical illustrations`, a Commons naming convention.
+* **Wikimedia details** (`WikimediaClient`): absolute HTTPS URLs to `en.wikipedia.org` and `commons.wikimedia.org` only. Files must be on `upload.wikimedia.org` or `thumb.wikimedia.org`, with a page on `commons.wikimedia.org`. A 1600-pixel rendition is used when Commons really makes one; otherwise the original. Files with `Restrictions` or `NonFree` are dropped, and the author's HTML is reduced to plain text.
+* **HTTP limits** (`ExternalJsonClient`): no redirects, no retries, 3-second timeout, 1 MB limit, JSON only, the project User-Agent, failures logged without the URL.
+* **Tests** use 10 responses recorded once on 2026-10-17 (`Fixtures/INaturalist`, `Fixtures/Wikimedia`, with READMEs).
+
 ---
 
 # 22. Data Ingestion
@@ -740,6 +753,15 @@ Fuzzy matches, higher-rank fallbacks, synonyms and non-plants are rejected, and 
 * Each name is NFC-normalized with whitespace collapsed, must contain a letter, and must fit 200 characters with no control characters. Names that differ only in case are stored once, preferring a spelling with a cited reference. At most 40 names are stored per plant.
 * The source marks no preferred name, so the **English display name** is the English name listed most often. Spellings that differ only in case, hyphens or spacing count as one name ("Dog-rose", "dog rose"). A tie goes to the only tied name with a cited reference. If that does not settle it, there is no English name. The chosen name gets a capital first letter ("Dog rose").
 * Recorded results: Rosa canina → "Dog rose" (listed twice), Mentha × piperita → "Peppermint" (the only referenced English name).
+
+**Images (`ExternalImagePolicy`, `PlantImageSelector`, Phase 11d-1):**
+* **Licences:** only licences that allow commercial use and changes such as resizing: public domain, CC0, CC BY and CC BY-SA (any version, not ported versions). NC, ND, "all rights reserved", unknown and missing licences are rejected.
+* **Credit:** when the licence (CC BY, CC BY-SA) or the provider requires credit, the author must be known, or the image is rejected.
+* **File:** JPEG, PNG or WebP only, with a longer side of at least 1000 pixels; HTTPS only.
+* **Choice:** one photo and one illustration per plant. For each kind, sources are asked in order and the first accepted candidate wins; later sources are not asked.
+* **Recorded results:**
+  * Rosa canina → the third iNaturalist photo (the first two are NC/ND), CC BY-SA by Douglas Goldman, and a public-domain drawing from Bley's *Botanisches Bilderbuch*.
+  * Mentha × piperita → no photo (iNaturalist has only NC/ND photos, and the Wikipedia photo's author is unknown) and a public-domain Bley drawing.
 
 **What an imported plant contains:** the display name is the chosen English name, or the scientific name when there is none. The common names are stored as `plant_names` rows of type `Common`, so search finds them. No description, care or images are imported.
 

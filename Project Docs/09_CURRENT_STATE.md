@@ -167,7 +167,14 @@ Implemented and verified:
     * the cache (what is stored, 24-hour expiry, keyed by exact name, hits do not use the budget)
     * Plant Detail attributions
   * **Total:** 268 backend tests pass with 0 build warnings. No migration; no live GBIF requests were made in 11c.
-  * **Not verified yet:** a manual end-to-end check against real GBIF from the browser.
+  * **Manually verified** by the developer on 2026-10-17 in the browser against real GBIF (Development).
+* Automatic image choice, Phase 11d-1 (ARCHITECTURE §21–22). Not wired into imports yet: nothing is downloaded, stored or shown.
+  * **Sources:** iNaturalist taxon photos, then the English Wikipedia article's main image (licence read from Commons), for the photo; the Commons category "{name} - botanical illustrations" for the illustration.
+  * **Rules:** public domain, CC0, CC BY or CC BY-SA only (commercial use allowed); a known author when credit is required; JPEG, PNG or WebP with a longer side of at least 1000 pixels. The first acceptable candidate wins.
+  * **Recorded results:** Rosa canina gets a CC BY-SA iNaturalist photo and a public-domain drawing; Mentha × piperita gets no photo (no usable licence or author) and a public-domain drawing.
+  * **Live requests:** 10 read-only requests (iNaturalist 4, Wikipedia 2, Commons 4), approved and made once on 2026-10-17, recorded under `PlantEncyclopedia.Tests/Fixtures/INaturalist` and `Fixtures/Wikimedia`.
+  * **Tests:** 49 new backend tests: request shapes, recorded parsing, licence table, credit, size and type rules, Commons filtering (restrictions, non-free, foreign hosts, unscaled thumbnails), genus redirects, failures, cancellation, source order.
+  * **Total:** 342 backend tests pass with 0 build warnings. No migration, no new package, no frontend change.
 * Common names for imported plants, Phase 11c.1 (ARCHITECTURE §21–22).
   * **Source:** ChecklistBank, `GET https://api.checklistbank.org/dataset/3LXR/taxon/{COL ID}/vernacular`, called by `ChecklistBankCommonNameClient` only for a plant about to be created. The GBIF taxon details endpoint returned 404, so it is not used.
     * Limits: HTTPS to `api.checklistbank.org` only, no redirects or retries, 1.5-second timeout, 1 MB limit, the same User-Agent, no request logging.
@@ -178,7 +185,7 @@ Implemented and verified:
   * **Live requests:** 2 read-only ChecklistBank requests (Rosa canina, Mentha × piperita), approved and made once on 2026-10-17, recorded under `PlantEncyclopedia.Tests/Fixtures/ChecklistBank`. Neither plant has Korean names there.
   * **Tests:** 25 new backend tests: client request shape, recorded parsing, failures, timeout, cancellation, dot IDs; name selection on both recordings and edge cases; budget sharing; ingestion with names, without an English name, and end to end on both recordings; no request logging.
   * **Total:** 293 backend tests pass with 0 build warnings. No migration, no new package, no frontend change.
-  * **Not done:** plants imported before 11c.1 keep their scientific display name (no backfill). Not yet checked in the browser.
+  * **Not done:** plants imported before 11c.1 keep their scientific display name (no backfill). Manually verified in the browser on 2026-10-17 (Rosa canina → "Dog rose", Mentha piperita → "Peppermint", common-name search, no-match case).
 * External plant import, Phase 11b (ARCHITECTURE §21–23, DATABASE_DESIGN §20/§23). Since 11c it is used by `POST /api/search/external`; before that it had no endpoint.
   * **Adapter:** `IPlantDataProvider` is implemented by `GbifPlantDataProvider`, which calls the GBIF v2 species match API against Catalogue of Life XR (`checklistKey 7ddf754f-…`).
     * Limits: HTTPS to `api.gbif.org` only, no redirects or retries, 3-second timeout, 1 MB limit.
