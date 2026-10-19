@@ -3,11 +3,21 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { catchError, combineLatest, map, Observable, of, startWith, Subject, switchMap } from 'rxjs';
+import {
+  catchError,
+  combineLatest,
+  map,
+  Observable,
+  of,
+  startWith,
+  Subject,
+  switchMap,
+} from 'rxjs';
 import { PlantApi } from '../../core/api/plant-api';
 import { PlantDetail } from '../../core/api/plant-detail.model';
 import { goBack } from '../../core/navigation/go-back';
 import { CareCard } from './care-card';
+import { ImageCreditLine } from './image-credit';
 import { formatTemperature } from './format-temperature';
 
 type PageState =
@@ -27,7 +37,7 @@ interface CareCardView {
 /** Plant Detail (UX §25–29): hero placeholder, naming hierarchy, description, Quick Care. */
 @Component({
   selector: 'app-plant-detail-page',
-  imports: [RouterLink, CareCard],
+  imports: [RouterLink, CareCard, ImageCreditLine],
   templateUrl: './plant-detail-page.html',
   styleUrl: './plant-detail-page.css',
 })

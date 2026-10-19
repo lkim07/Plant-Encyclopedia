@@ -313,6 +313,14 @@ namespace PlantEncyclopedia.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("height");
 
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasDefaultValue("Photo")
+                        .HasColumnName("kind");
+
                     b.Property<string>("LargeUrl")
                         .HasMaxLength(2048)
                         .HasColumnType("character varying(2048)")
@@ -343,8 +351,8 @@ namespace PlantEncyclopedia.Infrastructure.Persistence.Migrations
                         .HasColumnName("source");
 
                     b.Property<string>("SourceId")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
                         .HasColumnName("source_id");
 
                     b.Property<string>("SourceUrl")
@@ -373,9 +381,16 @@ namespace PlantEncyclopedia.Infrastructure.Persistence.Migrations
                     b.HasIndex("PlantId")
                         .HasDatabaseName("ix_plant_images_plant_id");
 
+                    b.HasIndex("PlantId", "Source", "SourceId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_plant_images_plant_source")
+                        .HasFilter("source_id IS NOT NULL");
+
                     b.ToTable("plant_images", null, t =>
                         {
                             t.HasCheckConstraint("ck_plant_images_height", "height IS NULL OR height > 0");
+
+                            t.HasCheckConstraint("ck_plant_images_kind", "kind IN ('Photo', 'Illustration')");
 
                             t.HasCheckConstraint("ck_plant_images_width", "width IS NULL OR width > 0");
                         });

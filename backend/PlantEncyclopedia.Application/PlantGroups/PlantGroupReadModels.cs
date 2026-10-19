@@ -11,5 +11,5 @@ public sealed record PlantGroupDetail(
 /// <summary>The category a plant group belongs to.</summary>
 public sealed record CategoryReference(string Slug, string Name);
 
-/// <summary>A plant as listed on its plant-group page.</summary>
-public sealed record PlantSummary(Guid Id, string Name);
+/// <summary>A plant as listed on its plant-group page, with its card image (a photo, else an illustration).</summary>
+public sealed record PlantSummary(Guid Id, string Name, string? ImageUrl);

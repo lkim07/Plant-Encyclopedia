@@ -480,3 +480,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Stored plant images (local development storage)
+backend/PlantEncyclopedia.Api/App_Data/

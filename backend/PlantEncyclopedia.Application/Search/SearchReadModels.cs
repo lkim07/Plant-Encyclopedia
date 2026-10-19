@@ -3,7 +3,8 @@ namespace PlantEncyclopedia.Application.Search;
 /// <summary>One page of search results, best matches first.</summary>
 public sealed record SearchPage(IReadOnlyList<SearchResult> Results, bool HasNext);
 
-public sealed record SearchResult(Guid Id, string Name, string? PlantGroupName, string ScientificName);
+/// <param name="ImageUrl">The card image: a photo if there is one, otherwise an illustration.</param>
+public sealed record SearchResult(Guid Id, string Name, string? PlantGroupName, string ScientificName, string? ImageUrl);
 
 /// <summary>A name to offer while the user types. Selecting it runs a search for <see cref="Text"/>.</summary>
 public sealed record SearchSuggestion(string Text, SuggestionType Type);

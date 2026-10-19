@@ -7,8 +7,8 @@ export interface PlantDetail {
   readonly plantGroupId: string | null;
   readonly scientificName: string;
   readonly description: string | null;
-  /** Always null until the hero-image approach is decided. */
-  readonly heroImage: HeroImage | null;
+  /** The photo, or the illustration when there is no photo; null when the plant has no image. */
+  readonly heroImage: PlantImage | null;
   /** Null unless the plant's care information is verified. */
   readonly quickCare: QuickCare | null;
   /** Credits for external sources, e.g. { type: "taxonomy", text: "Catalogue of Life, via GBIF" }. */
@@ -20,9 +20,25 @@ export interface Attribution {
   readonly text: string;
 }
 
-export interface HeroImage {
+export interface PlantImage {
   readonly url: string;
   readonly altText: string | null;
+  readonly kind: 'photo' | 'illustration';
+  /** Null only for sources without reviewed credit text. */
+  readonly credit: ImageCredit | null;
+}
+
+/** What the image's licence requires us to show: author, licence and source. */
+export interface ImageCredit {
+  readonly author: string | null;
+  /** e.g. "CC BY-SA 3.0" or "Public domain". */
+  readonly license: string;
+  /** The licence deed, when the version is known. */
+  readonly licenseUrl: string | null;
+  /** e.g. "iNaturalist" or "Wikimedia Commons". */
+  readonly source: string;
+  /** The image's page at the source, when known. */
+  readonly sourceUrl: string | null;
 }
 
 /** A card is null when it has no value. */

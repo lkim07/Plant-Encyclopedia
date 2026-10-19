@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using PlantEncyclopedia.Application.ExternalData.Images;
+using PlantEncyclopedia.Domain.Plants;
 using PlantEncyclopedia.Infrastructure.ExternalData.Wikimedia;
 
 namespace PlantEncyclopedia.Tests.ExternalData;
@@ -34,35 +35,46 @@ public class PlantImageSelectorTests
         Assert.DoesNotContain(handler.Requests, r => r.RequestUri!.Host == "en.wikipedia.org");
     }
 
-    // Protects against: using a photo whose required credit cannot be given. iNaturalist has only NC/ND
-    // photos of peppermint, and the Wikipedia photo (CC BY 3.0) has no author on Commons.
+    // Protects against: using a photo whose required credit cannot be given (iNaturalist has only NC/ND photos
+    // of peppermint; the Wikipedia photo has no author), missing a usable photo in the species' Commons
+    // category, or picking a photo of another organism filed there too (a grasshopper on mint).
     [Fact]
-    public async Task MenthaPiperita_GetsNoPhoto_ButADrawing()
+    public async Task MenthaPiperita_GetsAPhotoFromTheCommonsSpeciesCategory()
     {
         var handler = ImageFixtures.RecordedHandler();
 
-        var selected = await ImageFixtures.Selector(handler).SelectAsync("Mentha × piperita", CancellationToken.None);
+        var selected = await ImageFixtures.Selector(handler).SelectAsync("Mentha × piperita", [PlantImageKind.Photo], CancellationToken.None);
 
-        Assert.Null(selected.Photo);
-        Assert.Equal(("File:Bley, Botanisches Bilderbuch 41.jpg", "pd"),
-            (selected.Illustration!.Image.SourceId, selected.Illustration.LicenseCode));
+        var photo = Assert.Single(selected);
+        Assert.Equal(("wikimedia-commons", "File:Botanischer Garten Düsseldorf-0057.jpg", "cc-by-sa-4.0", "Björn Sothmann"),
+            (photo.Image.Provider, photo.Image.SourceId, photo.LicenseCode, photo.Creator));
         Assert.Equal(
             ["api.inaturalist.org", "api.inaturalist.org", "en.wikipedia.org", "commons.wikimedia.org", "commons.wikimedia.org"],
             handler.Requests.Select(r => r.RequestUri!.Host));
     }
+
+    [Theory]
+    [InlineData(new[] { "Mentha × piperita", "Taken with Canon EOS 7D", "Self-published work" }, true)]
+    [InlineData(new[] { "Rosa canina", "Rosales in Hockenheim", "Pink and red" }, true)]
+    [InlineData(new[] { "Anacridium aegyptium", "Mentha × piperita" }, false)]
+    [InlineData(new[] { "Rosa canina", "Hippophae rhamnoides" }, false)]
+    [InlineData(new[] { "Rosa canina", "Rosa canina - botanical illustrations" }, false)]
+    [InlineData(new[] { "Rosa canina", "Drawings of roses" }, false)]
+    public void CommonsSpeciesPhotos_SkipFilesOfOtherTaxaAndDrawings(string[] categories, bool expected) =>
+        Assert.Equal(expected, WikimediaClient.IsOnlyOfThisPlant(categories, categories.Contains("Rosa canina") ? "Rosa canina" : "Mentha × piperita"));
 
     // Protects against: sources being asked in the wrong order, or a photo source supplying a drawing.
     [Fact]
     public async Task Sources_AreAskedInOrder_AndKindsAreNotMixed()
     {
         var asked = new List<string>();
-        var drawingAsPhoto = Candidate("first", ImageKind.Illustration);
+        var drawingAsPhoto = Candidate("first", PlantImageKind.Illustration);
         var selector = new PlantImageSelector(
         [
-            new FakeSource("first", ImageKind.Photo, asked, drawingAsPhoto),
-            new FakeSource("second", ImageKind.Photo, asked, Candidate("second")),
-            new FakeSource("third", ImageKind.Photo, asked, Candidate("third")),
-            new FakeSource("drawings", ImageKind.Illustration, asked)
+            new FakeSource("first", PlantImageKind.Photo, asked, drawingAsPhoto),
+            new FakeSource("second", PlantImageKind.Photo, asked, Candidate("second")),
+            new FakeSource("third", PlantImageKind.Photo, asked, Candidate("third")),
+            new FakeSource("drawings", PlantImageKind.Illustration, asked)
         ]);
 
         var selected = await selector.SelectAsync("Rosa canina", CancellationToken.None);
@@ -74,7 +86,7 @@ public class PlantImageSelectorTests
 
     internal static ExternalImageCandidate Candidate(
         string sourceId = "photo-1",
-        ImageKind kind = ImageKind.Photo,
+        PlantImageKind kind = PlantImageKind.Photo,
         string? license = "cc-by",
         string? creator = "A. Photographer",
         int width = 2048,
@@ -84,10 +96,10 @@ public class PlantImageSelectorTests
         string url = "https://images.example.org/photo.jpg") =>
         new("test", sourceId, kind, new Uri(url), width, height, mime, license, attributionRequired, creator, null);
 
-    private sealed class FakeSource(string name, ImageKind kind, List<string> asked, params ExternalImageCandidate[] candidates)
+    private sealed class FakeSource(string name, PlantImageKind kind, List<string> asked, params ExternalImageCandidate[] candidates)
         : IPlantImageSource
     {
-        public ImageKind Kind => kind;
+        public PlantImageKind Kind => kind;
 
         public Task<IReadOnlyList<ExternalImageCandidate>> GetCandidatesAsync(string scientificName, CancellationToken cancellationToken)
         {

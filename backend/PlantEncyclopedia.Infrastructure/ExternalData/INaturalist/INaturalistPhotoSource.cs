@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using PlantEncyclopedia.Application.ExternalData.Images;
+using PlantEncyclopedia.Domain.Plants;
 
 namespace PlantEncyclopedia.Infrastructure.ExternalData.INaturalist;
 
@@ -25,7 +26,7 @@ internal sealed class INaturalistPhotoSource(HttpClient http, ILogger<INaturalis
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
     };
 
-    public ImageKind Kind => ImageKind.Photo;
+    public PlantImageKind Kind => PlantImageKind.Photo;
 
     public async Task<IReadOnlyList<ExternalImageCandidate>> GetCandidatesAsync(string scientificName, CancellationToken cancellationToken)
     {
@@ -65,7 +66,7 @@ internal sealed class INaturalistPhotoSource(HttpClient http, ILogger<INaturalis
         return new ExternalImageCandidate(
             Provider: ProviderName,
             SourceId: photo.Id.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            Kind: ImageKind.Photo,
+            Kind: PlantImageKind.Photo,
             DownloadUrl: url,
             Width: photo.OriginalDimensions.Width,
             Height: photo.OriginalDimensions.Height,

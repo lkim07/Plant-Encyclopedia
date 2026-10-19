@@ -6,5 +6,9 @@
   "/health": {
     "target": "http://localhost:5034",
     "secure": false
+  },
+  "/media": {
+    "target": "http://localhost:5034",
+    "secure": false
   }
 }

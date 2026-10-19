@@ -7,6 +7,7 @@ using PlantEncyclopedia.Application.ExternalData;
 using PlantEncyclopedia.Infrastructure;
 using PlantEncyclopedia.Infrastructure.ExternalData;
 using PlantEncyclopedia.Infrastructure.ExternalData.Gbif;
+using PlantEncyclopedia.Infrastructure.ExternalData.Images;
 using PlantEncyclopedia.Tests.Api;
 
 namespace PlantEncyclopedia.Tests.ExternalData;
@@ -209,7 +210,7 @@ public class GbifPlantDataProviderTests
 
         var services = new ServiceCollection()
             .AddLogging(b => b.AddProvider(logs).SetMinimumLevel(LogLevel.Trace))
-            .AddExternalPlantData(GbifFixtures.Options(), new GenusPlantGroupMap(null));
+            .AddExternalPlantData(GbifFixtures.Options(), new GenusPlantGroupMap(null), new PlantImageOptions());
         services.ConfigureAll<HttpClientFactoryOptions>(o =>
             o.HttpMessageHandlerBuilderActions.Add(b => b.PrimaryHandler = handler));
         await using var provider = services.BuildServiceProvider();

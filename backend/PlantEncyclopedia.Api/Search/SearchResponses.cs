@@ -17,14 +17,14 @@ public sealed record SearchResultResponse(
         result.Name,
         result.PlantGroupName,
         result.ScientificName,
-        ImageUrl: null); // Plant images are not served yet.
+        result.ImageUrl);
 
     public static SearchResultResponse From(PlantSummary plant) => new(
         plant.Id,
         plant.Name,
         plant.PlantGroupName,
         plant.ScientificName,
-        ImageUrl: null);
+        plant.ImageUrl);
 }
 
 /// <summary>Request body of POST /api/search/external (API_SPEC §27).</summary>

@@ -683,13 +683,14 @@ Provider-specific response formats must stop at the infrastructure boundary.
 
 ### Implemented (Phase 11d-1): image sources
 
-Not wired into imports yet: nothing is downloaded or stored, and no endpoint uses them (Phase 11d-2).
+Since Phase 11d-2 they are used by the image import below (§22–23).
 
 * **Interface:** `IPlantImageSource` (Application/ExternalData/Images) has a `Kind` (`Photo` or `Illustration`) and `GetCandidatesAsync(scientificName)`, which returns provider-neutral `ExternalImageCandidate`s: download URL, size, file type, licence code, author and file page. Failures return no candidates. Response types are `internal` to Infrastructure.
 * **Sources, in the order they are asked:**
   1. **iNaturalist photos** (`INaturalistPhotoSource`). `GET https://api.inaturalist.org/v1/taxa?q=…&is_active=true&per_page=10`, then `GET /v1/taxa/{id}` for the exact, active Plantae taxon (rank species, hybrid, subspecies or variety). It offers that taxon's own photos in curator order, only from the open-data bucket `inaturalist-open-data.s3.amazonaws.com`, using the original file.
   2. **Wikipedia photo** (`WikipediaPhotoSource`). The English article's main image (`prop=pageimages`, redirects followed, except to the genus article), then its licence on Commons.
-  3. **Commons illustrations** (`CommonsIllustrationSource`). Up to 10 files from `Category:{scientific name} - botanical illustrations`, a Commons naming convention.
+  3. **Commons species photos** (`CommonsCategoryPhotoSource`, added after review on 2026-10-19). Up to 20 files filed directly in `Category:{scientific name}`. Files also filed under another Latin-style two-word name (e.g. a grasshopper on mint, "Anacridium aegyptium") or under an illustration or drawing category are left out; videos, audio and small files fail the policy.
+  4. **Commons illustrations** (`CommonsIllustrationSource`). Up to 10 files from `Category:{scientific name} - botanical illustrations`, a Commons naming convention.
 * **Wikimedia details** (`WikimediaClient`): absolute HTTPS URLs to `en.wikipedia.org` and `commons.wikimedia.org` only. Files must be on `upload.wikimedia.org` or `thumb.wikimedia.org`, with a page on `commons.wikimedia.org`. A 1600-pixel rendition is used when Commons really makes one; otherwise the original. Files with `Restrictions` or `NonFree` are dropped, and the author's HTML is reduced to plain text.
 * **HTTP limits** (`ExternalJsonClient`): no redirects, no retries, 3-second timeout, 1 MB limit, JSON only, the project User-Agent, failures logged without the URL.
 * **Tests** use 10 responses recorded once on 2026-10-17 (`Fixtures/INaturalist`, `Fixtures/Wikimedia`, with READMEs).
@@ -758,12 +759,24 @@ Fuzzy matches, higher-rank fallbacks, synonyms and non-plants are rejected, and 
 * **Licences:** only licences that allow commercial use and changes such as resizing: public domain, CC0, CC BY and CC BY-SA (any version, not ported versions). NC, ND, "all rights reserved", unknown and missing licences are rejected.
 * **Credit:** when the licence (CC BY, CC BY-SA) or the provider requires credit, the author must be known, or the image is rejected.
 * **File:** JPEG, PNG or WebP only, with a longer side of at least 1000 pixels; HTTPS only.
-* **Choice:** one photo and one illustration per plant. For each kind, sources are asked in order and the first accepted candidate wins; later sources are not asked.
+* **Choice:** for each kind, sources are asked in order and the first accepted candidate wins; later sources are not asked. Since 11d-2 a plant gets a photo, and an illustration only when no photo is found.
 * **Recorded results:**
   * Rosa canina → the third iNaturalist photo (the first two are NC/ND), CC BY-SA by Douglas Goldman, and a public-domain drawing from Bley's *Botanisches Bilderbuch*.
   * Mentha × piperita → no photo (iNaturalist has only NC/ND photos, and the Wikipedia photo's author is unknown) and a public-domain Bley drawing.
 
-**What an imported plant contains:** the display name is the chosen English name, or the scientific name when there is none. The common names are stored as `plant_names` rows of type `Common`, so search finds them. No description, care or images are imported.
+**Image import (`PlantImageImportService`, Phase 11d-2):**
+* **When:** after an import creates a plant (queued, see §23), and at startup in Development for up to 50 species-level plants that are not Archived and have no photo (`BackfillOnStartup`).
+* **What:** a plant that has a photo is left alone. Otherwise a photo is looked up, and an illustration only if no photo is found and the plant has none yet. Cultivars are skipped, because a species image would show the wrong plant. The startup backfill covers plants without a photo, so a plant with only a drawing keeps looking for a photo.
+* **Storing:** `ImageFileStore` downloads the chosen file, then `LocalImageStorage` writes it.
+  * Download: HTTPS from `inaturalist-open-data.s3.amazonaws.com`, `upload.wikimedia.org` or `thumb.wikimedia.org` only, no redirects or retries, 15-second timeout, 15 MB limit, JPEG, PNG or WebP content types only.
+  * Checks: the bytes must decode as JPEG, PNG or WebP, at most 12,000 pixels a side and 50 megapixels (read from the header before decoding).
+  * Re-encoding (SkiaSharp, MIT): EXIF orientation applied; WebP at quality 82 in widths 400 (`thumb`), 800 (`medium`) and 1600 (`large`), never enlarged. Only pixels are kept, so camera data such as GPS coordinates is dropped.
+  * Files: `plants/{plantId}/{imageId}-{size}.webp` under `ExternalPlantData:Images:StoragePath` (default `App_Data/plant-images`, git-ignored), written to a temporary name and then moved. Cloudflare R2 replaces the folder in Phase 11d-3.
+* **Row:** one `plant_images` row per image with `kind`, the three URLs, the large size, `source` (`inaturalist` / `wikimedia-commons`), `source_id`, `source_url` (Commons file page; none for iNaturalist yet), `license` (a licence code), `attribution` (the author), `alt_text` ("Dog rose (Rosa canina)", "Botanical illustration of …") and `retrieved_at`. The same source image is stored once per plant (`ux_plant_images_plant_source`).
+* **Serving:** the API serves the folder at `/media`, `.webp` files only, with `Cache-Control: public, max-age=31536000, immutable` (file names never change) and `X-Content-Type-Options: nosniff`.
+* **Display:** cards use the photo's 800-pixel rendition, else the illustration's. Plant Detail's hero is the photo, else the illustration, shown whole over a blurred copy and fading into the page (UX §26), with a credit (author, licence, source).
+
+**What an imported plant contains:** the display name is the chosen English name, or the scientific name when there is none. The common names are stored as `plant_names` rows of type `Common`, so search finds them. A photo, or a botanical illustration when no photo is acceptable, is added in the background. No description or care is imported.
 
 ---
 
@@ -826,6 +839,19 @@ Search (no results) → user clicks "Search Catalogue of Life"
 * `Unavailable` (provider disabled, over the app-wide budget, timed out or failed) becomes `503 EXTERNAL_LOOKUP_UNAVAILABLE`. The frontend shows a retryable "can't be reached" message, never "not found".
 * The app-wide budget (`ExternalCallBudget`) allows 30 external calls per minute and 1,000 per day, counting only real calls. GBIF and ChecklistBank calls share it, so an import that creates a plant uses two. When the budget is used up before the common-names call, the plant is imported without common names. On top of it, each client IP may make 5 lookups per minute.
 * GBIF is enabled only in `appsettings.Development.json`. It is off in `appsettings.json` and forced off in `Testing`.
+
+### Implemented (Phase 11d-2): background image import
+
+```text
+PlantIngestionService creates a plant → IPlantImageQueue.Enqueue(plantId) → lookup returns
+PlantImageWorker (BackgroundService, one plant at a time)
+  → PlantImageImportService: missing kinds → PlantImageSelector → ImageFileStore → plant_images row
+```
+
+* The queue is in memory and bounded (1,000 plants; more are dropped and picked up by a later backfill). It is lost on restart.
+* **Image budget** (`ImageCallBudget`): 40 requests per minute and 2,000 per day, app-wide, separate from the lookup budget so image work never blocks lookups. Every iNaturalist, Wikipedia and Commons request and every download takes one, through a message handler on those HTTP clients. When it is used up, the worker waits a minute and queues the plant again.
+* Other failures are logged with the plant ID (never its name) and the worker moves on.
+* Image import is configured by `ExternalPlantData:Images` (`Enabled`, `StoragePath`, `BackfillOnStartup`, `BackfillLimit`), requires GBIF to be enabled, is on only in `appsettings.Development.json`, and is forced off in `Testing`, where nothing is queued.
 
 ---
 

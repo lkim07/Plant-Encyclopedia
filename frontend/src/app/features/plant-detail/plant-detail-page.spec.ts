@@ -6,7 +6,7 @@ import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { routes } from '../../app.routes';
 import { ApiResponse } from '../../core/api/api-response.model';
-import { Attribution, PlantDetail, QuickCare } from '../../core/api/plant-detail.model';
+import { Attribution, PlantDetail, PlantImage, QuickCare } from '../../core/api/plant-detail.model';
 
 const PLANT_ID = 'd5e00000-0000-4000-8000-000000000001';
 const URL = `/api/plants/${PLANT_ID}`;
@@ -14,6 +14,7 @@ const URL = `/api/plants/${PLANT_ID}`;
 function plant(
   quickCare: QuickCare | null = null,
   attributions: Attribution[] = [],
+  heroImage: PlantImage | null = null,
 ): ApiResponse<PlantDetail> {
   return {
     data: {
@@ -23,7 +24,7 @@ function plant(
       plantGroupId: 'roses',
       scientificName: 'Rosa × hybrida',
       description: 'Development sample data — not verified.',
-      heroImage: null,
+      heroImage,
       quickCare,
       attributions,
     },
@@ -73,7 +74,9 @@ describe('PlantDetailPage', () => {
     expect(page.querySelector('h1')?.textContent).toBe("Rosa 'Peace'");
     expect(page.querySelector('.group')?.textContent).toBe('Roses');
     expect(page.querySelector('.scientific i')?.textContent).toBe('Rosa × hybrida');
-    expect(page.querySelector('.description')?.textContent).toBe('Development sample data — not verified.');
+    expect(page.querySelector('.description')?.textContent).toBe(
+      'Development sample data — not verified.',
+    );
     expect(page.querySelector('.hero-image')).toBeNull();
     expect(page.textContent).toContain("Care information isn't available yet.");
     expect(page.querySelector('article')?.getAttribute('aria-busy')).toBe('false');
@@ -93,6 +96,86 @@ describe('PlantDetailPage', () => {
     );
   });
 
+  // Protects against: an image shown without the credit its licence requires, a cropped plant (the image is
+  // shown whole over a blurred, decorative copy), or the names placed outside their readable panel.
+  it('shows the whole hero photo over a blurred copy, with its credit', async () => {
+    const photo: PlantImage = {
+      url: '/media/photo-large.webp',
+      altText: 'Dog rose (Rosa canina)',
+      kind: 'photo',
+      credit: {
+        author: 'Douglas Goldman',
+        license: 'CC BY-SA 4.0',
+        licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
+        source: 'Wikimedia Commons',
+        sourceUrl: 'https://commons.wikimedia.org/wiki/File:Dog_rose.jpg',
+      },
+    };
+    const harness = await openPlant();
+    http.expectOne(URL).flush(plant(null, [], photo));
+    const page = await settle(harness);
+
+    const hero = page.querySelector('.hero.has-image')!;
+    const image = hero.querySelector<HTMLImageElement>('.hero-image')!;
+    expect(image.getAttribute('src')).toBe('/media/photo-large.webp');
+    expect(image.alt).toBe('Dog rose (Rosa canina)');
+    const backdrop = hero.querySelector<HTMLImageElement>('.hero-backdrop')!;
+    expect(backdrop.getAttribute('src')).toBe('/media/photo-large.webp');
+    expect([backdrop.alt, backdrop.getAttribute('aria-hidden')]).toEqual(['', 'true']);
+    expect(hero.querySelector('.names h1')?.textContent).toBe("Rosa 'Peace'");
+
+    const credit = page.querySelector('.hero + .image-credit')!;
+    expect(credit.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Photo: Douglas Goldman · CC BY-SA 4.0 · Wikimedia Commons',
+    );
+    expect(
+      Array.from(credit.querySelectorAll('a')).map((a) => [
+        a.getAttribute('href'),
+        a.getAttribute('rel'),
+      ]),
+    ).toEqual([
+      ['https://creativecommons.org/licenses/by-sa/4.0/', 'noopener noreferrer'],
+      ['https://commons.wikimedia.org/wiki/File:Dog_rose.jpg', 'noopener noreferrer'],
+    ]);
+  });
+
+  // Protects against: a plant with only a drawing showing a placeholder.
+  it('shows a drawing as the hero when there is no photo', async () => {
+    const drawing: PlantImage = {
+      url: '/media/drawing-large.webp',
+      altText: 'Botanical illustration of Peppermint (Mentha × piperita)',
+      kind: 'illustration',
+      credit: {
+        author: 'Franz Bley',
+        license: 'Public domain',
+        licenseUrl: null,
+        source: 'Wikimedia Commons',
+        sourceUrl: null,
+      },
+    };
+    const harness = await openPlant();
+    http.expectOne(URL).flush(plant(null, [], drawing));
+    const page = await settle(harness);
+
+    expect(page.querySelector('.hero-image')?.getAttribute('src')).toBe(
+      '/media/drawing-large.webp',
+    );
+    expect(page.querySelector('.image-credit')?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Illustration: Franz Bley · Public domain · Wikimedia Commons',
+    );
+  });
+
+  // Protects against: a broken image area when the plant has no image.
+  it('keeps the placeholder hero without an image', async () => {
+    const harness = await openPlant();
+    http.expectOne(URL).flush(plant());
+    const page = await settle(harness);
+
+    expect(page.querySelector('.hero')?.classList.contains('has-image')).toBe(false);
+    expect(page.querySelector('.hero img')).toBeNull();
+    expect(page.querySelector('.image-credit')).toBeNull();
+  });
+
   // Protects against: verified care not shown, or cards not expanding (UX §29).
   it('shows Quick Care cards and expands a card with details', async () => {
     const harness = await openPlant();
@@ -106,7 +189,9 @@ describe('PlantDetailPage', () => {
     );
     const page = await settle(harness);
 
-    const values = Array.from(page.querySelectorAll('app-care-card .value')).map((v) => v.textContent);
+    const values = Array.from(page.querySelectorAll('app-care-card .value')).map(
+      (v) => v.textContent,
+    );
     expect(values).toEqual(['Test light', '15–25°C', 'Test soil']);
 
     // Only the card with details is a button.
@@ -126,7 +211,10 @@ describe('PlantDetailPage', () => {
     const harness = await openPlant();
     http
       .expectOne(URL)
-      .flush({ error: { code: 'PLANT_NOT_FOUND', message: 'x' } }, { status: 404, statusText: 'Not Found' });
+      .flush(
+        { error: { code: 'PLANT_NOT_FOUND', message: 'x' } },
+        { status: 404, statusText: 'Not Found' },
+      );
     const page = await settle(harness);
 
     expect(page.querySelector('h1')?.textContent).toBe('Plant not found');
@@ -139,7 +227,10 @@ describe('PlantDetailPage', () => {
     await harness.navigateByUrl('/plants/abc');
     http
       .expectOne('/api/plants/abc')
-      .flush({ error: { code: 'VALIDATION_ERROR', message: 'x' } }, { status: 400, statusText: 'Bad Request' });
+      .flush(
+        { error: { code: 'VALIDATION_ERROR', message: 'x' } },
+        { status: 400, statusText: 'Bad Request' },
+      );
     const page = await settle(harness);
 
     expect(page.querySelector('h1')?.textContent).toBe('Plant not found');
@@ -172,7 +263,12 @@ describe('PlantDetailPage', () => {
 
     expect(TestBed.inject(Router).url).toBe('/plant-groups/roses');
     http.expectOne('/api/plant-groups/roses?page=1&pageSize=20').flush({
-      data: { id: 'roses', name: 'Roses', category: { id: 'flowers', name: 'Flowers' }, plants: [] },
+      data: {
+        id: 'roses',
+        name: 'Roses',
+        category: { id: 'flowers', name: 'Flowers' },
+        plants: [],
+      },
       pagination: { page: 1, pageSize: 20, hasNext: false },
     });
   });

@@ -206,8 +206,8 @@ Unverified sample data: `backend/dev-data/seed-dev-data.sql` (loaded locally, co
 * [x] Add common names (en, fr, de, ko)
 * [x] Add scientific names (including 2 synonyms)
 * [x] Add cultivar information where applicable (roses, apples)
-* [ ] Add initial images (deferred until image licensing/storage is decided)
-* [ ] Add image provenance
+* [-] Add initial images (11d-2: species-level plants get images automatically; the sample cultivars have none)
+* [x] Add image provenance (source, source page, licence code, author, retrieval time)
 * [ ] Add basic care information (deferred: needs sourced data; no AI-written care values)
 * [ ] Add blooming information
 * [ ] Add health information
@@ -472,10 +472,11 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 ## Provider Abstraction
 
 * [x] Define plant data provider interface (`IPlantDataProvider`, 11b)
-* [-] Implement iNaturalist provider (11d-1: taxon photos as an image source; not wired into imports yet)
-* [-] Automatic plant images (photo and botanical illustration)
+* [x] Implement iNaturalist provider (11d: taxon photos as an image source)
+* [-] Automatic plant images (a photo; a botanical illustration when there is no photo)
   - Done (11d-1): sources (iNaturalist, Wikipedia, Commons), licence policy (PD, CC0, CC BY, CC BY-SA), automatic choice
-  - Next (11d-2): `kind` column on `plant_images` (migration, approved), download from approved hosts with a size cap, check the bytes, re-encode to WebP sizes with SkiaSharp (drops location data), local storage, fetch after import without slowing the lookup, app-wide budget, API fields, cards and detail hero with credits, fill existing plants
+  - Done (11d-2): `kind` column, download and checks, WebP sizes, local storage, background worker with its own budget, startup backfill, API fields, cards, whole-image detail hero with credits, Commons species photos, illustrations only as a fallback
+  - Next: manually verify in the browser with real downloads (Priority: High)
   - Next (11d-3): Cloudflare R2 storage (developer creates the account)
 * [ ] Verify the iNaturalist photo page URL pattern before linking credits to it
   - Why: The API returns no photo page URL; none is invented
@@ -502,7 +503,12 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 * [x] Normalize names (scientific names: NFC, whitespace, authorship removed, hybrid sign and rank markers kept)
 * [x] Normalize taxonomy (kingdom → genus, plus the full species / subspecies / variety name)
 * [x] Normalize plant groups (configured genus → plant group list, `ExternalPlantData:GenusPlantGroups`)
-* [ ] Normalize images
+* [x] Normalize images (WebP at 400/800/1600 px, metadata dropped)
+* [ ] Persistent image queue
+  - Why: Queued plants are lost on restart; the startup backfill only covers plants with no image at all
+  - Priority: Low (until production)
+* [ ] Linux native assets for SkiaSharp (`SkiaSharp.NativeAssets.Linux.NoDependencies`) before deploying to Linux
+  - Priority: Before deployment
 * [x] Store external identifiers (`plant_sources.external_id`, provider `gbif-col-xr`)
 * [x] Store provenance (Taxonomy source; no source URL yet)
 * [x] Store retrieval timestamps

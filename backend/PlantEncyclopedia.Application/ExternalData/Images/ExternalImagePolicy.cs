@@ -76,6 +76,13 @@ public static partial class ExternalImagePolicy
         return null;
     }
 
+    /// <summary>
+    /// The display name and deed of a stored licence code, e.g. "cc-by-sa-3.0" → ("CC BY-SA 3.0", its deed).
+    /// Null for codes this policy would not accept.
+    /// </summary>
+    public static (string Name, Uri? Url)? Describe(string? licenseCode) =>
+        ParseLicense(licenseCode) is { } license ? (license.Name, license.Url) : null;
+
     private static (string Code, string Name, Uri? Url, bool RequiresAttribution)? ParseLicense(string? code)
     {
         if (code is null) return null;

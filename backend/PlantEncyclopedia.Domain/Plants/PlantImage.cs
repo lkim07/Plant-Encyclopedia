@@ -4,11 +4,13 @@ namespace PlantEncyclopedia.Domain.Plants;
 
 /// <summary>
 /// Image metadata and provenance. Image binaries live in object storage, not the database.
+/// <see cref="License"/> holds a licence code ("cc-by-sa-3.0", "pd") and <see cref="Attribution"/> the author's name.
 /// </summary>
 public class PlantImage : IHasCreatedAt
 {
     public Guid Id { get; set; }
     public Guid PlantId { get; set; }
+    public PlantImageKind Kind { get; set; }
     public required string Url { get; set; }
     public string? ThumbnailUrl { get; set; }
     public string? MediumUrl { get; set; }

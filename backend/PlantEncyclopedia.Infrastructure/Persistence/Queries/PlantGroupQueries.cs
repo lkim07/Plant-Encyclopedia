@@ -31,7 +31,14 @@ internal sealed class PlantGroupQueries(PlantEncyclopediaDbContext db) : IPlantG
             .ThenBy(p => p.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize + 1)
-            .Select(p => new PlantSummary(p.Id, p.DisplayName))
+            .Select(p => new PlantSummary(
+                p.Id,
+                p.DisplayName,
+                p.Images
+                    .OrderBy(i => i.Kind == PlantImageKind.Photo ? 0 : 1)
+                    .ThenBy(i => i.CreatedAt)
+                    .Select(i => i.MediumUrl ?? i.Url)
+                    .FirstOrDefault()))
             .ToListAsync(cancellationToken);
 
         var hasNext = plants.Count > pageSize;

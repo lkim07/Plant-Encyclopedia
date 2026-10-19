@@ -16,18 +16,35 @@
       }
     </div>
   } @else if (s.status === 'loaded') {
-    <header class="hero">
+    <header class="hero" [class.has-image]="s.plant.heroImage !== null">
       @if (s.plant.heroImage; as image) {
-        <img class="hero-image" [src]="image.url" [alt]="image.altText ?? ''" />
+        <!-- A blurred copy fills the background; the plant itself is shown whole. Both fade out at the bottom. -->
+        <div class="hero-media">
+          <img class="hero-backdrop" [src]="image.url" alt="" aria-hidden="true" />
+          <img
+            class="hero-image"
+            [src]="image.url"
+            [alt]="image.altText ?? ''"
+            fetchpriority="high"
+          />
+        </div>
       }
       <div class="names">
         <h1>{{ s.plant.name }}</h1>
         @if (s.plant.plantGroup) {
           <p class="group">{{ s.plant.plantGroup }}</p>
         }
-        <p class="scientific"><i>{{ s.plant.scientificName }}</i></p>
+        <p class="scientific">
+          <i>{{ s.plant.scientificName }}</i>
+        </p>
       </div>
     </header>
+
+    @if (s.plant.heroImage?.credit; as credit) {
+      <p class="image-credit muted">
+        <app-image-credit [credit]="credit" [kind]="s.plant.heroImage!.kind" />
+      </p>
+    }
 
     @if (s.plant.description) {
       <p class="description">{{ s.plant.description }}</p>

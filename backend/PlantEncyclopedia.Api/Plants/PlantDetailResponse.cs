@@ -1,5 +1,6 @@
 using System.Text.Json;
 using PlantEncyclopedia.Application.ExternalData;
+using PlantEncyclopedia.Application.ExternalData.Images;
 using PlantEncyclopedia.Application.Plants;
 
 namespace PlantEncyclopedia.Api.Plants;
@@ -12,7 +13,7 @@ public sealed record PlantDetailResponse(
     string? PlantGroupId,
     string ScientificName,
     string? Description,
-    HeroImageResponse? HeroImage,
+    PlantImageResponse? HeroImage,
     QuickCareResponse? QuickCare,
     IReadOnlyList<AttributionResponse> Attributions)
 {
@@ -23,7 +24,8 @@ public sealed record PlantDetailResponse(
         plant.PlantGroupSlug,
         plant.ScientificName,
         plant.Description,
-        HeroImage: null, // Hero image selection is not decided yet.
+        // The hero is the photo, or the illustration when there is no photo (images come photos first).
+        PlantImageResponse.From(plant.Images.FirstOrDefault()),
         QuickCareResponse.From(plant.Care),
         AttributionResponse.From(plant.Sources));
 }
@@ -47,7 +49,35 @@ public sealed record AttributionResponse(string Type, string Text)
         .ToList();
 }
 
-public sealed record HeroImageResponse(string Url, string? AltText);
+/// <summary>A plant image: the large rendition, its kind ("photo" or "illustration") and its credit.</summary>
+public sealed record PlantImageResponse(string Url, string? AltText, string Kind, ImageCreditResponse? Credit)
+{
+    public static PlantImageResponse? From(PlantImageInfo? image) => image is null
+        ? null
+        : new PlantImageResponse(
+            image.LargeUrl ?? image.Url,
+            image.AltText,
+            JsonNamingPolicy.CamelCase.ConvertName(image.Kind.ToString()),
+            ImageCreditResponse.From(image));
+}
+
+/// <summary>
+/// Credit for an image, as its licence requires: author, licence (with its deed when the version is known) and
+/// source. Null for images from providers without reviewed credit text, or with a licence the import would not accept.
+/// </summary>
+public sealed record ImageCreditResponse(string? Author, string License, string? LicenseUrl, string Source, string? SourceUrl)
+{
+    private static readonly Dictionary<string, string> SourceNames = new(StringComparer.Ordinal)
+    {
+        ["inaturalist"] = "iNaturalist",
+        ["wikimedia-commons"] = "Wikimedia Commons"
+    };
+
+    public static ImageCreditResponse? From(PlantImageInfo image) =>
+        SourceNames.TryGetValue(image.Source, out var source) && ExternalImagePolicy.Describe(image.License) is { } license
+            ? new ImageCreditResponse(image.Attribution, license.Name, license.Url?.AbsoluteUri, source, image.SourceUrl)
+            : null;
+}
 
 /// <summary>Quick Care cards. A card is null when it has no value.</summary>
 public sealed record QuickCareResponse(

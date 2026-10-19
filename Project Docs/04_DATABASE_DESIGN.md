@@ -351,6 +351,7 @@ Conceptual model:
 Plant
   │
   └── PlantImage
+          ├── Kind (Photo | Illustration)
           ├── Url
           ├── ThumbnailUrl
           ├── MediumUrl
@@ -363,6 +364,13 @@ Plant
           ├── License
           └── CreatedAt
 ```
+
+Implemented (Phase 11d-2, migration `AddPlantImageKind`):
+
+* `kind` — `Photo` or `Illustration` (`ck_plant_images_kind`), default `Photo`.
+* `source_id` — up to 500 characters (Commons file titles can be long).
+* `ux_plant_images_plant_source` — unique (`plant_id`, `source`, `source_id`) where `source_id` is set: the same external image is stored once per plant.
+* `license` holds a licence code (`cc-by-sa-3.0`, `pd`, ...) and `attribution` the author's name; the API derives the display name and licence deed from the code.
 
 ### Rationale
 

@@ -55,7 +55,12 @@ internal sealed class SearchQueries(PlantEncyclopediaDbContext db) : ISearchQuer
                 p.Id,
                 p.DisplayName,
                 p.PlantGroup != null ? p.PlantGroup.Name : null,
-                p.ScientificName))
+                p.ScientificName,
+                p.Images
+                    .OrderBy(i => i.Kind == PlantImageKind.Photo ? 0 : 1)
+                    .ThenBy(i => i.CreatedAt)
+                    .Select(i => i.MediumUrl ?? i.Url)
+                    .FirstOrDefault()))
             .ToListAsync(cancellationToken);
 
         var hasNext = rows.Count > pageSize;

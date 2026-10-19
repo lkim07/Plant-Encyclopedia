@@ -32,6 +32,8 @@ internal static class ImageFixtures
             ("en.wikipedia.org", "/w/api.php") when query.Contains("titles=Mentha × piperita") => "Wikimedia/wikipedia-pageimage-mentha-x-piperita.json",
             ("commons.wikimedia.org", "/w/api.php") when query.Contains("titles=File:Divlja_ruza_cvijet_270508.jpg") => "Wikimedia/commons-imageinfo-rosa-canina.json",
             ("commons.wikimedia.org", "/w/api.php") when query.Contains("titles=File:Pfefferminze_natur_peppermint.jpg") => "Wikimedia/commons-imageinfo-mentha-x-piperita.json",
+            ("commons.wikimedia.org", "/w/api.php") when query.Contains("gcmtitle=Category:Rosa canina&") => "Wikimedia/commons-category-rosa-canina.json",
+            ("commons.wikimedia.org", "/w/api.php") when query.Contains("gcmtitle=Category:Mentha × piperita&") => "Wikimedia/commons-category-mentha-x-piperita.json",
             ("commons.wikimedia.org", "/w/api.php") when query.Contains("gcmtitle=Category:Rosa canina - botanical illustrations") => "Wikimedia/commons-illustrations-rosa-canina.json",
             ("commons.wikimedia.org", "/w/api.php") when query.Contains("gcmtitle=Category:Mentha × piperita - botanical illustrations") => "Wikimedia/commons-illustrations-mentha-x-piperita.json",
             _ => null
@@ -57,7 +59,7 @@ internal static class ImageFixtures
         return new WikimediaClient(client, Loggers(logs).CreateLogger<WikimediaClient>());
     }
 
-    /// <summary>The production order: iNaturalist then Wikipedia for photos, Commons for illustrations.</summary>
+    /// <summary>The production order: iNaturalist, Wikipedia, then the Commons species category for photos; Commons for illustrations.</summary>
     public static PlantImageSelector Selector(HttpMessageHandler handler)
     {
         var wikimedia = Wikimedia(handler);
@@ -65,6 +67,7 @@ internal static class ImageFixtures
         [
             INaturalist(handler),
             new WikipediaPhotoSource(wikimedia),
+            new CommonsCategoryPhotoSource(wikimedia),
             new CommonsIllustrationSource(wikimedia)
         ]);
     }

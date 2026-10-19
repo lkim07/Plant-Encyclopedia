@@ -345,6 +345,14 @@ On top of the per-client limits, external lookup (API_SPEC §27) has app-wide pr
 * Both clients call fixed HTTPS hosts (`api.gbif.org`, `api.checklistbank.org`) without following redirects, and cap responses at 1 MB.
 * Imported common names are untrusted text: they are normalized, length-checked and stored as plain text, and Angular escapes them when shown.
 
+Image import (ARCHITECTURE §22–23) has its own app-wide budget of 40 requests per minute and 2,000 per day, separate from lookups. Downloads:
+* only HTTPS from `inaturalist-open-data.s3.amazonaws.com`, `upload.wikimedia.org` and `thumb.wikimedia.org`; no redirects, so an image URL cannot lead the server to another host or an internal address
+* at most 15 MB and 15 seconds; only JPEG, PNG or WebP content types
+* the bytes must decode as JPEG, PNG or WebP within 12,000 pixels a side and 50 megapixels, checked from the header before decoding (decompression bombs)
+* re-encoded to WebP from pixels only, so embedded metadata (GPS coordinates, camera data, comments) is never stored or served
+
+Stored images are served at `/media`: `.webp` files only, from the image folder only, with `X-Content-Type-Options: nosniff`. File paths are built from GUIDs, never from external text.
+
 All limits are in memory and per instance. A shared store is needed before running several instances. Forwarded headers are not trusted until a proxy is configured. Searched text is never logged.
 
 ---

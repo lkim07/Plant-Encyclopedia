@@ -73,6 +73,22 @@ public class PlantIngestionTests(PostgresDatabaseFixture fixture)
             plant.Names.Select(n => (n.Name, n.NameType, n.LanguageCode)).OrderBy(n => n.LanguageCode));
     }
 
+    // Protects against: a lookup waiting for images, or images never being fetched for a new plant. Existing
+    // plants are not queued: they are never changed by a lookup.
+    [Fact]
+    public async Task Import_QueuesOnlyCreatedPlantsForImages()
+    {
+        var genus = TestData.NewGenus();
+        var queue = new RecordingImageQueue();
+        var provider = new FakePlantDataProvider(TaxonLookupResult.Found(ExternalTaxa.Species(genus)));
+
+        var created = await ImportAsync(provider, $"{genus} vulgaris", imageQueue: queue);
+        var again = await ImportAsync(provider, $"{genus} vulgaris", imageQueue: queue);
+
+        Assert.Equal((PlantImportStatus.Created, PlantImportStatus.AlreadyExists), (created.Status, again.Status));
+        Assert.Equal([created.PlantId!.Value], queue.PlantIds);
+    }
+
     // Protects against: a plant with no usable common names failing to import.
     [Fact]
     public async Task Import_UsesScientificName_WhenThereIsNoEnglishName()
@@ -238,6 +254,7 @@ public class PlantIngestionTests(PostgresDatabaseFixture fixture)
                 new FakePlantDataProvider(TaxonLookupResult.Found(taxon)),
                 new GatedImportStore(new PlantImportStore(db), bothReadyToInsert),
                 new GenusPlantGroupMap(null),
+                new RecordingImageQueue(),
                 new FixedTimeProvider(Now));
             return await service.ImportAsync($"{genus} vulgaris", CancellationToken.None);
         }
@@ -345,10 +362,15 @@ public class PlantIngestionTests(PostgresDatabaseFixture fixture)
         Assert.False(await db.Plants.AnyAsync(p => p.ScientificName == "Lycopersicon esculentum"));
     }
 
-    private async Task<PlantImportResult> ImportAsync(IPlantDataProvider provider, string name, GenusPlantGroupMap? map = null)
+    private async Task<PlantImportResult> ImportAsync(
+        IPlantDataProvider provider,
+        string name,
+        GenusPlantGroupMap? map = null,
+        RecordingImageQueue? imageQueue = null)
     {
         await using var db = fixture.CreateDbContext();
-        var service = new PlantIngestionService(provider, new PlantImportStore(db), map ?? new GenusPlantGroupMap(null), new FixedTimeProvider(Now));
+        var service = new PlantIngestionService(
+            provider, new PlantImportStore(db), map ?? new GenusPlantGroupMap(null), imageQueue ?? new RecordingImageQueue(), new FixedTimeProvider(Now));
         return await service.ImportAsync(name, CancellationToken.None);
     }
 

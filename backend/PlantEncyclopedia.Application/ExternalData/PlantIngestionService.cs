@@ -1,3 +1,4 @@
+using PlantEncyclopedia.Application.ExternalData.Images;
 using PlantEncyclopedia.Domain.Plants;
 
 namespace PlantEncyclopedia.Application.ExternalData;
@@ -34,12 +35,14 @@ public sealed record PlantImportResult(
 /// reused and never overwritten. A new plant is Published only when its genus maps to an existing
 /// plant group and no near-duplicate name exists; otherwise it is saved as NeedsReview.
 /// Common names in the app's languages are imported with it; the display name is the English name chosen
-/// by <see cref="CommonNamePolicy"/>, or the scientific name when there is none.
+/// by <see cref="CommonNamePolicy"/>, or the scientific name when there is none. A created plant is queued
+/// for image import, which runs in the background (<see cref="IPlantImageQueue"/>).
 /// </summary>
 public sealed class PlantIngestionService(
     IPlantDataProvider provider,
     IPlantImportStore store,
     GenusPlantGroupMap plantGroups,
+    IPlantImageQueue imageQueue,
     TimeProvider timeProvider)
 {
     public async Task<PlantImportResult> ImportAsync(string scientificName, CancellationToken cancellationToken)
@@ -115,9 +118,13 @@ public sealed class PlantIngestionService(
         };
 
         var inserted = await store.InsertAsync(plant, cancellationToken);
-        return inserted.Created
-            ? new PlantImportResult(PlantImportStatus.Created, inserted.PlantId, status)
-            : new PlantImportResult(PlantImportStatus.AlreadyExists, inserted.PlantId);
+        if (!inserted.Created)
+        {
+            return new PlantImportResult(PlantImportStatus.AlreadyExists, inserted.PlantId);
+        }
+
+        imageQueue.Enqueue(inserted.PlantId);
+        return new PlantImportResult(PlantImportStatus.Created, inserted.PlantId, status);
     }
 
     // Species holds the full binomial (as in the seed data); subspecies and variety hold the full name.

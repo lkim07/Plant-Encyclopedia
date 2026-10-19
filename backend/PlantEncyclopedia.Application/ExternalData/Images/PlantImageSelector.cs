@@ -1,3 +1,5 @@
+using PlantEncyclopedia.Domain.Plants;
+
 namespace PlantEncyclopedia.Application.ExternalData.Images;
 
 /// <param name="Photo">The chosen photo, or null when no source offers an acceptable one.</param>
@@ -14,10 +16,25 @@ public sealed class PlantImageSelector(IEnumerable<IPlantImageSource> sources)
     private readonly IReadOnlyList<IPlantImageSource> _sources = sources.ToList();
 
     public async Task<SelectedPlantImages> SelectAsync(string scientificName, CancellationToken cancellationToken) =>
-        new(await SelectAsync(scientificName, ImageKind.Photo, cancellationToken),
-            await SelectAsync(scientificName, ImageKind.Illustration, cancellationToken));
+        new(await SelectAsync(scientificName, PlantImageKind.Photo, cancellationToken),
+            await SelectAsync(scientificName, PlantImageKind.Illustration, cancellationToken));
 
-    private async Task<AcceptedImage?> SelectAsync(string scientificName, ImageKind kind, CancellationToken cancellationToken)
+    /// <summary>Only the given kinds; sources of other kinds are not asked.</summary>
+    public async Task<IReadOnlyList<AcceptedImage>> SelectAsync(
+        string scientificName,
+        IReadOnlyCollection<PlantImageKind> kinds,
+        CancellationToken cancellationToken)
+    {
+        var selected = new List<AcceptedImage>();
+        foreach (var kind in kinds)
+        {
+            if (await SelectAsync(scientificName, kind, cancellationToken) is { } image) selected.Add(image);
+        }
+
+        return selected;
+    }
+
+    private async Task<AcceptedImage?> SelectAsync(string scientificName, PlantImageKind kind, CancellationToken cancellationToken)
     {
         foreach (var source in _sources.Where(s => s.Kind == kind))
         {

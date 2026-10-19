@@ -1,10 +1,6 @@
-namespace PlantEncyclopedia.Application.ExternalData.Images;
+using PlantEncyclopedia.Domain.Plants;
 
-public enum ImageKind
-{
-    Photo,
-    Illustration
-}
+namespace PlantEncyclopedia.Application.ExternalData.Images;
 
 /// <summary>
 /// An image a source offers for a plant, in provider-neutral terms. Untrusted until
@@ -23,7 +19,7 @@ public enum ImageKind
 public sealed record ExternalImageCandidate(
     string Provider,
     string SourceId,
-    ImageKind Kind,
+    PlantImageKind Kind,
     Uri DownloadUrl,
     int Width,
     int Height,
@@ -40,7 +36,7 @@ public sealed record ExternalImageCandidate(
 /// </summary>
 public interface IPlantImageSource
 {
-    ImageKind Kind { get; }
+    PlantImageKind Kind { get; }
 
     /// <summary>Candidates for exactly this scientific name, in the provider's own order of preference.</summary>
     Task<IReadOnlyList<ExternalImageCandidate>> GetCandidatesAsync(string scientificName, CancellationToken cancellationToken);

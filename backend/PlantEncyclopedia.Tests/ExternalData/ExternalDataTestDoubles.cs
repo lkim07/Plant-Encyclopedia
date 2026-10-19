@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
 using PlantEncyclopedia.Application.ExternalData;
+using PlantEncyclopedia.Application.ExternalData.Images;
 using PlantEncyclopedia.Infrastructure.ExternalData.ChecklistBank;
 using PlantEncyclopedia.Infrastructure.ExternalData.Gbif;
 using PlantEncyclopedia.Tests.Api;
@@ -108,6 +109,22 @@ internal sealed class FakePlantDataProvider(Func<string, CancellationToken, Task
     {
         CommonNameCalls++;
         return Task.FromResult(CommonNames);
+    }
+}
+
+/// <summary>Records the plants queued for image import; nothing is processed.</summary>
+internal sealed class RecordingImageQueue : IPlantImageQueue
+{
+    private readonly List<Guid> _plantIds = [];
+
+    public IReadOnlyList<Guid> PlantIds
+    {
+        get { lock (_plantIds) return _plantIds.ToList(); }
+    }
+
+    public void Enqueue(Guid plantId)
+    {
+        lock (_plantIds) _plantIds.Add(plantId);
     }
 }
 

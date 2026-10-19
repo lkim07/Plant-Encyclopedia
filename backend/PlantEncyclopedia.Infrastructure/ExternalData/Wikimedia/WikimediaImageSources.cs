@@ -1,4 +1,5 @@
 using PlantEncyclopedia.Application.ExternalData.Images;
+using PlantEncyclopedia.Domain.Plants;
 
 namespace PlantEncyclopedia.Infrastructure.ExternalData.Wikimedia;
 
@@ -9,7 +10,7 @@ namespace PlantEncyclopedia.Infrastructure.ExternalData.Wikimedia;
 /// </summary>
 internal sealed class WikipediaPhotoSource(WikimediaClient wikimedia) : IPlantImageSource
 {
-    public ImageKind Kind => ImageKind.Photo;
+    public PlantImageKind Kind => PlantImageKind.Photo;
 
     public async Task<IReadOnlyList<ExternalImageCandidate>> GetCandidatesAsync(string scientificName, CancellationToken cancellationToken)
     {
@@ -17,8 +18,20 @@ internal sealed class WikipediaPhotoSource(WikimediaClient wikimedia) : IPlantIm
         var genus = scientificName.Split(' ')[0];
         if (fileName is null || articleTitle == genus) return [];
 
-        return await wikimedia.GetFileAsync(fileName, ImageKind.Photo, cancellationToken);
+        return await wikimedia.GetFileAsync(fileName, PlantImageKind.Photo, cancellationToken);
     }
+}
+
+/// <summary>
+/// Photos from the species' own Wikimedia Commons category, asked after iNaturalist and Wikipedia (ARCHITECTURE
+/// §21). One GET returning up to 20 files with their licences; see <see cref="WikimediaClient.GetSpeciesPhotosAsync"/>.
+/// </summary>
+internal sealed class CommonsCategoryPhotoSource(WikimediaClient wikimedia) : IPlantImageSource
+{
+    public PlantImageKind Kind => PlantImageKind.Photo;
+
+    public Task<IReadOnlyList<ExternalImageCandidate>> GetCandidatesAsync(string scientificName, CancellationToken cancellationToken) =>
+        wikimedia.GetSpeciesPhotosAsync(scientificName, cancellationToken);
 }
 
 /// <summary>
@@ -27,8 +40,8 @@ internal sealed class WikipediaPhotoSource(WikimediaClient wikimedia) : IPlantIm
 /// </summary>
 internal sealed class CommonsIllustrationSource(WikimediaClient wikimedia) : IPlantImageSource
 {
-    public ImageKind Kind => ImageKind.Illustration;
+    public PlantImageKind Kind => PlantImageKind.Illustration;
 
     public Task<IReadOnlyList<ExternalImageCandidate>> GetCandidatesAsync(string scientificName, CancellationToken cancellationToken) =>
-        wikimedia.GetCategoryFilesAsync($"{scientificName} - botanical illustrations", ImageKind.Illustration, cancellationToken);
+        wikimedia.GetCategoryFilesAsync($"{scientificName} - botanical illustrations", PlantImageKind.Illustration, cancellationToken);
 }

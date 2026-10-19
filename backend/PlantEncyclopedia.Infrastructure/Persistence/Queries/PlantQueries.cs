@@ -34,6 +34,13 @@ internal sealed class PlantQueries(PlantEncyclopediaDbContext db) : IPlantQuerie
                     .OrderBy(s => s.SourceType)
                     .ThenBy(s => s.Provider)
                     .Select(s => new PlantSourceInfo(s.Provider, s.SourceType))
+                    .ToList(),
+                p.Images
+                    .OrderBy(i => i.Kind == PlantImageKind.Photo ? 0 : 1)
+                    .ThenBy(i => i.CreatedAt)
+                    .Select(i => new PlantImageInfo(
+                        i.Kind, i.Url, i.ThumbnailUrl, i.MediumUrl, i.LargeUrl, i.AltText, i.Width, i.Height,
+                        i.Source, i.SourceUrl, i.License, i.Attribution))
                     .ToList()))
             .SingleOrDefaultAsync(cancellationToken);
 
@@ -46,6 +53,11 @@ internal sealed class PlantQueries(PlantEncyclopediaDbContext db) : IPlantQuerie
                 p.DisplayName,
                 p.PlantGroup != null ? p.PlantGroup.Name : null,
                 p.ScientificName,
-                p.Status))
+                p.Status,
+                p.Images
+                    .OrderBy(i => i.Kind == PlantImageKind.Photo ? 0 : 1)
+                    .ThenBy(i => i.CreatedAt)
+                    .Select(i => i.MediumUrl ?? i.Url)
+                    .FirstOrDefault()))
             .SingleOrDefaultAsync(cancellationToken);
 }

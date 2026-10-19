@@ -689,6 +689,15 @@ Similar Plants
 
 The hero should be nearly full-screen.
 
+Implemented (Phase 11d-2, revised after review on 2026-10-19):
+
+* The plant's image is the hero background and is shown **whole**, never cropped: a blurred, decorative copy of the same image fills the area behind it.
+* Both fade gradually into the page at the bottom.
+* The name, plant group and scientific name sit on a more opaque dark-brown panel with light text, so they stay readable over any image.
+* The image is the plant's photo; a botanical illustration is used only when the plant has no photo. There is no separate illustration section.
+* A credit line (author, licence, source) follows the hero.
+* Without an image, the warm placeholder hero remains.
+
 Desktop and mobile both use immersive photography.
 
 Controls:

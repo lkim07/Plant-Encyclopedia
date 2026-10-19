@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using PlantEncyclopedia.Application.ExternalData.Images;
+using PlantEncyclopedia.Domain.Plants;
 
 namespace PlantEncyclopedia.Infrastructure.ExternalData.Wikimedia;
 
@@ -38,7 +39,7 @@ internal sealed partial class WikimediaClient(HttpClient http, ILogger<Wikimedia
     }
 
     /// <summary>One Commons file, or none when it is not on Commons (e.g. a non-free file kept on Wikipedia).</summary>
-    public async Task<IReadOnlyList<ExternalImageCandidate>> GetFileAsync(string fileName, ImageKind kind, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ExternalImageCandidate>> GetFileAsync(string fileName, PlantImageKind kind, CancellationToken cancellationToken)
     {
         var response = await ExternalJsonClient.GetAsync<MediaWikiResponse>(
             http, $"{CommonsApi}{ImageInfo}&titles={Uri.EscapeDataString("File:" + fileName)}",
@@ -47,7 +48,7 @@ internal sealed partial class WikimediaClient(HttpClient http, ILogger<Wikimedia
     }
 
     /// <summary>Up to 10 files of a Commons category, in the order the API lists them.</summary>
-    public async Task<IReadOnlyList<ExternalImageCandidate>> GetCategoryFilesAsync(string category, ImageKind kind, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ExternalImageCandidate>> GetCategoryFilesAsync(string category, PlantImageKind kind, CancellationToken cancellationToken)
     {
         var response = await ExternalJsonClient.GetAsync<MediaWikiResponse>(
             http, $"{CommonsApi}&generator=categorymembers&gcmtitle={Uri.EscapeDataString("Category:" + category)}" +
@@ -56,13 +57,39 @@ internal sealed partial class WikimediaClient(HttpClient http, ILogger<Wikimedia
         return ToCandidates(response, kind);
     }
 
-    private static List<ExternalImageCandidate> ToCandidates(MediaWikiResponse? response, ImageKind kind) =>
+    /// <summary>
+    /// Photos filed directly in the species' own Commons category ("Category:Rosa canina"), up to 20. Files also
+    /// filed under another Latin-style two-word name are left out, because they often show another organism
+    /// (a grasshopper on mint, a dune with sea buckthorn), and so are files filed as illustrations or drawings.
+    /// </summary>
+    public async Task<IReadOnlyList<ExternalImageCandidate>> GetSpeciesPhotosAsync(string scientificName, CancellationToken cancellationToken)
+    {
+        var response = await ExternalJsonClient.GetAsync<MediaWikiResponse>(
+            http, $"{CommonsApi}&generator=categorymembers&gcmtitle={Uri.EscapeDataString("Category:" + scientificName)}" +
+                  $"&gcmtype=file&gcmlimit=20{ImageInfo}",
+            JsonOptions, "Commons species category", logger, cancellationToken);
+        return ToCandidates(response, PlantImageKind.Photo, categories => IsOnlyOfThisPlant(categories, scientificName));
+    }
+
+    internal static bool IsOnlyOfThisPlant(IReadOnlyList<string> categories, string scientificName) =>
+        !categories.Any(c =>
+            (c != scientificName && OtherTaxon().IsMatch(c))
+            || c.Contains("illustration", StringComparison.OrdinalIgnoreCase)
+            || c.Contains("drawing", StringComparison.OrdinalIgnoreCase));
+
+    private static List<ExternalImageCandidate> ToCandidates(
+        MediaWikiResponse? response,
+        PlantImageKind kind,
+        Func<IReadOnlyList<string>, bool>? categoryFilter = null) =>
         (response?.Query?.Pages ?? [])
-            .Select(p => ToCandidate(p, kind))
+            .Select(p => ToCandidate(p, kind, categoryFilter))
             .OfType<ExternalImageCandidate>()
             .ToList();
 
-    private static ExternalImageCandidate? ToCandidate(MediaWikiPage? page, ImageKind kind)
+    private static ExternalImageCandidate? ToCandidate(
+        MediaWikiPage? page,
+        PlantImageKind kind,
+        Func<IReadOnlyList<string>, bool>? categoryFilter)
     {
         if (page is null || page.Missing == true || page.Title is null) return null;
 
@@ -75,6 +102,10 @@ internal sealed partial class WikimediaClient(HttpClient http, ILogger<Wikimedia
 
         // Trademark, personality-right or similar restrictions, or a file marked as non-free.
         if (!string.IsNullOrWhiteSpace(Field("Restrictions")) || metadata.ContainsKey("NonFree")) return null;
+
+        // Categories reads "Rosa canina|Taken with Canon EOS 7D|Self-published work".
+        var categories = (Field("Categories") ?? "").Split('|', StringSplitOptions.RemoveEmptyEntries);
+        if (categoryFilter is not null && !categoryFilter(categories)) return null;
 
         // thumbwidth/thumbheight are the requested size even when Commons serves the original instead
         // ("thumbnail_unscaled", same path as the original): then the original's size is the real one.
@@ -119,6 +150,10 @@ internal sealed partial class WikimediaClient(HttpClient http, ILogger<Wikimedia
         text = Whitespace().Replace(text, " ").Trim();
         return text.Length == 0 ? null : text;
     }
+
+    // "Anacridium aegyptium", "Hippophae rhamnoides": a capitalized word, then a lower-case word.
+    [GeneratedRegex("^[A-Z][a-z]+ [a-z][a-z-]+$")]
+    private static partial Regex OtherTaxon();
 
     [GeneratedRegex("<[^>]*>")]
     private static partial Regex Tags();

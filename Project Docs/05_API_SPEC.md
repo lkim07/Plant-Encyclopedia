@@ -436,7 +436,24 @@ Field rules:
 * `name` — the most understandable plant/cultivar name (UX §28).
 * `plantGroup` — the plant group name.
 * `plantGroupId` — the plant group's slug, usable with `GET /api/plant-groups/{plantGroupId}` (§19). `plantGroup` and `plantGroupId` are both `null` when the plant has no group.
-* `heroImage` — always `null` until the hero-image approach is decided. When set, it will be `{ "url", "altText" }`.
+* `heroImage` — the plant's photo, or its botanical illustration when it has no photo; `null` when it has no image. An illustration stored next to a photo is not returned. Shape:
+  ```json
+  {
+    "url": "/media/plants/…/…-large.webp",
+    "altText": "Dog rose (Rosa canina)",
+    "kind": "photo",
+    "credit": {
+      "author": "Douglas Goldman",
+      "license": "CC BY-SA",
+      "licenseUrl": null,
+      "source": "iNaturalist",
+      "sourceUrl": null
+    }
+  }
+  ```
+  * `url` is the 1600-pixel WebP rendition, served by this API under `/media` (relative URL).
+  * `kind` is `photo` or `illustration`.
+  * `credit` is what the image's licence requires to be shown. `licenseUrl` is set only when the licence version is known; `sourceUrl` is the image's page at the source, when known. `credit` is `null` only for sources without reviewed credit text.
 * `quickCare` — `null` unless the plant's care information is **Verified**. Unverified care is never returned. Inside it, any card without a value is `null`.
 * `temperature` — numeric degrees Celsius (`minC`, `maxC`, either may be `null`); clients format the display text (e.g. "15–25°C").
 * `attributions` — credits for external sources, shown on Plant Detail. Each item is `{ "type", "text" }`, for example `{ "type": "taxonomy", "text": "Catalogue of Life, via GBIF" }` for a plant imported through §27. The array is empty for curated plants.
@@ -503,6 +520,8 @@ Example:
 ```
 
 The frontend should choose the appropriate image size based on the display context.
+
+Implemented (Phase 11d-2): Plant Detail returns a single `heroImage` (§14) rather than an `images` array. Card `imageUrl` values (§19, §25, §27.1) are the 800-pixel rendition of the photo, else of the illustration, or `null`.
 
 ---
 
@@ -642,7 +661,7 @@ Implemented rules:
 
 * Only `Published` plants are returned, ordered by name and then ID so pages are stable.
 * `category` identifies the group's category (slug and name) for page headers and back navigation.
-* Plant `id` values are UUIDs (use them with `GET /api/plants/{plantId}`); `imageUrl` is always `null` until plant images exist.
+* Plant `id` values are UUIDs (use them with `GET /api/plants/{plantId}`); `imageUrl` is the card image (§16), or `null` when the plant has no image.
 * A group with no Published plants returns `200` with `"plants": []`.
 
 Unknown plant group — `404 Not Found`:
@@ -811,7 +830,7 @@ Example (implemented):
 
 * `id` — the plant's UUID (use with §14).
 * `plantGroup` — the plant group name, or `null`.
-* `imageUrl` — always `null` until plant images are served.
+* `imageUrl` — the card image (§16), or `null` when the plant has no image.
 
 ---
 
@@ -924,6 +943,7 @@ The user asked to look up a name that `GET /api/search` did not find. The lookup
 * The name is sent in botanical casing: genus capitalized, the rest lower-case (`rosa CANINA` → `Rosa canina`).
 * A plant already stored (same identity) is answered from the database without an external request.
 * A newly imported plant's `name` is its English common name when one stands out in the source, e.g. `Dog rose` for Rosa canina; otherwise it is the scientific name. Its common names in en, fr, de and ko are stored too, so `GET /api/search` finds them (ARCHITECTURE §22).
+* Images are fetched in the background after a plant is created, so a newly imported plant's `imageUrl` is usually `null` in this response and appears a few seconds later (ARCHITECTURE §23).
 
 ### Errors
 
