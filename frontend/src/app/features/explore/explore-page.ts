@@ -1,4 +1,14 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import {
+  afterNextRender,
+  Component,
+  DestroyRef,
+  effect,
+  ElementRef,
+  inject,
+  Injector,
+  signal,
+  untracked,
+} from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { catchError, map, Observable, of, startWith, Subject, Subscription, switchMap } from 'rxjs';
@@ -7,6 +17,8 @@ import { CategoryApi } from '../../core/api/category-api';
 import { ExploreApi, ExploreCard } from '../../core/api/explore-api';
 import { ImageCard } from '../../shared/image-card/image-card';
 import { WhenVisible } from '../../shared/when-visible';
+import { Icon } from '../../shared/icons/icon';
+import { loadGsap, motionAllowed } from '../../shared/motion';
 
 type CategoriesState =
   | { readonly status: 'loading' }
@@ -33,7 +45,7 @@ type FeedState =
  */
 @Component({
   selector: 'app-explore-page',
-  imports: [RouterLink, ImageCard, WhenVisible],
+  imports: [RouterLink, ImageCard, WhenVisible, Icon],
   templateUrl: './explore-page.html',
   styleUrl: './explore-page.css',
 })
@@ -59,6 +71,36 @@ export class ExplorePage {
 
   constructor() {
     this.loadFeed();
+
+    // The title and category pills slide in once, the first time the categories arrive (when motion is welcome).
+    const host: HTMLElement = inject(ElementRef).nativeElement;
+    const injector = inject(Injector);
+    let introduced = false;
+    let intro: { revert(): void } | undefined;
+    effect(() => {
+      if (this.categories().status !== 'loaded' || introduced || !motionAllowed()) {
+        return;
+      }
+      introduced = true;
+      untracked(() =>
+        afterNextRender(
+          async () => {
+            const { gsap } = await loadGsap();
+            intro = gsap.context(() => {
+              gsap.from(['.explore-header h1', '.pills li'], {
+                opacity: 0,
+                y: 14,
+                duration: 0.5,
+                stagger: 0.04,
+                ease: 'power2.out',
+              });
+            }, host);
+          },
+          { injector },
+        ),
+      );
+    });
+    inject(DestroyRef).onDestroy(() => intro?.revert());
   }
 
   protected retry(): void {

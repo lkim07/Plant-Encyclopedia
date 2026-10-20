@@ -2,7 +2,7 @@
 
 <article class="page" [attr.aria-busy]="s.status === 'loading'">
   <button type="button" class="icon-button back" aria-label="Back" (click)="goBack()">
-    <span aria-hidden="true">←</span>
+    <app-icon name="arrow-left" />
   </button>
 
   @if (s.status === 'loading') {

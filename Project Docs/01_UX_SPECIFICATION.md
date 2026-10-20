@@ -40,6 +40,13 @@ They must never interfere with:
 
 ## 2.1 Visual Tone
 
+Implemented (Phase 22, 2026-10-20):
+
+* **Typography:** Nunito (rounded, readable), with Gowun Dodum for Korean text, which Nunito lacks. Both are bundled with the app (SIL Open Font License); no font service is contacted.
+* **Icons:** outlined only, in a warm mid-brown (`--color-icon`), drawn for this project in one style (24-pixel grid, 1.75 stroke, round caps). No emoji are used as icons.
+* **Sidebar:** hovered or keyboard-focused labels grow slightly (scale 1.12), on devices with a real pointer and when motion is welcome.
+* **Cards without an image** show an outlined leaf on the warm surface.
+
 The primary visual language should use:
 
 * Warm neutral backgrounds
@@ -1287,6 +1294,17 @@ Do not apply the effect globally.
 
 # 50. Motion Guidelines
 
+Implemented (Phase 22, 2026-10-20):
+
+* **Page changes** cross-fade (about 220 ms) using the browser's View Transitions; navigation never waits for them.
+* **Cards** fade and rise in the first time they come into view, staggered across a row of four; a newly loaded page of results animates on its own.
+* **Card images** zoom slightly (1.04) on desktop hover or focus.
+* **Plant Detail:** the hero image and its name panel ease in; on desktop the image drifts slower than the page as it scrolls away (GSAP ScrollTrigger).
+* **Explore:** the title and category pills slide in the first time the categories load.
+* **Smooth scrolling** (Lenis) on the whole site, on desktop with a mouse or trackpad only.
+* GSAP, ScrollTrigger and Lenis are loaded on demand, only where they run. Only `transform` and `opacity` are animated.
+* A card image growing into the Plant Detail hero is not implemented: the detail data arrives after the page changes, so there is no hero image to grow into yet.
+
 Motion should communicate:
 
 * State change
@@ -1318,6 +1336,8 @@ Decorative animations must never delay:
 
 # 51. Reduced Motion
 
+Implemented: with reduced motion, nothing is hidden or animated. Cards appear immediately, GSAP animations and smooth scrolling never start, page cross-fades are switched off, and the sidebar labels and card images do not grow.
+
 Respect the user's reduced-motion preference.
 
 When reduced motion is enabled:
@@ -1333,6 +1353,8 @@ No feature should depend on decorative motion.
 ---
 
 # 52. Mobile Motion
+
+Implemented: no smooth scrolling, no hover effects and no scroll-driven hero drift on touch screens; card fade-ins move less (0.5rem) and last 300 ms; the hero ease-in is shorter.
 
 Mobile should use a more restrained motion language than desktop.
 

@@ -17,6 +17,7 @@ import { CategoryDetail } from '../../core/api/browse.model';
 import { CategoryApi } from '../../core/api/category-api';
 import { goBack } from '../../core/navigation/go-back';
 import { ImageCard } from '../../shared/image-card/image-card';
+import { Icon } from '../../shared/icons/icon';
 
 type PageState =
   | { readonly status: 'loading' }
@@ -27,7 +28,7 @@ type PageState =
 /** Category page (UX §22): plant-group cards from this category only (UX §24). */
 @Component({
   selector: 'app-category-page',
-  imports: [RouterLink, ImageCard],
+  imports: [RouterLink, ImageCard, Icon],
   templateUrl: './category-page.html',
   styleUrl: '../../shared/browse-page.css',
 })

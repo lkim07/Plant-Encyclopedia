@@ -1,4 +1,5 @@
 import { Component, input, signal } from '@angular/core';
+import { Icon, IconName } from '../../shared/icons/icon';
 
 /**
  * One Quick Care card (UX §29). When there is an explanation, the whole card is a button
@@ -6,6 +7,7 @@ import { Component, input, signal } from '@angular/core';
  */
 @Component({
   selector: 'app-care-card',
+  imports: [Icon],
   template: `
     @if (description(); as details) {
       <button
@@ -14,16 +16,16 @@ import { Component, input, signal } from '@angular/core';
         [attr.aria-expanded]="expanded()"
         (click)="expanded.set(!expanded())"
       >
-        <span class="title"><span aria-hidden="true">{{ icon() }}</span> {{ label() }}</span>
+        <span class="title"><app-icon [name]="icon()" /> {{ label() }}</span>
         <span class="value">{{ value() }}</span>
         @if (expanded()) {
           <span class="details">{{ details }}</span>
         }
-        <span class="arrow" aria-hidden="true">{{ expanded() ? '↑' : '↓' }}</span>
+        <app-icon class="arrow" [name]="expanded() ? 'chevron-up' : 'chevron-down'" />
       </button>
     } @else {
       <div class="card">
-        <span class="title"><span aria-hidden="true">{{ icon() }}</span> {{ label() }}</span>
+        <span class="title"><app-icon [name]="icon()" /> {{ label() }}</span>
         <span class="value">{{ value() }}</span>
       </div>
     }
@@ -31,7 +33,7 @@ import { Component, input, signal } from '@angular/core';
   styleUrl: './care-card.css',
 })
 export class CareCard {
-  readonly icon = input.required<string>();
+  readonly icon = input.required<IconName>();
   readonly label = input.required<string>();
   readonly value = input.required<string>();
   readonly description = input<string | null>(null);

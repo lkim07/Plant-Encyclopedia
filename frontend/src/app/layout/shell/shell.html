@@ -9,7 +9,7 @@
 <dialog #drawer class="drawer" aria-label="Main menu" (click)="onDrawerClick($event)">
   <div class="drawer-panel">
     <button type="button" class="icon-button drawer-close" aria-label="Close menu" (click)="closeDrawer()">
-      <span aria-hidden="true">✕</span>
+      <app-icon name="close" />
     </button>
     <app-sidebar (navigate)="closeDrawer()" />
   </div>

@@ -32,6 +32,7 @@ import { ImageCard } from '../../shared/image-card/image-card';
 import { WhenVisible } from '../../shared/when-visible';
 import { SearchBox } from './search-box';
 import { isNameShaped, validateSearchText } from './search-text';
+import { Icon } from '../../shared/icons/icon';
 
 /** The "Search Catalogue of Life" action shown when the local search finds nothing (API_SPEC §27). */
 type ExternalLookupState =
@@ -67,7 +68,7 @@ type ResultsState =
  */
 @Component({
   selector: 'app-search-page',
-  imports: [RouterLink, ImageCard, SearchBox, WhenVisible],
+  imports: [RouterLink, ImageCard, SearchBox, WhenVisible, Icon],
   templateUrl: './search-page.html',
   styleUrls: ['../../shared/browse-page.css', './search-page.css'],
 })

@@ -24,12 +24,12 @@
   />
   @if (text()) {
     <button type="button" class="icon-button clear" aria-label="Clear search" (click)="clear()">
-      <span aria-hidden="true">✕</span>
+      <app-icon name="close" />
     </button>
   }
 
   @if (showSuggestions()) {
-    <ul id="search-suggestions" class="suggestions" role="listbox" aria-label="Suggestions">
+    <ul id="search-suggestions" class="suggestions" role="listbox" aria-label="Suggestions" data-lenis-prevent>
       @for (suggestion of suggestions(); track suggestion.text; let i = $index) {
         <!-- mousedown is cancelled so the input keeps focus and the click still lands. -->
         <li

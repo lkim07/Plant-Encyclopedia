@@ -1,5 +1,5 @@
 <div class="brand">
-  <span class="brand-icon" aria-hidden="true">🌿</span>
+  <app-icon class="brand-icon" name="leaf" />
   @if (!collapsed()) {
     <span class="brand-name">Plant Encyclopedia</span>
   }
@@ -13,7 +13,7 @@
     [attr.aria-label]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
     (click)="toggleCollapsed.emit()"
   >
-    <span aria-hidden="true">{{ collapsed() ? '»' : '«' }}</span>
+    <app-icon [name]="collapsed() ? 'chevrons-right' : 'chevrons-left'" />
   </button>
 }
 
@@ -30,9 +30,9 @@
           [attr.title]="collapsed() ? item.label : null"
           (click)="navigate.emit()"
         >
-          <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+          <app-icon class="nav-icon" [name]="item.icon" />
           @if (!collapsed()) {
-            <span>{{ item.label }}</span>
+            <span class="nav-label">{{ item.label }}</span>
           }
         </a>
       </li>
@@ -42,8 +42,8 @@
 
 <!-- Authentication is not implemented yet, so the account entry is a disabled placeholder. -->
 <button type="button" class="nav-item account" disabled [attr.aria-label]="collapsed() ? 'Login' : null">
-  <span class="nav-icon" aria-hidden="true">👤</span>
+  <app-icon class="nav-icon" name="user" />
   @if (!collapsed()) {
-    <span>Login</span>
+    <span class="nav-label">Login</span>
   }
 </button>

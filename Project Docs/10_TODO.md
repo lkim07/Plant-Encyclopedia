@@ -877,10 +877,11 @@ Only after the core product works reliably:
 
 ## Visual
 
-* [ ] Refine typography
+* [x] Refine typography (Nunito with Gowun Dodum for Korean)
+* [x] Replace emoji with outlined brown icons
 * [ ] Refine spacing
 * [ ] Refine image presentation
-* [ ] Refine cards
+* [-] Refine cards (outlined-leaf placeholder, fade-in, hover zoom; masonry and hover information pending)
 * [ ] Refine hero transition
 * [ ] Refine responsive layouts
 
@@ -888,15 +889,17 @@ Only after the core product works reliably:
 
 * [ ] Add subtle desktop cursor effect if still valuable
 * [ ] Add occasional leaf effect if still valuable
-* [ ] Add subtle hover interactions
+* [x] Add subtle hover interactions (sidebar labels, card images)
 * [ ] Add bookmark animation
-* [ ] Add scroll-driven hero transition
+* [-] Add scroll-driven hero transition (hero ease-in and scroll drift on desktop; card-to-hero transition needs the detail data before the page changes)
 
 ## Motion Review
 
-* [ ] Verify navigation never waits for animation
-* [ ] Verify reduced-motion behavior
+* [ ] Verify navigation never waits for animation (by design; check in the browser)
+* [-] Verify reduced-motion behavior (card fade-ins covered by tests; check the rest in the browser)
 * [ ] Verify mobile performance
+* [ ] Measure with Lighthouse before and after the visual refresh
+  - Priority: High (before treating Phase 22 motion as done)
 * [ ] Remove effects that do not add meaningful value
 
 ---

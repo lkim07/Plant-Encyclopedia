@@ -5,7 +5,7 @@
 
   <header class="search-header">
     <button type="button" class="icon-button" aria-label="Back" (click)="goBack()">
-      <span aria-hidden="true">←</span>
+      <app-icon name="arrow-left" />
     </button>
     <app-search-box [(text)]="text" (submitted)="submit($event)" />
   </header>
@@ -25,7 +25,7 @@
                 [attr.aria-label]="'Remove ' + item + ' from recent searches'"
                 (click)="removeRecent(item)"
               >
-                <span aria-hidden="true">×</span>
+                <app-icon name="close" />
               </button>
             </li>
           }

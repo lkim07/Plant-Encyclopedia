@@ -7,8 +7,13 @@
   --color-text-muted: #6b5847;
   --color-focus: #8a5a2b;
   --color-backdrop: rgb(40 28 20 / 0.4);
+  /* Outlined icons (UX §2.1): a warm mid-brown, lighter than the text. */
+  --color-icon: #7a5232;
 
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+  /* Nunito (rounded, readable) with Gowun Dodum for Korean, which Nunito lacks. Both bundled (SIL OFL). */
+  --font-sans:
+    'Nunito', 'Gowun Dodum', system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans KR',
+    sans-serif;
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -25,6 +30,7 @@
   --top-bar-height: 3.5rem;
   --touch-target: 2.75rem;
   --transition-fast: 150ms ease-out;
+  --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 *,
@@ -96,7 +102,50 @@ button {
   opacity: 0.5;
 }
 
+/*
+ * Cards fade and rise in as they come into view (the Reveal directive adds .revealed). The delay staggers a
+ * row. Without the directive running, nothing is hidden: .reveal only hides once the directive has started.
+ */
+.reveal {
+  opacity: 0;
+  transform: translateY(1.25rem);
+  transition:
+    opacity 500ms ease-out,
+    transform 650ms var(--ease-out-soft);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.reveal.revealed {
+  opacity: 1;
+  transform: none;
+}
+
+/* Phones: a shorter, smaller movement (UX §52). */
+@media (max-width: 47.99rem) {
+  .reveal {
+    transform: translateY(0.5rem);
+    transition-duration: 300ms;
+  }
+}
+
+/* Page changes cross-fade (router View Transitions); the sidebar and top bar stay put. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+
   *,
   *::before,
   *::after {

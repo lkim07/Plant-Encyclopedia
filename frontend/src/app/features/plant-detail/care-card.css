@@ -21,6 +21,9 @@ button.card {
 }
 
 .title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
   color: var(--color-text-muted);
   font-size: 0.875rem;
 }
@@ -38,4 +41,6 @@ button.card {
   position: absolute;
   right: var(--space-3);
   bottom: var(--space-2);
+  width: 1.125rem;
+  height: 1.125rem;
 }

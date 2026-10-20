@@ -1,6 +1,16 @@
 import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, computed, inject } from '@angular/core';
+import {
+  afterNextRender,
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  ElementRef,
+  inject,
+  Injector,
+  untracked,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
@@ -19,6 +29,8 @@ import { goBack } from '../../core/navigation/go-back';
 import { CareCard } from './care-card';
 import { ImageCreditLine } from './image-credit';
 import { formatTemperature } from './format-temperature';
+import { Icon, IconName } from '../../shared/icons/icon';
+import { isDesktopPointer, loadGsap, motionAllowed } from '../../shared/motion';
 
 type PageState =
   | { readonly status: 'loading' }
@@ -28,16 +40,20 @@ type PageState =
 
 interface CareCardView {
   readonly key: string;
-  readonly icon: string;
+  readonly icon: IconName;
   readonly label: string;
   readonly value: string;
   readonly description: string | null;
 }
 
-/** Plant Detail (UX §25–29): hero placeholder, naming hierarchy, description, Quick Care. */
+/**
+ * Plant Detail (UX §25–29): hero, naming hierarchy, description, Quick Care. When motion is welcome, the hero
+ * image and its name panel ease in (GSAP), and on desktop the image drifts slower than the page as it scrolls
+ * away. The page is complete without any of it.
+ */
 @Component({
   selector: 'app-plant-detail-page',
-  imports: [RouterLink, CareCard, ImageCreditLine],
+  imports: [RouterLink, CareCard, ImageCreditLine, Icon],
   templateUrl: './plant-detail-page.html',
   styleUrl: './plant-detail-page.css',
 })
@@ -47,6 +63,9 @@ export class PlantDetailPage {
   private readonly location = inject(Location);
   private readonly plantApi = inject(PlantApi);
   private readonly retry$ = new Subject<void>();
+  private readonly host = inject(ElementRef<HTMLElement>);
+  private readonly injector = inject(Injector);
+  private heroAnimation?: { revert(): void };
 
   protected readonly skeletonCards = [1, 2, 3, 4];
 
@@ -68,23 +87,23 @@ export class PlantDetailPage {
 
     const cards: CareCardView[] = [];
     if (care.light) {
-      cards.push({ key: 'light', icon: '☀', label: 'Light', ...care.light });
+      cards.push({ key: 'light', icon: 'sun', label: 'Light', ...care.light });
     }
     if (care.water) {
-      cards.push({ key: 'water', icon: '💧', label: 'Water', ...care.water });
+      cards.push({ key: 'water', icon: 'droplet', label: 'Water', ...care.water });
     }
     const temperature = care.temperature ? formatTemperature(care.temperature) : null;
     if (care.temperature && temperature) {
       cards.push({
         key: 'temperature',
-        icon: '🌡',
+        icon: 'thermometer',
         label: 'Temp',
         value: temperature,
         description: care.temperature.description,
       });
     }
     if (care.soil) {
-      cards.push({ key: 'soil', icon: '🌱', label: 'Soil', ...care.soil });
+      cards.push({ key: 'soil', icon: 'sprout', label: 'Soil', ...care.soil });
     }
     return cards;
   });
@@ -94,6 +113,22 @@ export class PlantDetailPage {
   }
 
   /** "taxonomy" → "Taxonomy": the label in front of a source credit. */
+  constructor() {
+    // Each loaded plant with an image gets its own hero animation; the previous one is undone first.
+    effect(() => {
+      const state = this.state();
+      untracked(() => {
+        this.heroAnimation?.revert();
+        this.heroAnimation = undefined;
+        if (state.status === 'loaded' && state.plant.heroImage && motionAllowed()) {
+          const plantId = state.plant.id;
+          afterNextRender(() => void this.animateHero(plantId), { injector: this.injector });
+        }
+      });
+    });
+    inject(DestroyRef).onDestroy(() => this.heroAnimation?.revert());
+  }
+
   protected attributionLabel(type: string): string {
     return type.charAt(0).toUpperCase() + type.slice(1);
   }
@@ -103,6 +138,38 @@ export class PlantDetailPage {
     const state = this.state();
     const groupId = state.status === 'loaded' ? state.plant.plantGroupId : null;
     goBack(this.location, this.router, groupId ? `/plant-groups/${groupId}` : '/explore');
+  }
+
+  private async animateHero(plantId: string): Promise<void> {
+    const { gsap } = await loadGsap();
+    const state = this.state();
+    const hero = this.host.nativeElement.querySelector('.hero.has-image');
+    if (state.status !== 'loaded' || state.plant.id !== plantId || !hero) {
+      return; // the page moved on while GSAP loaded
+    }
+
+    const desktop = isDesktopPointer();
+    this.heroAnimation = gsap.context(() => {
+      gsap.from('.hero-image', {
+        opacity: 0,
+        scale: 1.03,
+        duration: desktop ? 1 : 0.5,
+        ease: 'power2.out',
+      });
+      gsap.from('.names', {
+        opacity: 0,
+        y: desktop ? 32 : 12,
+        duration: desktop ? 0.8 : 0.4,
+        delay: 0.15,
+        ease: 'power3.out',
+      });
+      if (desktop) {
+        // The image drifts slower than the page as the hero scrolls away.
+        const scrollTrigger = { trigger: hero, start: 'top top', end: 'bottom top', scrub: true };
+        gsap.to('.hero-image', { yPercent: 10, ease: 'none', scrollTrigger });
+        gsap.to('.hero-backdrop', { yPercent: 5, ease: 'none', scrollTrigger });
+      }
+    }, hero);
   }
 
   private load(plantId: string): Observable<PageState> {

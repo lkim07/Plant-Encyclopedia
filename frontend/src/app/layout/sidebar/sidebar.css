@@ -17,10 +17,31 @@
 
 .brand-icon,
 .nav-icon {
-  display: inline-grid;
-  place-items: center;
   width: 1.75rem;
-  font-size: 1.25rem;
+  height: 1.75rem;
+}
+
+/*
+ * Hovered or focused labels grow (UX request, 2026-10-20). A transform, so nothing around them moves.
+ * Only with a real pointer and when motion is welcome; touch screens and reduced motion keep them still.
+ */
+.nav-label,
+.nav-icon {
+  display: inline-block;
+  transform-origin: left center;
+  transition: transform 220ms var(--ease-out-soft);
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .nav-item:hover:not(:disabled) .nav-label,
+  .nav-item:focus-visible .nav-label {
+    transform: scale(1.12);
+  }
+
+  .nav-item:hover:not(:disabled) .nav-icon,
+  .nav-item:focus-visible .nav-icon {
+    transform: scale(1.08);
+  }
 }
 
 .collapse-toggle {

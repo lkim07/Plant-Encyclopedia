@@ -59,14 +59,16 @@
  * letterboxed box), so the mask feathers the photo's real edges into the blurred copy behind it.
  */
 .hero-image {
+  /* Centred with auto margins (not a transform), so the scroll animation can use transforms freely. */
   position: absolute;
   top: var(--space-4);
-  left: 50%;
+  right: 0;
+  left: 0;
   width: auto;
   height: auto;
   max-width: 100%;
   max-height: calc(100% - 7rem);
-  transform: translateX(-50%);
+  margin-inline: auto;
   -webkit-mask-image:
     linear-gradient(to right, transparent, #000 10%, #000 90%, transparent),
     linear-gradient(to bottom, transparent, #000 10%, #000 90%, transparent);

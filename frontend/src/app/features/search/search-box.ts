@@ -13,6 +13,7 @@ import { catchError, debounceTime, distinctUntilChanged, map, of, Subject, switc
 import { SearchApi } from '../../core/api/search-api';
 import { SearchSuggestion, SuggestionType } from '../../core/api/search.model';
 import { MAX_SEARCH_LENGTH, validateSearchText } from './search-text';
+import { Icon } from '../../shared/icons/icon';
 
 /** Suggestions are requested only after typing pauses for this long (UX §19). */
 export const SUGGESTION_DELAY_MS = 250;
@@ -33,6 +34,7 @@ const TYPE_LABELS: Record<SuggestionType, string> = {
  */
 @Component({
   selector: 'app-search-box',
+  imports: [Icon],
   templateUrl: './search-box.html',
   styleUrl: './search-box.css',
 })
