@@ -685,6 +685,28 @@ Invalid `page` / `pageSize` — `400 VALIDATION_ERROR` (see §10).
 GET /api/explore
 ```
 
+Implemented (Phase 7, feed for visitors without behavioral data):
+
+```json
+{
+  "data": [
+    {
+      "id": "d5e00000-0000-4000-8000-000000000001",
+      "name": "Dog rose",
+      "plantGroup": "Roses",
+      "imageUrl": "/media/plants/…/…-medium.webp"
+    }
+  ],
+  "pagination": { "page": 1, "pageSize": 20, "hasNext": true }
+}
+```
+
+* `page` / `pageSize` use the limits in §10 (`pageSize` up to 50); other values return `400 VALIDATION_ERROR`.
+* Only `Published` plants with a plant group appear, each exactly once; cultivars are separate plants.
+* `imageUrl` is the card image (§16), or `null`.
+* The order is the same on every request (no randomness, no popularity), so pages never repeat or skip a plant; see §22.
+* `categoryId` (§21) and personalization are not implemented. Authentication is not used yet.
+
 ### Authentication
 
 Optional.
@@ -735,6 +757,8 @@ For users with sufficient behavioral data:
 ```
 
 This is a recommendation guideline rather than a strict API response requirement.
+
+Implemented for new or anonymous users (Phase 7): categories take turns (every category's first plant, then every category's second, …, categories in name order); inside a category the plant groups take turns the same way; inside a group, plants with an image come first, then by name. Behavioral personalization is not implemented.
 
 ---
 

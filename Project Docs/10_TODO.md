@@ -357,18 +357,20 @@ This vertical slice should validate the architecture before a large amount of fu
 
 ## Explore API
 
-* [ ] Implement `GET /api/explore`
-* [ ] Establish initial feed composition
-* [ ] Add category diversity
-* [ ] Prevent duplicate plant/cultivar cards
-* [ ] Support pagination/infinite scrolling
+* [x] Implement `GET /api/explore`
+* [x] Establish initial feed composition (categories and plant groups take turns; plants with images first)
+* [x] Add category diversity
+* [x] Prevent duplicate plant/cultivar cards
+* [x] Support pagination/infinite scrolling
+* [ ] Restore the Explore feed and scroll position on Back (UX §15)
+  - Priority: Medium
 
 ## Anonymous/New User Feed
 
-* [ ] Implement broad category representation
-* [ ] Implement curated/diverse discovery
-* [ ] Avoid popularity-only recommendations
-* [ ] Avoid repeated plants
+* [x] Implement broad category representation
+* [-] Implement curated/diverse discovery (rule-based order; no hand-curated picks yet)
+* [x] Avoid popularity-only recommendations
+* [x] Avoid repeated plants
 
 ## Behavioral Personalization
 

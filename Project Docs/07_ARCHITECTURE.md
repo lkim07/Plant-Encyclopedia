@@ -2145,6 +2145,8 @@ Angular Grid
 
 Feed composition should remain fast enough for normal browsing.
 
+Implemented (Phase 7): `GET /api/explore` → `IExploreQueries` (Application/Explore) → `ExploreQueries` (Infrastructure). One parameterized SQL statement numbers each plant's turn inside its plant group (`row_number()`, plants with an image first, then by name), then each plant's turn inside its category (by group turn, then group), and orders the feed by category turn, then category name. Paging uses `OFFSET`/`LIMIT` with one extra row for `hasNext`. There is no service layer, recommendation weights or personalization yet. The frontend loads 20 cards per page with infinite scroll (the shared `WhenVisible` directive, also used by Search) and a Load more fallback.
+
 ---
 
 # 72. Recommended Favorites Flow

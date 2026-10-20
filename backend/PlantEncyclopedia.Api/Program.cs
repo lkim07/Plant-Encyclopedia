@@ -4,6 +4,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.FileProviders;
 using PlantEncyclopedia.Api.Categories;
 using PlantEncyclopedia.Api.Errors;
+using PlantEncyclopedia.Api.Explore;
 using PlantEncyclopedia.Api.Health;
 using PlantEncyclopedia.Api.PlantGroups;
 using PlantEncyclopedia.Api.Plants;
@@ -92,6 +93,7 @@ app.MapPlantEndpoints();
 app.MapCategoryEndpoints();
 app.MapPlantGroupEndpoints();
 app.MapSearchEndpoints();
+app.MapExploreEndpoints();
 
 app.Run();
 

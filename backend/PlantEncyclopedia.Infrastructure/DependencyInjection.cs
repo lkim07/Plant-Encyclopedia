@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using PlantEncyclopedia.Application.Categories;
+using PlantEncyclopedia.Application.Explore;
 using PlantEncyclopedia.Application.ExternalData;
 using PlantEncyclopedia.Application.ExternalData.Images;
 using PlantEncyclopedia.Application.PlantGroups;
@@ -31,6 +32,7 @@ public static class DependencyInjection
         services.AddScoped<ICategoryQueries, CategoryQueries>();
         services.AddScoped<IPlantGroupQueries, PlantGroupQueries>();
         services.AddScoped<ISearchQueries, SearchQueries>();
+        services.AddScoped<IExploreQueries, ExploreQueries>();
 
         return services;
     }

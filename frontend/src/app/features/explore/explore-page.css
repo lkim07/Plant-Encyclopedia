@@ -65,6 +65,55 @@
   cursor: pointer;
 }
 
+.retry:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+/* The discovery feed: two columns on mobile, more as space allows (as on Search and plant-group pages). */
+.feed {
+  margin-top: var(--space-6);
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 48rem) {
+  .card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  }
+}
+
+.card-skeleton {
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  animation: pulse 1.2s ease-in-out infinite alternate;
+}
+
+.muted {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.sentinel {
+  height: 1px;
+}
+
+.load-more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+}
+
 @keyframes pulse {
   to {
     opacity: 0.55;

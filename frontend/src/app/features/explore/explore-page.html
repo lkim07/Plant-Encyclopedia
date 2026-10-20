@@ -31,3 +31,60 @@
     <button type="button" class="retry" (click)="retry()">Try Again</button>
   </div>
 }
+
+@let f = feed();
+
+<!-- The discovery feed (UX §13, §17): every plant once, with categories taking turns. -->
+<section class="feed" aria-labelledby="feed-heading">
+  <h2 id="feed-heading" class="visually-hidden">Discover plants</h2>
+
+  @if (f.status === 'loading') {
+    <span class="visually-hidden" role="status">Loading plants…</span>
+    <ul class="card-grid" aria-hidden="true">
+      @for (card of skeletonCards; track card) {
+        <li class="card-skeleton"></li>
+      }
+    </ul>
+  } @else if (f.status === 'loaded') {
+    @if (f.cards.length > 0) {
+      <ul class="card-grid" aria-label="Plants to discover">
+        @for (card of f.cards; track card.id) {
+          <li>
+            <app-image-card
+              [name]="card.name"
+              [imageUrl]="card.imageUrl"
+              [link]="'/plants/' + card.id"
+            />
+          </li>
+        }
+      </ul>
+
+      @if (f.hasNext) {
+        @if (f.more === 'idle') {
+          <!-- Infinite scroll: the next page loads as this comes into view (WhenVisible). -->
+          <div class="sentinel" aria-hidden="true" appWhenVisible (visible)="loadMore()"></div>
+        }
+        <div class="load-more">
+          @if (f.more === 'error') {
+            <p class="muted" role="alert">We couldn't load more plants.</p>
+          }
+          <button
+            type="button"
+            class="retry"
+            [disabled]="f.more === 'loading'"
+            (click)="loadMore()"
+          >
+            {{ f.more === 'loading' ? 'Loading…' : f.more === 'error' ? 'Try Again' : 'Load more' }}
+          </button>
+        </div>
+      }
+    } @else {
+      <p class="muted">No plants to explore yet.</p>
+    }
+  } @else {
+    <div class="error" role="alert">
+      <p>Something went wrong. We couldn't load plants to explore.</p>
+      <button type="button" class="retry" (click)="loadFeed()">Try Again</button>
+    </div>
+  }
+</section>

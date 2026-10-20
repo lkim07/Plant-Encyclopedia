@@ -5,8 +5,6 @@ import {
   Component,
   computed,
   DestroyRef,
-  effect,
-  ElementRef,
   inject,
   signal,
   viewChild,
@@ -31,6 +29,7 @@ import { ExternalLookupResult, SearchResultItem } from '../../core/api/search.mo
 import { goBack } from '../../core/navigation/go-back';
 import { RecentSearches } from '../../core/storage/recent-searches';
 import { ImageCard } from '../../shared/image-card/image-card';
+import { WhenVisible } from '../../shared/when-visible';
 import { SearchBox } from './search-box';
 import { isNameShaped, validateSearchText } from './search-text';
 
@@ -68,7 +67,7 @@ type ResultsState =
  */
 @Component({
   selector: 'app-search-page',
-  imports: [RouterLink, ImageCard, SearchBox],
+  imports: [RouterLink, ImageCard, SearchBox, WhenVisible],
   templateUrl: './search-page.html',
   styleUrls: ['../../shared/browse-page.css', './search-page.css'],
 })
@@ -81,7 +80,6 @@ export class SearchPage {
   private readonly recentSearches = inject(RecentSearches);
   private readonly retry$ = new Subject<void>();
   private readonly searchBox = viewChild.required(SearchBox);
-  private readonly sentinel = viewChild<ElementRef<HTMLElement>>('sentinel');
   private loadMoreSubscription?: Subscription;
   private lookupSubscription?: Subscription;
 
@@ -123,25 +121,6 @@ export class SearchPage {
       if (!this.query()) {
         this.searchBox().focus();
       }
-    });
-
-    // Infinite scroll: load the next page when the sentinel below the results comes into view.
-    // The sentinel only exists while another page can be loaded, so each new one re-arms the observer.
-    effect((onCleanup) => {
-      const element = this.sentinel()?.nativeElement;
-      if (!element || typeof IntersectionObserver === 'undefined') {
-        return;
-      }
-      const observer = new IntersectionObserver(
-        (entries) => {
-          if (entries.some((entry) => entry.isIntersecting)) {
-            this.loadMore();
-          }
-        },
-        { rootMargin: '400px 0px' },
-      );
-      observer.observe(element);
-      onCleanup(() => observer.disconnect());
     });
   }
 

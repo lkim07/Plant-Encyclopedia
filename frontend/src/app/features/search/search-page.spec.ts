@@ -494,5 +494,9 @@ describe('SearchPage', () => {
 
     expect(TestBed.inject(Router).url).toBe('/explore');
     http.expectOne('/api/categories').flush({ data: [] });
+    // Explore also loads its feed.
+    http
+      .expectOne((req) => req.url === '/api/explore')
+      .flush({ data: [], pagination: { page: 1, pageSize: 20, hasNext: false } });
   });
 });

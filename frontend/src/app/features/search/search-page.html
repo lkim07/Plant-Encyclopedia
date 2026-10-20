@@ -57,7 +57,8 @@
 
       @if (s.hasNext && s.page < maxPage) {
         @if (s.more === 'idle') {
-          <div #sentinel class="sentinel" aria-hidden="true"></div>
+          <!-- Infinite scroll: the next page loads as this comes into view (WhenVisible). -->
+          <div class="sentinel" aria-hidden="true" appWhenVisible (visible)="loadMore()"></div>
         }
         <div class="load-more">
           @if (s.more === 'error') {
