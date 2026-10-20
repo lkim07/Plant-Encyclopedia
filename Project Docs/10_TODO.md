@@ -479,7 +479,10 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
   - Done (11d-1): sources (iNaturalist, Wikipedia, Commons), licence policy (PD, CC0, CC BY, CC BY-SA), automatic choice
   - Done (11d-2): `kind` column, download and checks, WebP sizes, local storage, background worker with its own budget, startup backfill, API fields, cards, whole-image detail hero with credits, Commons species photos, illustrations only as a fallback
   - Next: manually verify in the browser with real downloads (Priority: High)
-  - Next (11d-3): Cloudflare R2 storage (developer creates the account)
+  - Done (11d-3): Cloudflare R2 storage; existing images moved
+* [ ] Serve R2 images from a custom domain instead of `r2.dev` before production
+  - Why: Cloudflare rate-limits `r2.dev` and does not recommend it for production
+  - Priority: Before deployment
 * [ ] Choose a plant's image by hand from its candidates
   - Why: Automatic choice cannot see what a photo shows; Sugar maple (seeds), Peppermint and Rosa rugosa still have unsuitable images
   - Shape: list a plant's acceptable candidates with thumbnails, pick one, store it; needs authorization before it leaves Development

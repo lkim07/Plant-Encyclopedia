@@ -169,6 +169,12 @@ Implemented and verified:
     * Plant Detail attributions
   * **Total:** 268 backend tests pass with 0 build warnings. No migration; no live GBIF requests were made in 11c.
   * **Manually verified** by the developer on 2026-10-17 in the browser against real GBIF (Development).
+* Cloudflare R2 image storage, Phase 11d-3, 2026-10-20 (ARCHITECTURE §19).
+  * **Setup:** bucket `plant-encyclopedia-images`, an Account API token limited to Object Read & Write on it (keys in User Secrets), public reads through `https://pub-1a7886f8403245e981ef4d9f1944e825.r2.dev`. Development uses `Storage: R2`; the default is still Local.
+  * **Code:** `R2ImageStorage` (AWSSDK.S3 4.0.104.5, Apache-2.0); startup validation of account ID, keys, bucket and public address; `check-r2` and `migrate-images-to-r2` commands.
+  * **Live check:** `check-r2` uploaded a test file, read it back through the public address with matching bytes, and deleted it.
+  * **Migration:** 89 images (267 files) moved from `App_Data/plant-images` to R2 with 0 missing files; a second run moved nothing; a moved file loads publicly as `image/webp` with the one-year cache header. The local folder is kept as a backup.
+  * **Tests:** 15 new backend tests (request shape and signing, refused keys, upload failure, settings validation, migration with a fake R2); 412 backend tests pass with 0 build warnings. Tests never contact Cloudflare.
 * Image review and plant-group images, 2026-10-20 (ARCHITECTURE §22, DATABASE_DESIGN §12, API_SPEC §18).
   * **Rejecting:** migration `AddPlantImageRejectedAt` (applied to `plant_encyclopedia_dev`). Rejected images are hidden from Plant Detail, cards, search, Explore and group cards; the import skips every source image already stored for the plant, so the next acceptable candidate is chosen. The startup backfill includes plants without a usable photo.
   * **Development tool:** `POST /api/dev/plants/{id}/hero-image/reject`, mapped only in Development and Testing.

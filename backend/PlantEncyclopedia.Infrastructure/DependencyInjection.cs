@@ -131,7 +131,16 @@ public static class DependencyInjection
         services.AddTransient<IPlantImageSource, CommonsIllustrationSource>();
         services.AddTransient<PlantImageSelector>();
 
-        services.AddSingleton<IImageStorage, LocalImageStorage>();
+        if (images.Storage == ImageStorageKind.R2)
+        {
+            services.AddSingleton(_ => new R2ImageStorage(images));
+            services.AddSingleton<IImageStorage>(sp => sp.GetRequiredService<R2ImageStorage>());
+            services.AddScoped<ImageStorageMigration>();
+        }
+        else
+        {
+            services.AddSingleton<IImageStorage, LocalImageStorage>();
+        }
         services.AddScoped<PlantImageImportService>();
 
         services.AddSingleton<PlantImageQueue>();

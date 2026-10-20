@@ -598,6 +598,18 @@ PostgreSQL stores metadata such as:
 
 The database should not store large image binary data unless a specific requirement justifies it.
 
+### Implemented (Phase 11d-3): Cloudflare R2
+
+Plant images are stored in the Cloudflare R2 bucket `plant-encyclopedia-images` instead of Amazon S3 (the developer's choice; R2 charges nothing for downloads and speaks the S3 API, so moving to S3 later is a configuration change).
+
+* `ExternalPlantData:Images:Storage` selects `Local` (the folder served at `/media`) or `R2`. Development uses R2; the default stays Local.
+* `R2ImageStorage` uploads with the AWS S3 SDK (`AWSSDK.S3`, Apache-2.0) to `https://{AccountId}.r2.cloudflarestorage.com`, path-style, region `auto`, unsigned payload, checksums only when required, `image/webp`, `Cache-Control: public, max-age=31536000, immutable`.
+* Browsers load files from `ExternalPlantData:Images:R2:PublicBaseUrl`: in Development the bucket's `r2.dev` address, which Cloudflare rate-limits and does not recommend for production; a custom domain replaces it before release.
+* The database stores the full public URLs; keys are `plants/{plantId}/{imageId}-{size}.webp`, the same as the local folder.
+* Commands (the API exits without starting the web server):
+  * `check-r2` uploads a tiny file, reads it back through the public address, compares it and deletes it.
+  * `migrate-images-to-r2` uploads every image still stored locally and rewrites its URLs; running it again does nothing. Local files are kept as a backup.
+
 ---
 
 # 20. Image Processing
@@ -774,7 +786,7 @@ Fuzzy matches, higher-rank fallbacks, synonyms and non-plants are rejected, and 
   * Download: HTTPS from `inaturalist-open-data.s3.amazonaws.com`, `upload.wikimedia.org` or `thumb.wikimedia.org` only, no redirects or retries, 15-second timeout, 15 MB limit, JPEG, PNG or WebP content types only.
   * Checks: the bytes must decode as JPEG, PNG or WebP, at most 12,000 pixels a side and 50 megapixels (read from the header before decoding).
   * Re-encoding (SkiaSharp, MIT): EXIF orientation applied; WebP at quality 82 in widths 400 (`thumb`), 800 (`medium`) and 1600 (`large`), never enlarged. Only pixels are kept, so camera data such as GPS coordinates is dropped.
-  * Files: `plants/{plantId}/{imageId}-{size}.webp` under `ExternalPlantData:Images:StoragePath` (default `App_Data/plant-images`, git-ignored), written to a temporary name and then moved. Cloudflare R2 replaces the folder in Phase 11d-3.
+  * Files: `plants/{plantId}/{imageId}-{size}.webp` under `ExternalPlantData:Images:StoragePath` (default `App_Data/plant-images`, git-ignored), written to a temporary name and then moved. Since Phase 11d-3, Development stores files in Cloudflare R2 instead (§19).
 * **Row:** one `plant_images` row per image with `kind`, the three URLs, the large size, `source` (`inaturalist` / `wikimedia-commons`), `source_id`, `source_url` (Commons file page; none for iNaturalist yet), `license` (a licence code), `attribution` (the author), `alt_text` ("Dog rose (Rosa canina)", "Botanical illustration of …") and `retrieved_at`. The same source image is stored once per plant (`ux_plant_images_plant_source`).
 * **Serving:** the API serves the folder at `/media`, `.webp` files only, with `Cache-Control: public, max-age=31536000, immutable` (file names never change) and `X-Content-Type-Options: nosniff`.
 * **Display:** cards use the photo's 800-pixel rendition, else the illustration's. Plant Detail's hero is the photo, else the illustration, shown whole over a blurred copy and fading into the page (UX §26), with a credit (author, licence, source).

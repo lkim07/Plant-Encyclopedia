@@ -49,6 +49,26 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
+// Connection check: upload, read back through the public address, and delete one tiny file in R2, then exit.
+//   dotnet run --project PlantEncyclopedia.Api -- check-r2
+if (args.Contains("check-r2"))
+{
+    var check = await app.Services.CheckR2Async(CancellationToken.None);
+    Console.WriteLine(
+        $"R2 check: uploaded={check.Uploaded} publicReadMatches={check.PublicReadMatches} deleted={check.Deleted} " +
+        $"url={check.PublicUrl} {check.Problem}");
+    return;
+}
+
+// One-off command: move locally stored images to Cloudflare R2, then exit without starting the web server.
+//   dotnet run --project PlantEncyclopedia.Api -- migrate-images-to-r2
+if (args.Contains("migrate-images-to-r2"))
+{
+    var moved = await app.Services.MigrateImagesToR2Async(CancellationToken.None);
+    Console.WriteLine($"Moved {moved.Images} images to R2: {moved.Files} files uploaded, {moved.MissingFiles} local files missing.");
+    return;
+}
+
 // GlobalExceptionHandler writes the response. The empty fallback is required by the middleware and
 // only runs if GlobalExceptionHandler does not handle the exception; it returns a bare 500 with no body.
 app.UseExceptionHandler(_ => { });

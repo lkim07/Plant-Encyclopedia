@@ -353,6 +353,11 @@ Image import (ARCHITECTURE §22–23) has its own app-wide budget of 40 requests
 
 Stored images are served at `/media`: `.webp` files only, from the image folder only, with `X-Content-Type-Options: nosniff`. File paths are built from GUIDs, never from external text.
 
+With Cloudflare R2 storage (Phase 11d-3):
+* The R2 Account API token is scoped to Object Read & Write on the `plant-encyclopedia-images` bucket only. Its access key ID and secret are kept in User Secrets, never in files or logs; the API validates them at startup.
+* Object keys are built from GUIDs; keys containing `..`, a leading `/` or `\` are refused before any request.
+* The bucket is public for reading only, through its `r2.dev` address in Development. Before production, switch to a custom domain and review public access and cache rules.
+
 All limits are in memory and per instance. A shared store is needed before running several instances. Forwarded headers are not trusted until a proxy is configured. Searched text is never logged.
 
 ---

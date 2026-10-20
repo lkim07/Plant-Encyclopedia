@@ -451,7 +451,7 @@ Field rules:
     }
   }
   ```
-  * `url` is the 1600-pixel WebP rendition, served by this API under `/media` (relative URL).
+  * `url` is the 1600-pixel WebP rendition: an absolute Cloudflare R2 URL when image storage is R2 (Development since Phase 11d-3), or a relative `/media/…` URL served by this API with local storage.
   * `kind` is `photo` or `illustration`.
   * `credit` is what the image's licence requires to be shown. `licenseUrl` is set only when the licence version is known; `sourceUrl` is the image's page at the source, when known. `credit` is `null` only for sources without reviewed credit text.
 * `quickCare` — `null` unless the plant's care information is **Verified**. Unverified care is never returned. Inside it, any card without a value is `null`.
