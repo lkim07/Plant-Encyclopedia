@@ -340,6 +340,10 @@ namespace PlantEncyclopedia.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("plant_id");
 
+                    b.Property<DateTimeOffset?>("RejectedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("rejected_at");
+
                     b.Property<DateTimeOffset?>("RetrievedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("retrieved_at");

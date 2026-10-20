@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.FileProviders;
 using PlantEncyclopedia.Api.Categories;
+using PlantEncyclopedia.Api.Dev;
 using PlantEncyclopedia.Api.Errors;
 using PlantEncyclopedia.Api.Explore;
 using PlantEncyclopedia.Api.Health;
@@ -94,6 +95,12 @@ app.MapCategoryEndpoints();
 app.MapPlantGroupEndpoints();
 app.MapSearchEndpoints();
 app.MapExploreEndpoints();
+
+// Unauthenticated development tools (image review). Never mapped in other environments.
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))
+{
+    app.MapDevImageEndpoints();
+}
 
 app.Run();
 

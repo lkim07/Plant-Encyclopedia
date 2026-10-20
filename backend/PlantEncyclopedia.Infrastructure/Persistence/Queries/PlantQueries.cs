@@ -36,6 +36,7 @@ internal sealed class PlantQueries(PlantEncyclopediaDbContext db) : IPlantQuerie
                     .Select(s => new PlantSourceInfo(s.Provider, s.SourceType))
                     .ToList(),
                 p.Images
+                    .Where(i => i.RejectedAt == null)
                     .OrderBy(i => i.Kind == PlantImageKind.Photo ? 0 : 1)
                     .ThenBy(i => i.CreatedAt)
                     .Select(i => new PlantImageInfo(
@@ -55,6 +56,7 @@ internal sealed class PlantQueries(PlantEncyclopediaDbContext db) : IPlantQuerie
                 p.ScientificName,
                 p.Status,
                 p.Images
+                    .Where(i => i.RejectedAt == null)
                     .OrderBy(i => i.Kind == PlantImageKind.Photo ? 0 : 1)
                     .ThenBy(i => i.CreatedAt)
                     .Select(i => i.MediumUrl ?? i.Url)

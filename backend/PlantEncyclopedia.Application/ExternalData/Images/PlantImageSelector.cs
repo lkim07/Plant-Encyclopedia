@@ -20,28 +20,36 @@ public sealed class PlantImageSelector(IEnumerable<IPlantImageSource> sources)
             await SelectAsync(scientificName, PlantImageKind.Illustration, cancellationToken));
 
     /// <summary>Only the given kinds; sources of other kinds are not asked.</summary>
+    /// <param name="excluded">Source images (provider, source ID) never to choose, e.g. ones already stored or rejected.</param>
     public async Task<IReadOnlyList<AcceptedImage>> SelectAsync(
         string scientificName,
         IReadOnlyCollection<PlantImageKind> kinds,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        IReadOnlySet<(string Provider, string SourceId)>? excluded = null)
     {
         var selected = new List<AcceptedImage>();
         foreach (var kind in kinds)
         {
-            if (await SelectAsync(scientificName, kind, cancellationToken) is { } image) selected.Add(image);
+            if (await SelectAsync(scientificName, kind, cancellationToken, excluded) is { } image) selected.Add(image);
         }
 
         return selected;
     }
 
-    private async Task<AcceptedImage?> SelectAsync(string scientificName, PlantImageKind kind, CancellationToken cancellationToken)
+    private async Task<AcceptedImage?> SelectAsync(
+        string scientificName,
+        PlantImageKind kind,
+        CancellationToken cancellationToken,
+        IReadOnlySet<(string Provider, string SourceId)>? excluded = null)
     {
         foreach (var source in _sources.Where(s => s.Kind == kind))
         {
             foreach (var candidate in await source.GetCandidatesAsync(scientificName, cancellationToken))
             {
                 // A source of photos must not slip in a drawing, or the reverse.
-                if (candidate.Kind == kind && ExternalImagePolicy.Evaluate(candidate, out var accepted) is null)
+                if (candidate.Kind == kind
+                    && excluded?.Contains((candidate.Provider, candidate.SourceId)) != true
+                    && ExternalImagePolicy.Evaluate(candidate, out var accepted) is null)
                 {
                     return accepted;
                 }

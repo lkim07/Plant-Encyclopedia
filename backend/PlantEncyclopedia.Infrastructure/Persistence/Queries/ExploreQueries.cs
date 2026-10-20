@@ -28,7 +28,7 @@ internal sealed class ExploreQueries(PlantEncyclopediaDbContext db) : IExploreQu
                 SELECT p.id, p.display_name, g.name AS plant_group, g.slug AS group_slug, c.name AS category_name, c.slug AS category_slug,
                        (SELECT coalesce(i.medium_url, i.url)
                         FROM plant_images i
-                        WHERE i.plant_id = p.id
+                        WHERE i.plant_id = p.id AND i.rejected_at IS NULL
                         ORDER BY CASE WHEN i.kind = {photo} THEN 0 ELSE 1 END, i.created_at
                         LIMIT 1) AS image_url
                 FROM plants p

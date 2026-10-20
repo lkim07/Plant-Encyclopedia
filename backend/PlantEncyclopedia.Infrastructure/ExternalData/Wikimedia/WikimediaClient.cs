@@ -133,7 +133,7 @@ internal sealed partial class WikimediaClient(HttpClient http, ILogger<Wikimedia
             MimeType: info.Mime,
             LicenseCode: Field("License"),
             ProviderRequiresAttribution: string.Equals(Field("AttributionRequired"), "true", StringComparison.OrdinalIgnoreCase),
-            Creator: PlainText(Field("Artist")) ?? PlainText(Field("Attribution")),
+            Creator: Author(Field("Artist")) ?? Author(Field("Attribution")),
             SourcePageUrl: pageUrl);
     }
 
@@ -143,6 +143,16 @@ internal sealed partial class WikimediaClient(HttpClient http, ILogger<Wikimedia
         && thumb.AbsolutePath != original.AbsolutePath;
 
     /// <summary>"&lt;a href=…&gt;Roberta F.&lt;/a&gt;" becomes "Roberta F."; blank becomes null.</summary>
+    /// <summary>
+    /// The author as plain text, or null when Commons only has placeholder text such as "No machine-readable author
+    /// provided. X assumed (based on copyright claims)." or "Unknown author": that is not an author to credit.
+    /// </summary>
+    internal static string? Author(string? html)
+    {
+        var text = PlainText(html);
+        return text is null || PlaceholderAuthor().IsMatch(text) ? null : text;
+    }
+
     internal static string? PlainText(string? html)
     {
         if (string.IsNullOrWhiteSpace(html)) return null;
@@ -154,6 +164,9 @@ internal sealed partial class WikimediaClient(HttpClient http, ILogger<Wikimedia
     // "Anacridium aegyptium", "Hippophae rhamnoides": a capitalized word, then a lower-case word.
     [GeneratedRegex("^[A-Z][a-z]+ [a-z][a-z-]+$")]
     private static partial Regex OtherTaxon();
+
+    [GeneratedRegex(@"^(?:No machine-readable author provided\b.*|(?:Unknown author\s*)+)$", RegexOptions.IgnoreCase)]
+    private static partial Regex PlaceholderAuthor();
 
     [GeneratedRegex("<[^>]*>")]
     private static partial Regex Tags();

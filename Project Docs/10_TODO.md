@@ -480,6 +480,12 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
   - Done (11d-2): `kind` column, download and checks, WebP sizes, local storage, background worker with its own budget, startup backfill, API fields, cards, whole-image detail hero with credits, Commons species photos, illustrations only as a fallback
   - Next: manually verify in the browser with real downloads (Priority: High)
   - Next (11d-3): Cloudflare R2 storage (developer creates the account)
+* [ ] Choose a plant's image by hand from its candidates
+  - Why: Automatic choice cannot see what a photo shows; Sugar maple (seeds), Peppermint and Rosa rugosa still have unsuitable images
+  - Shape: list a plant's acceptable candidates with thumbnails, pick one, store it; needs authorization before it leaves Development
+  - Priority: Medium (also listed under Future features in README.md)
+* [x] Reject a wrong image and take the next candidate (`rejected_at`, Development endpoint)
+* [x] Plant-group card images (one plant's image per group, stable for a day)
 * [ ] Verify the iNaturalist photo page URL pattern before linking credits to it
   - Why: The API returns no photo page URL; none is invented
   - Priority: Medium

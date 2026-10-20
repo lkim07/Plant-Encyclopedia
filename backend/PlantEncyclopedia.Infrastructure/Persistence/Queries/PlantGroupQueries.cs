@@ -35,6 +35,7 @@ internal sealed class PlantGroupQueries(PlantEncyclopediaDbContext db) : IPlantG
                 p.Id,
                 p.DisplayName,
                 p.Images
+                    .Where(i => i.RejectedAt == null)
                     .OrderBy(i => i.Kind == PlantImageKind.Photo ? 0 : 1)
                     .ThenBy(i => i.CreatedAt)
                     .Select(i => i.MediumUrl ?? i.Url)

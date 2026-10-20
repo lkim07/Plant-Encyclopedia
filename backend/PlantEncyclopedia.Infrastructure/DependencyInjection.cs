@@ -29,6 +29,7 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString).UseSnakeCaseNamingConvention());
 
         services.AddScoped<IPlantQueries, PlantQueries>();
+        services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<ICategoryQueries, CategoryQueries>();
         services.AddScoped<IPlantGroupQueries, PlantGroupQueries>();
         services.AddScoped<ISearchQueries, SearchQueries>();
@@ -58,6 +59,8 @@ public static class DependencyInjection
         services.AddSingleton(genusPlantGroups);
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<IPlantImportStore, PlantImportStore>();
+        // Also used by the Development-only image rejection endpoint, so registered even when image import is off.
+        services.AddScoped<IPlantImageStore, PlantImageStore>();
         services.AddScoped<PlantIngestionService>();
         services.AddScoped<ExternalPlantLookupService>();
 
@@ -129,7 +132,6 @@ public static class DependencyInjection
         services.AddTransient<PlantImageSelector>();
 
         services.AddSingleton<IImageStorage, LocalImageStorage>();
-        services.AddScoped<IPlantImageStore, PlantImageStore>();
         services.AddScoped<PlantImageImportService>();
 
         services.AddSingleton<PlantImageQueue>();

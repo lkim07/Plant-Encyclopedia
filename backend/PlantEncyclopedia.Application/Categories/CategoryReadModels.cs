@@ -7,4 +7,6 @@ public sealed record CategorySummary(string Slug, string Name);
 public sealed record CategoryDetail(string Slug, string Name, IReadOnlyList<PlantGroupSummary> PlantGroups);
 
 /// <summary>A plant group as listed on its category page.</summary>
-public sealed record PlantGroupSummary(string Slug, string Name);
+/// <param name="ImageUrl">The card image: a usable image of one of the group's Published plants (photos first), the same
+/// plant all day and a different one on another day; null when none of its plants has an image.</param>
+public sealed record PlantGroupSummary(string Slug, string Name, string? ImageUrl = null);

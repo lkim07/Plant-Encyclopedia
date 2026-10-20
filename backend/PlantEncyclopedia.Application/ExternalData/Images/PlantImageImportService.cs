@@ -3,12 +3,14 @@ using PlantEncyclopedia.Domain.Plants;
 namespace PlantEncyclopedia.Application.ExternalData.Images;
 
 /// <summary>What the image import needs to know about a plant.</summary>
-/// <param name="ExistingKinds">Kinds the plant already has an image of; they are not fetched again.</param>
+/// <param name="ExistingKinds">Kinds the plant has a usable (not rejected) image of; they are not fetched again.</param>
+/// <param name="StoredSourceImages">Every source image stored for the plant, rejected ones included; never chosen again.</param>
 public sealed record PlantImageTarget(
     string DisplayName,
     string ScientificName,
     string? CultivarName,
-    IReadOnlyList<PlantImageKind> ExistingKinds);
+    IReadOnlyList<PlantImageKind> ExistingKinds,
+    IReadOnlySet<(string Provider, string SourceId)> StoredSourceImages);
 
 /// <summary>Database operations for image import (implemented in Infrastructure).</summary>
 public interface IPlantImageStore
@@ -18,8 +20,14 @@ public interface IPlantImageStore
     /// <summary>Saves the image row. Returns false when the same source image is already stored for the plant.</summary>
     Task<bool> AddAsync(PlantImage image, CancellationToken cancellationToken);
 
-    /// <summary>Species-level plants (no cultivar) that are not Archived and have no photo, oldest first.</summary>
+    /// <summary>Species-level plants (no cultivar) that are not Archived and have no usable photo, oldest first.</summary>
     Task<IReadOnlyList<Guid>> FindPlantsWithoutImagesAsync(int limit, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Rejects the image the plant currently shows as its hero (its first usable photo, else illustration).
+    /// Returns false when the plant has no usable image.
+    /// </summary>
+    Task<bool> RejectHeroImageAsync(Guid plantId, DateTimeOffset rejectedAt, CancellationToken cancellationToken);
 }
 
 /// <summary>The stored renditions of one image, as URLs the browser can load.</summary>
@@ -76,10 +84,11 @@ public sealed class PlantImageImportService(
 
         if (target.ExistingKinds.Contains(PlantImageKind.Photo)) return new PlantImageImportResult(PlantImageImportStatus.Done);
 
-        var images = await selector.SelectAsync(target.ScientificName, [PlantImageKind.Photo], cancellationToken);
+        var excluded = target.StoredSourceImages;
+        var images = await selector.SelectAsync(target.ScientificName, [PlantImageKind.Photo], cancellationToken, excluded);
         if (images.Count == 0 && !target.ExistingKinds.Contains(PlantImageKind.Illustration))
         {
-            images = await selector.SelectAsync(target.ScientificName, [PlantImageKind.Illustration], cancellationToken);
+            images = await selector.SelectAsync(target.ScientificName, [PlantImageKind.Illustration], cancellationToken, excluded);
         }
 
         var added = 0;

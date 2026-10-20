@@ -603,7 +603,9 @@ Implemented rules:
 
 * Only the category's own plant groups are returned, ordered by name.
 * Plant groups are listed even if they have no Published plants yet.
-* `imageUrl` is always `null` until plant-group images exist.
+* A plant group's `imageUrl` is the card image of one of its Published plants (photos before illustrations, rejected images never). The plant looks randomly chosen but stays the same for a whole day (UTC) and changes the next day; `null` when none of the group's plants has an image. The category's own `imageUrl` (§17) is still always `null`.
+
+Development only (mapped in the `Development` and `Testing` environments, no authentication): `POST /api/dev/plants/{plantId}/hero-image/reject` rejects the image the plant shows as its hero and queues the plant for a new image; `202 Accepted`, or `404 PLANT_IMAGE_NOT_FOUND` when it has no usable image. It is a stand-in until an authorized review tool exists.
 
 Unknown category — `404 Not Found`:
 

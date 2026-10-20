@@ -24,6 +24,10 @@ public class PlantImage : IHasCreatedAt
     public string? License { get; set; }
     public string? Attribution { get; set; }
     public DateTimeOffset? RetrievedAt { get; set; }
+
+    /// <summary>Set when someone rejected the image (e.g. it shows a can, not the plant). A rejected image is
+    /// never shown, and the same source image is never chosen again for this plant.</summary>
+    public DateTimeOffset? RejectedAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 
     public Plant? Plant { get; set; }

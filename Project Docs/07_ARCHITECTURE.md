@@ -759,7 +759,10 @@ Fuzzy matches, higher-rank fallbacks, synonyms and non-plants are rejected, and 
 * **Licences:** only licences that allow commercial use and changes such as resizing: public domain, CC0, CC BY and CC BY-SA (any version, not ported versions). NC, ND, "all rights reserved", unknown and missing licences are rejected.
 * **Credit:** when the licence (CC BY, CC BY-SA) or the provider requires credit, the author must be known, or the image is rejected.
 * **File:** JPEG, PNG or WebP only, with a longer side of at least 1000 pixels; HTTPS only.
-* **Choice:** for each kind, sources are asked in order and the first accepted candidate wins; later sources are not asked. Since 11d-2 a plant gets a photo, and an illustration only when no photo is found.
+* **Choice:** for each kind, sources are asked in order and the first accepted candidate wins; later sources are not asked. Since 11d-2 a plant gets a photo, and an illustration only when no photo is found. Source images already stored for the plant, including rejected ones, are skipped.
+* **Authors:** Commons placeholder text ("No machine-readable author provided…", "Unknown author") is not an author, so files that require credit and have only that text are rejected.
+* **Review:** a wrong image can be rejected (`plant_images.rejected_at`); it is hidden everywhere and the plant is queued for its next acceptable candidate. In Development this is done with `POST /api/dev/plants/{id}/hero-image/reject`.
+* **Plant-group cards** use one Published plant's image per group, chosen by `md5(plant id || UTC date)` with photos first, so the pick is stable for a day.
 * **Recorded results:**
   * Rosa canina → the third iNaturalist photo (the first two are NC/ND), CC BY-SA by Douglas Goldman, and a public-domain drawing from Bley's *Botanisches Bilderbuch*.
   * Mentha × piperita → no photo (iNaturalist has only NC/ND photos, and the Wikipedia photo's author is unknown) and a public-domain Bley drawing.

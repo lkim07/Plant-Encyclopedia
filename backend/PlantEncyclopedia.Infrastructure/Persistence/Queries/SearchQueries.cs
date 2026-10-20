@@ -57,6 +57,7 @@ internal sealed class SearchQueries(PlantEncyclopediaDbContext db) : ISearchQuer
                 p.PlantGroup != null ? p.PlantGroup.Name : null,
                 p.ScientificName,
                 p.Images
+                    .Where(i => i.RejectedAt == null)
                     .OrderBy(i => i.Kind == PlantImageKind.Photo ? 0 : 1)
                     .ThenBy(i => i.CreatedAt)
                     .Select(i => i.MediumUrl ?? i.Url)

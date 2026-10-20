@@ -365,6 +365,8 @@ Plant
           └── CreatedAt
 ```
 
+Implemented (migration `AddPlantImageRejectedAt`, 2026-10-20): `rejected_at` — set when someone rejected the image (e.g. a can instead of the plant). Rejected rows are kept, so the same source image is never chosen again for the plant, and are never shown.
+
 Implemented (Phase 11d-2, migration `AddPlantImageKind`):
 
 * `kind` — `Photo` or `Illustration` (`ck_plant_images_kind`), default `Photo`.
