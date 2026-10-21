@@ -714,7 +714,11 @@ CreatedAt
 UpdatedAt
 ```
 
-The exact authentication implementation is deferred.
+Implemented (D-070, migration `AddUserAccounts`): ASP.NET Core Identity's tables, renamed to this schema's style.
+
+* `users` — `id` (uuid), `display_name` (≤ 50), `created_at`, `user_name` and `email` (the email address) with normalized copies, `email_confirmed`, `password_hash` (Identity's salted hash; null for provider-only accounts), `security_stamp`, `concurrency_stamp`, `two_factor_enabled`, lockout columns. Phone number columns are not stored.
+* `ux_users_normalized_email` and `ux_users_normalized_user_name` — unique, so two simultaneous sign-ups cannot share an address.
+* `user_logins` (sign-in providers linked to an account), `user_claims`, `user_tokens` — Identity's own; cascade-deleted with the user.
 
 Sensitive authentication information should not be unnecessarily duplicated in the application's own database.
 

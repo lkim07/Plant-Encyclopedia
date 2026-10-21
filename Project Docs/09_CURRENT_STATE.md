@@ -169,6 +169,13 @@ Implemented and verified:
     * Plant Detail attributions
   * **Total:** 268 backend tests pass with 0 build warnings. No migration; no live GBIF requests were made in 11c.
   * **Manually verified** by the developer on 2026-10-17 in the browser against real GBIF (Development).
+* Accounts with email + password, Phase 6a-1 (D-070), 2026-10-21.
+  * **Backend:** ASP.NET Core Identity in PostgreSQL (migration `AddUserAccounts`, applied to `plant_encyclopedia_dev`); `GET /api/me` and `/api/auth/register`, `login`, `logout`, `forgot-password`, `reset-password`, `resend-confirmation`, `confirm-email` (API_SPEC §6).
+  * **Security:** HttpOnly Secure SameSite=Lax session cookie (14 days, sliding); antiforgery tokens on every state-changing account request; passwords 8–128 characters; lockout after 5 failures for 15 minutes; 10 requests/minute per client; no account discovery through sign-in or reset; links valid 3 hours. Emails are written to `App_Data/emails` in Development; other environments refuse to start without an email service.
+  * **Frontend:** Sign in, Create account, Forgot password, Reset password and Email confirmed pages; the sidebar shows Sign in, or the user's initial and name with Sign out; the mobile top bar shows the initial or a Sign in link. Sign-in returns only to paths inside the app.
+  * **Packages:** Microsoft.AspNetCore.Identity.EntityFrameworkCore 10.0.12.
+  * **Tests:** 15 new backend tests (cookie flags, CSRF rejection — confirmed to fail when the check is removed, validation, 8-character minimum, taken email, same answer for unknown email and wrong password, lockout, sign-out, reset without account discovery and with a forged token, confirmation, rate limit, no passwords in logs) and 7 new frontend tests. 427 backend and 93 frontend tests pass; 0 build warnings; `ng build` without warnings.
+  * **Not verified yet:** a manual check in the browser. Google, Microsoft and GitHub sign-in come in 6a-2.
 * Cloudflare R2 image storage, Phase 11d-3, 2026-10-20 (ARCHITECTURE §19).
   * **Setup:** bucket `plant-encyclopedia-images`, an Account API token limited to Object Read & Write on it (keys in User Secrets), public reads through `https://pub-1a7886f8403245e981ef4d9f1944e825.r2.dev`. Development uses `Storage: R2`; the default is still Local.
   * **Code:** `R2ImageStorage` (AWSSDK.S3 4.0.104.5, Apache-2.0); startup validation of account ID, keys, bucket and public address; `check-r2` and `migrate-images-to-r2` commands.

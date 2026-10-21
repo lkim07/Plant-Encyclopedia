@@ -1,11 +1,15 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using PlantEncyclopedia.Domain.Common;
 using PlantEncyclopedia.Domain.Plants;
+using PlantEncyclopedia.Infrastructure.Identity;
+using PlantEncyclopedia.Infrastructure.Persistence.Configurations;
 
 namespace PlantEncyclopedia.Infrastructure.Persistence;
 
+/// <summary>The application database, including the user accounts kept by ASP.NET Core Identity (D-070).</summary>
 public class PlantEncyclopediaDbContext(DbContextOptions<PlantEncyclopediaDbContext> options)
-    : DbContext(options)
+    : IdentityUserContext<ApplicationUser, Guid>(options)
 {
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<PlantGroup> PlantGroups => Set<PlantGroup>();
@@ -18,6 +22,9 @@ public class PlantEncyclopediaDbContext(DbContextOptions<PlantEncyclopediaDbCont
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+        IdentityConfiguration.Configure(modelBuilder);
+
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(PlantEncyclopediaDbContext).Assembly);
 
         // Search support (AddSearchSupport migration): accent removal and trigram indexes.

@@ -1652,6 +1652,31 @@ Premature arbitrary targets can be less useful than measuring the real applicati
 
 ---
 
+## D-070 — Sign-in with ASP.NET Core Identity and a Session Cookie
+
+**Status:** Accepted (2026-10-21)
+
+### Decision
+
+* Accounts use ASP.NET Core Identity, stored in the application's PostgreSQL database: email + password, and sign-in with Google, Microsoft and GitHub (Phase 6a-2).
+* Browsers keep a session cookie set by the API: HttpOnly, Secure, SameSite=Lax, 14 days, extended while the site is used. Requests that change data must also carry a CSRF token. No tokens are kept in browser storage.
+* Passwords: 8–128 characters, spaces allowed, no forced character classes (the developer's choice). Identity stores only a salted hash. Five failed sign-ins lock the account for 15 minutes; account endpoints are rate-limited per client.
+* Signing in does not need a confirmed email; saving Favorites does (D-041).
+* Stored about a user: email, display name, timestamps and the sign-in providers linked to the account. No phone number.
+
+### Rationale
+
+Identity is Microsoft's maintained, well-tested account system (SECURITY §4: no custom authentication). The Angular app and the API share one origin through the proxy, so a cookie session is the simplest safe option for browsers.
+
+### Consequences
+
+* The planned mobile app (D-067) will need token-based sign-in, which Identity also supports.
+* Real emails need an email service before public release; until then Development writes them to files.
+* Current NIST guidance (SP 800-63B, 2024) recommends 15 characters for passwords used alone; with an 8-character minimum, new passwords should be checked against known breached passwords before public release (TODO).
+* Each sign-in provider needs its own OAuth app, with its keys in User Secrets.
+
+---
+
 # 17. Decision Principles
 
 When future decisions are unclear, use these principles in order:

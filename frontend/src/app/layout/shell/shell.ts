@@ -8,6 +8,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { Auth } from '../../core/auth/auth';
 import { Sidebar } from '../sidebar/sidebar';
 import { TopBar } from '../top-bar/top-bar';
 import { Icon } from '../../shared/icons/icon';
@@ -33,6 +34,9 @@ export class Shell {
   private readonly main = viewChild.required<ElementRef<HTMLElement>>('main');
 
   constructor() {
+    // Who is signed in (and a CSRF token for requests that change data).
+    inject(Auth).refresh().subscribe();
+
     const destroyRef = inject(DestroyRef);
     afterNextRender(async () => {
       if (!motionAllowed() || !isDesktopPointer()) {

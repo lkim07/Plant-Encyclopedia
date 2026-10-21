@@ -125,6 +125,14 @@ The exact authentication mechanism is an architectural decision and should be do
 
 Do not implement custom cryptographic authentication when a mature framework/library provides the required security primitives.
 
+Implemented (D-070, Phase 6a-1): ASP.NET Core Identity.
+
+* **Passwords:** 8–128 characters, spaces allowed, no forced character classes; stored only as Identity's salted hash (PBKDF2). Never logged or echoed (tested).
+* **Guessing:** 5 failed sign-ins lock the account for 15 minutes; `/api/auth/*` is limited to 10 requests per minute per client; sign-in answers the same for an unknown address and a wrong password.
+* **Account discovery:** "forgot password" answers the same whether or not the address has an account. Registration does reveal a taken address (`409`), limited by the rate limit.
+* **Links:** confirmation and reset tokens are Identity's data-protection tokens, valid for 3 hours; a reset changes the security stamp, ending other sessions at their next check.
+* **Emails:** Development and Testing write them to files; any other environment refuses to start until an email service is configured.
+
 ---
 
 # 5. Authorization
@@ -406,6 +414,14 @@ When authentication is implemented, the project should explicitly evaluate:
 * cookie security attributes where cookies are used
 
 The project should prefer established framework security mechanisms over custom implementations.
+
+Implemented (D-070):
+
+* **Session:** cookie `pe_session` — HttpOnly (no script access), Secure, SameSite=Lax (needed to return from a sign-in provider), 14 days with sliding renewal. Sign-out removes it. No tokens in localStorage or sessionStorage.
+* **CSRF:** every account endpoint that changes state validates ASP.NET Core antiforgery tokens: the `pe_antiforgery` cookie (HttpOnly, SameSite=Strict) plus the `X-XSRF-TOKEN` header, which Angular copies from the readable `XSRF-TOKEN` cookie. Tokens are bound to the user and reissued on sign-in and sign-out.
+* **XSS:** Angular escapes all bound text; the session cookie cannot be read by scripts.
+* **Open redirects:** after sign-in the app only returns to paths inside the app (`returnUrl` starting with a single `/`).
+* **Data protection keys** (which sign cookies and tokens) are kept in the user profile in Development; production needs a persisted, protected key store (TODO).
 
 ---
 

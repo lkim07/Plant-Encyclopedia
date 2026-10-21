@@ -87,7 +87,20 @@
   margin-top: auto;
 }
 
-.account:disabled {
-  color: var(--color-text-muted);
-  cursor: not-allowed;
+.account-user {
+  cursor: default;
+}
+
+/* The signed-in user's initial in a brown circle. */
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: var(--color-icon);
+  color: var(--color-bg);
+  font-size: 0.875rem;
+  font-weight: 700;
 }

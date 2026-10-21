@@ -418,17 +418,27 @@ Do not build a machine-learning recommendation system at this stage.
 
 ## Authentication Foundation
 
-* [ ] Select/confirm authentication approach
-* [ ] Implement authentication
-* [ ] Implement user identity model
-* [ ] Implement authorization
-* [ ] Protect authenticated endpoints
-* [ ] Add authentication tests
+* [x] Select/confirm authentication approach (D-070: ASP.NET Core Identity, session cookie)
+* [-] Implement authentication (6a-1: email + password; 6a-2: Google, Microsoft, GitHub)
+* [x] Implement user identity model (`users`, `user_logins`, `user_claims`, `user_tokens`)
+* [x] Implement authorization (cookie authentication; 401 JSON for APIs)
+* [-] Protect authenticated endpoints (account endpoints; Favorites in 6b)
+* [x] Add authentication tests
+* [ ] Manually verify sign-up, confirmation, sign-in, sign-out and password reset in the browser
+  - Priority: High
+* [ ] Real email service for confirmation and reset emails (e.g. Amazon SES or Resend)
+  - Priority: Before public release
+* [ ] Check new passwords against known breached passwords
+  - Why: The minimum is 8 characters (D-070); current NIST guidance recommends 15 for passwords used alone
+  - Priority: Before public release
+* [ ] Persist ASP.NET Core data protection keys outside the user profile
+  - Why: They sign session cookies and email links; production instances must share and protect them
+  - Priority: Before deployment
 
 ## UX
 
-* [ ] Implement login entry
-* [ ] Implement account state
+* [x] Implement login entry
+* [x] Implement account state
 * [ ] Handle unauthenticated actions
 * [ ] Preserve intended action where appropriate
 

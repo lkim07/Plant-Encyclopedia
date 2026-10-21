@@ -40,10 +40,40 @@
   </ul>
 </nav>
 
-<!-- Authentication is not implemented yet, so the account entry is a disabled placeholder. -->
-<button type="button" class="nav-item account" disabled [attr.aria-label]="collapsed() ? 'Login' : null">
-  <app-icon class="nav-icon" name="user" />
-  @if (!collapsed()) {
-    <span class="nav-label">Login</span>
+<!-- Account (D-070): sign in, or the signed-in user with Sign out. Nothing shows until the first check finishes. -->
+<div class="account">
+  @if (auth.user(); as user) {
+    <span class="nav-item account-user" [attr.title]="user.displayName">
+      <span class="avatar" aria-hidden="true">{{ initial(user.displayName) }}</span>
+      <span [class.visually-hidden]="collapsed()">{{
+        collapsed() ? 'Signed in as ' + user.displayName : user.displayName
+      }}</span>
+    </span>
+    <button
+      type="button"
+      class="nav-item"
+      [attr.aria-label]="collapsed() ? 'Sign out' : null"
+      [attr.title]="collapsed() ? 'Sign out' : null"
+      (click)="signOut()"
+    >
+      <app-icon class="nav-icon" name="log-out" />
+      @if (!collapsed()) {
+        <span class="nav-label">Sign out</span>
+      }
+    </button>
+  } @else if (auth.user() === null) {
+    <a
+      class="nav-item"
+      routerLink="/login"
+      routerLinkActive="active"
+      [attr.aria-label]="collapsed() ? 'Sign in' : null"
+      [attr.title]="collapsed() ? 'Sign in' : null"
+      (click)="navigate.emit()"
+    >
+      <app-icon class="nav-icon" name="user" />
+      @if (!collapsed()) {
+        <span class="nav-label">Sign in</span>
+      }
+    </a>
   }
-</button>
+</div>

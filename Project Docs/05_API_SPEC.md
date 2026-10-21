@@ -138,7 +138,24 @@ Examples:
 * Persistent user history
 * Account-specific functionality
 
-The exact authentication provider and token mechanism will be finalized during implementation.
+Implemented (D-070): ASP.NET Core Identity with a session cookie.
+
+* `pe_session` — the session cookie (HttpOnly, Secure, SameSite=Lax, 14 days, sliding). Unauthenticated calls to protected endpoints get `401 UNAUTHENTICATED`, never a redirect.
+* `XSRF-TOKEN` — a readable cookie with the CSRF token; the client copies it into the `X-XSRF-TOKEN` header on requests that change data. It is issued by `GET /api/me` and again after signing in or out (the token is bound to the user). Missing or wrong tokens get `403 CSRF_TOKEN_INVALID`.
+* Account endpoints (`/api/auth/*`) are limited to 10 requests per minute per client (`429 RATE_LIMITED`), with a 4 KB body limit.
+
+| Endpoint | Body | Success | Errors |
+|---|---|---|---|
+| `GET /api/me` | — | `200 {data: user}` | `401 UNAUTHENTICATED` when signed out |
+| `POST /api/auth/register` | `{email, password, displayName}` | `201 {data: user}`, signed in; a confirmation email is sent | `400 VALIDATION_ERROR` (`email`, `password` 8–128, `displayName` 1–50); `409 EMAIL_TAKEN` |
+| `POST /api/auth/login` | `{email, password}` | `200 {data: user}` | `401 INVALID_CREDENTIALS` (same for unknown email and wrong password); `423 ACCOUNT_LOCKED` after 5 failures, for 15 minutes |
+| `POST /api/auth/logout` | `{}` | `204` | — |
+| `POST /api/auth/forgot-password` | `{email}` | `202`, the same whether or not the address has an account | `400 VALIDATION_ERROR` |
+| `POST /api/auth/reset-password` | `{email, token, password}` | `204` (also ends a lockout) | `400 INVALID_RESET_LINK`; `400 VALIDATION_ERROR` |
+| `POST /api/auth/resend-confirmation` | `{}` (signed in) | `202` | `401 UNAUTHENTICATED` |
+| `GET /api/auth/confirm-email?userId=&token=` | — | redirect to `/email-confirmed?status=ok` or `status=invalid` | — |
+
+A user is `{ "id", "displayName", "email", "emailConfirmed" }`. Email links (confirmation, reset) are built from `Accounts:PublicBaseUrl` and expire after 3 hours. Registration necessarily reveals that an address already has an account (`409`); sign-in and password reset do not.
 
 ---
 
@@ -1158,7 +1175,7 @@ The operation should maintain a valid ordering state.
 
 # 35. Authentication Flow
 
-The exact authentication provider is deferred.
+Implemented: see §6 (D-070). Sign-in with Google, Microsoft and GitHub follows in Phase 6a-2.
 
 Conceptually:
 

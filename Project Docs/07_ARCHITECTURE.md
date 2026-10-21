@@ -1279,6 +1279,13 @@ The exact identity provider can be finalized during implementation.
 
 The rest of the application should depend on an application-level authenticated user identity rather than a specific authentication vendor.
 
+Implemented (D-070, Phase 6a-1):
+
+* **Identity** lives in Infrastructure (`ApplicationUser`, the DbContext as an `IdentityUserContext<ApplicationUser, Guid>`, `IdentityConfiguration`); the Domain does not reference it.
+* **Api/Accounts:** `AccountSetup` configures Identity (password, lockout, unique email), the cookie, antiforgery, the `accounts` rate-limit policy and the email sender; `AccountEndpoints` maps `/api/me` and `/api/auth/*`; `AccountInput` reads and validates bodies.
+* **Emails:** `IAccountEmailSender`; `FileAccountEmailSender` writes them to `Accounts:EmailFolder` (Development: `App_Data/emails`). Links use `Accounts:PublicBaseUrl` (Development: `http://localhost:4200`, the Angular app, which proxies `/api`).
+* **Frontend:** `Auth` (core/auth) holds the signed-in user as a signal, checked on start (`GET /api/me`); `/login`, `/signup`, `/forgot-password`, `/reset-password` and `/email-confirmed` pages; the sidebar and top bar show the account. `HttpClient` is configured to send the XSRF header.
+
 ---
 
 # 39. Authorization

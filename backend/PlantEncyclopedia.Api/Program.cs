@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.FileProviders;
+using PlantEncyclopedia.Api.Accounts;
 using PlantEncyclopedia.Api.Categories;
 using PlantEncyclopedia.Api.Dev;
 using PlantEncyclopedia.Api.Errors;
@@ -43,6 +44,7 @@ builder.Services.AddExternalPlantData(
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddSearchProtection();
+builder.Services.AddAccounts(builder.Configuration, builder.Environment);
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<PlantEncyclopediaDbContext>("database");
@@ -73,6 +75,8 @@ if (args.Contains("migrate-images-to-r2"))
 // only runs if GlobalExceptionHandler does not handle the exception; it returns a bare 500 with no body.
 app.UseExceptionHandler(_ => { });
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseRateLimiter();
 
 // Stored plant images (ARCHITECTURE §22). File names contain a new GUID per image, so they never change and can
@@ -115,6 +119,7 @@ app.MapCategoryEndpoints();
 app.MapPlantGroupEndpoints();
 app.MapSearchEndpoints();
 app.MapExploreEndpoints();
+app.MapAccountEndpoints();
 
 // Unauthenticated development tools (image review). Never mapped in other environments.
 if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))

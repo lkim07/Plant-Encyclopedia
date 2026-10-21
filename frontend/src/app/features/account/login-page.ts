@@ -1,0 +1,76 @@
+import { Component, inject } from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Auth } from '../../core/auth/auth';
+import { FormSubmission, safeReturnUrl } from './account-form';
+
+/** Sign in with email and password (D-070). After signing in, returns to `returnUrl` (paths in this app only). */
+@Component({
+  selector: 'app-login-page',
+  imports: [ReactiveFormsModule, RouterLink],
+  template: `
+    <section class="account" aria-labelledby="login-heading">
+      <h1 id="login-heading">Sign in</h1>
+      <p class="lead">Sign in to save plants to your Favorites.</p>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="field">
+          <label for="login-email">Email</label>
+          <input id="login-email" type="email" formControlName="email" autocomplete="email" />
+        </div>
+        <div class="field">
+          <label for="login-password">Password</label>
+          <input
+            id="login-password"
+            type="password"
+            formControlName="password"
+            autocomplete="current-password"
+          />
+        </div>
+
+        @if (submission.error(); as error) {
+          <p class="form-error" role="alert">{{ error.message }}</p>
+        }
+
+        <button type="submit" class="action" [disabled]="submission.busy()">
+          {{ submission.busy() ? 'Signing in…' : 'Sign in' }}
+        </button>
+      </form>
+
+      <div class="links">
+        <a routerLink="/forgot-password">Forgot password?</a>
+        <a routerLink="/signup" [queryParams]="{ returnUrl: returnUrl }">Create an account</a>
+      </div>
+    </section>
+  `,
+  styleUrl: './account-page.css',
+})
+export class LoginPage {
+  private readonly auth = inject(Auth);
+  private readonly router = inject(Router);
+
+  protected readonly returnUrl = safeReturnUrl(
+    inject(ActivatedRoute).snapshot.queryParamMap.get('returnUrl'),
+  );
+  protected readonly submission = new FormSubmission();
+  protected readonly form = inject(NonNullableFormBuilder).group({
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', Validators.required],
+  });
+
+  protected submit(): void {
+    if (this.form.invalid) {
+      this.submission.error.set({
+        code: 'VALIDATION_ERROR',
+        message: 'Enter your email address and password.',
+        fields: {},
+      });
+      return;
+    }
+    const { email, password } = this.form.getRawValue();
+    this.submission.run(
+      this.auth.login(email.trim(), password),
+      () => void this.router.navigateByUrl(this.returnUrl),
+    );
+  }
+}

@@ -27,10 +27,17 @@ internal sealed class TestApiFactory : WebApplicationFactory<Program>
 
     public CapturingLoggerProvider Logs { get; } = new();
 
+    /// <summary>Where this API instance writes account emails (the development email stand-in).</summary>
+    public string EmailFolder { get; } = Path.Combine(Path.GetTempPath(), "pe-emails-" + Guid.NewGuid().ToString("N"));
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         // Not "Development": User Secrets, which hold the development connection string, are never loaded.
         builder.UseEnvironment("Testing");
+
+        // Account links point at the test site; account emails are written to a temporary folder per factory.
+        builder.UseSetting("Accounts:PublicBaseUrl", "https://localhost");
+        builder.UseSetting("Accounts:EmailFolder", EmailFolder);
 
         if (_connectionString is not null)
         {

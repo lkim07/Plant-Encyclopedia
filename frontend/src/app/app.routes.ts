@@ -41,6 +41,34 @@ export const routes: Routes = [
       import('./features/plant-detail/plant-detail-page').then((m) => m.PlantDetailPage),
   },
   {
+    path: 'login',
+    title: 'Sign in · Plant Encyclopedia',
+    loadComponent: () => import('./features/account/login-page').then((m) => m.LoginPage),
+  },
+  {
+    path: 'signup',
+    title: 'Create an account · Plant Encyclopedia',
+    loadComponent: () => import('./features/account/signup-page').then((m) => m.SignupPage),
+  },
+  {
+    path: 'forgot-password',
+    title: 'Forgot password · Plant Encyclopedia',
+    loadComponent: () =>
+      import('./features/account/password-pages').then((m) => m.ForgotPasswordPage),
+  },
+  {
+    path: 'reset-password',
+    title: 'Choose a new password · Plant Encyclopedia',
+    loadComponent: () =>
+      import('./features/account/password-pages').then((m) => m.ResetPasswordPage),
+  },
+  {
+    path: 'email-confirmed',
+    title: 'Email confirmation · Plant Encyclopedia',
+    loadComponent: () =>
+      import('./features/account/password-pages').then((m) => m.EmailConfirmedPage),
+  },
+  {
     path: '**',
     title: 'Page not found · Plant Encyclopedia',
     loadComponent: () => import('./features/not-found/not-found-page').then((m) => m.NotFoundPage),

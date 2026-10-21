@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { routes } from '../../app.routes';
@@ -7,7 +9,7 @@ describe('Shell', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Shell],
-      providers: [provideRouter(routes)],
+      providers: [provideRouter(routes), provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
   });
 
@@ -17,7 +19,9 @@ describe('Shell', () => {
     await fixture.whenStable();
     const sidebar = (fixture.nativeElement as HTMLElement).querySelector('aside')!;
 
-    const labels = Array.from(sidebar.querySelectorAll('nav a span:not(.nav-icon)')).map((s) => s.textContent);
+    const labels = Array.from(sidebar.querySelectorAll('nav a span:not(.nav-icon)')).map(
+      (s) => s.textContent,
+    );
 
     expect(labels).toEqual(['Identify', 'Explore', 'Favorites']);
   });

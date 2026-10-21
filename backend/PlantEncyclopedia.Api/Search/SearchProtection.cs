@@ -60,7 +60,7 @@ public static class SearchProtection
         return services;
     }
 
-    private static void AddPerClientPolicy(RateLimiterOptions options, string policyName, int requestsPerMinute) =>
+    internal static void AddPerClientPolicy(RateLimiterOptions options, string policyName, int requestsPerMinute) =>
         options.AddPolicy(policyName, httpContext => RateLimitPartition.GetFixedWindowLimiter(
             ClientPartitionKey(httpContext),
             _ => new FixedWindowRateLimiterOptions
