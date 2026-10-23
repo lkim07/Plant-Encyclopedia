@@ -10,5 +10,13 @@
   "/media": {
     "target": "http://localhost:5034",
     "secure": false
+  },
+  "/signin-google": {
+    "target": "http://localhost:5034",
+    "secure": false
+  },
+  "/signin-github": {
+    "target": "http://localhost:5034",
+    "secure": false
   }
 }

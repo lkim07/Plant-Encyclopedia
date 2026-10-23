@@ -154,6 +154,9 @@ Implemented (D-070): ASP.NET Core Identity with a session cookie.
 | `POST /api/auth/reset-password` | `{email, token, password}` | `204` (also ends a lockout) | `400 INVALID_RESET_LINK`; `400 VALIDATION_ERROR` |
 | `POST /api/auth/resend-confirmation` | `{}` (signed in) | `202` | `401 UNAUTHENTICATED` |
 | `GET /api/auth/confirm-email?userId=&token=` | — | redirect to `/email-confirmed?status=ok` or `status=invalid` | — |
+| `GET /api/auth/providers` | — | `200 {data: [{id, name}]}` — only providers with configured keys (`google`, `github`) | — |
+| `GET /api/auth/external/{provider}?returnUrl=` | — (full-page navigation) | redirect to the provider; it returns to `/signin-{provider}`, then `/api/auth/external/callback` | `404 PROVIDER_NOT_FOUND` |
+| `GET /api/auth/external/callback?returnUrl=` | — | signed in; redirect to `returnUrl` (paths inside the app only, else `/explore`) | redirect to `/login?error=email-in-use`, `email-required`, `locked` or `external-failed` |
 
 A user is `{ "id", "displayName", "email", "emailConfirmed" }`. Email links (confirmation, reset) are built from `Accounts:PublicBaseUrl` and expire after 3 hours. Registration necessarily reveals that an address already has an account (`409`); sign-in and password reset do not.
 
@@ -1175,7 +1178,7 @@ The operation should maintain a valid ordering state.
 
 # 35. Authentication Flow
 
-Implemented: see §6 (D-070). Sign-in with Google, Microsoft and GitHub follows in Phase 6a-2.
+Implemented: see §6 (D-070). Sign-in with Google and GitHub: §6 (Phase 6a-2).
 
 Conceptually:
 

@@ -1658,7 +1658,7 @@ Premature arbitrary targets can be less useful than measuring the real applicati
 
 ### Decision
 
-* Accounts use ASP.NET Core Identity, stored in the application's PostgreSQL database: email + password, and sign-in with Google, Microsoft and GitHub (Phase 6a-2).
+* Accounts use ASP.NET Core Identity, stored in the application's PostgreSQL database: email + password, and sign-in with Google and GitHub (Phase 6a-2). Microsoft sign-in was planned and dropped by the developer on 2026-10-22.
 * Browsers keep a session cookie set by the API: HttpOnly, Secure, SameSite=Lax, 14 days, extended while the site is used. Requests that change data must also carry a CSRF token. No tokens are kept in browser storage.
 * Passwords: 8–128 characters, spaces allowed, no forced character classes (the developer's choice). Identity stores only a salted hash. Five failed sign-ins lock the account for 15 minutes; account endpoints are rate-limited per client.
 * Signing in does not need a confirmed email; saving Favorites does (D-041).
@@ -1674,6 +1674,7 @@ Identity is Microsoft's maintained, well-tested account system (SECURITY §4: no
 * Real emails need an email service before public release; until then Development writes them to files.
 * Current NIST guidance (SP 800-63B, 2024) recommends 15 characters for passwords used alone; with an 8-character minimum, new passwords should be checked against known breached passwords before public release (TODO).
 * Each sign-in provider needs its own OAuth app, with its keys in User Secrets.
+* Provider sign-ins join an existing account only when the provider verifies the email address (Google does; the GitHub handler does not check it). Otherwise an address already in use is refused, so nobody can take over an account by registering its address at a provider. Every account needs an email address.
 
 ---
 

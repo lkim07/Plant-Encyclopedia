@@ -423,6 +423,13 @@ Implemented (D-070):
 * **Open redirects:** after sign-in the app only returns to paths inside the app (`returnUrl` starting with a single `/`).
 * **Data protection keys** (which sign cookies and tokens) are kept in the user profile in Development; production needs a persisted, protected key store (TODO).
 
+Sign-in providers (Phase 6a-2):
+
+* Google and GitHub use ASP.NET Core's OAuth handlers (Microsoft's Google package; `AspNet.Security.OAuth.GitHub` from aspnet-contrib, Apache-2.0) with state and correlation cookies (Secure). Client IDs and secrets are in User Secrets; a provider is off when its keys are missing.
+* **Account takeover:** a provider joins an existing account only when the emails match and the provider verified the address — only Google's `email_verified` is trusted. Otherwise the sign-in is refused with "email in use". A new account from GitHub starts unconfirmed and gets a confirmation email. A provider that shares no email is refused.
+* The provider's answer lives only in Identity's short-lived external cookie and is removed after the callback.
+* `returnUrl` is checked on the server too: only paths inside the app; anything else becomes `/explore`.
+
 ---
 
 # 17. Logging and Sensitive Data

@@ -419,7 +419,11 @@ Do not build a machine-learning recommendation system at this stage.
 ## Authentication Foundation
 
 * [x] Select/confirm authentication approach (D-070: ASP.NET Core Identity, session cookie)
-* [-] Implement authentication (6a-1: email + password; 6a-2: Google, Microsoft, GitHub)
+* [x] Implement authentication (6a-1: email + password; 6a-2: Google, GitHub)
+* [ ] Create the Google and GitHub OAuth apps, add their keys to User Secrets, and sign in with each in the browser
+  - Priority: High
+* [ ] Let a signed-in user link another provider to their account (instead of "email in use")
+  - Priority: Low
 * [x] Implement user identity model (`users`, `user_logins`, `user_claims`, `user_tokens`)
 * [x] Implement authorization (cookie authentication; 401 JSON for APIs)
 * [-] Protect authenticated endpoints (account endpoints; Favorites in 6b)

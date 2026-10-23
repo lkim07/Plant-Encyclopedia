@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using PlantEncyclopedia.Api.Search;
@@ -78,9 +79,9 @@ public static class AccountSetup
 
         services.Configure<DataProtectionTokenProviderOptions>(o => o.TokenLifespan = LinkLifetime);
 
-        services
-            .AddAuthentication(IdentityConstants.ApplicationScheme)
-            .AddIdentityCookies();
+        var authentication = services.AddAuthentication(IdentityConstants.ApplicationScheme);
+        authentication.AddIdentityCookies();
+        AddProviders(authentication, services, configuration);
         services.ConfigureApplicationCookie(cookie =>
         {
             cookie.Cookie.Name = SessionCookieName;
@@ -120,6 +121,43 @@ public static class AccountSetup
             sp.GetRequiredService<TimeProvider>()));
 
         return services;
+    }
+
+    /// <summary>
+    /// Google and GitHub sign-in (Phase 6a-2), each registered only when its keys are in configuration
+    /// (Accounts:Providers:{Google|GitHub}:ClientId and ClientSecret, User Secrets). The provider's answer
+    /// lands in Identity's short-lived external cookie; /api/auth/external/callback turns it into a session.
+    /// Callbacks are /signin-google and /signin-github on the site's address.
+    /// </summary>
+    private static void AddProviders(AuthenticationBuilder authentication, IServiceCollection services, IConfiguration configuration)
+    {
+        var providers = configuration.GetSection("Accounts:Providers").Get<ExternalProviderOptions>() ?? new ExternalProviderOptions();
+        services.AddSingleton(providers);
+        services.AddScoped<ExternalSignIn>();
+
+        if (providers.Google.IsConfigured)
+        {
+            authentication.AddGoogle(ExternalSignIn.Google, google =>
+            {
+                google.ClientId = providers.Google.ClientId!;
+                google.ClientSecret = providers.Google.ClientSecret!;
+                google.SignInScheme = IdentityConstants.ExternalScheme;
+                google.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+                google.ClaimActions.MapJsonKey(ExternalIdentity.EmailVerifiedClaim, "email_verified");
+            });
+        }
+
+        if (providers.GitHub.IsConfigured)
+        {
+            authentication.AddGitHub(ExternalSignIn.GitHub, github =>
+            {
+                github.ClientId = providers.GitHub.ClientId!;
+                github.ClientSecret = providers.GitHub.ClientSecret!;
+                github.SignInScheme = IdentityConstants.ExternalScheme;
+                github.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+                github.Scope.Add("user:email"); // a private address is read from the emails endpoint (primary, not verification-checked)
+            });
+        }
     }
 
     /// <summary>

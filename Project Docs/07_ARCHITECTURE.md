@@ -1286,6 +1286,13 @@ Implemented (D-070, Phase 6a-1):
 * **Emails:** `IAccountEmailSender`; `FileAccountEmailSender` writes them to `Accounts:EmailFolder` (Development: `App_Data/emails`). Links use `Accounts:PublicBaseUrl` (Development: `http://localhost:4200`, the Angular app, which proxies `/api`).
 * **Frontend:** `Auth` (core/auth) holds the signed-in user as a signal, checked on start (`GET /api/me`); `/login`, `/signup`, `/forgot-password`, `/reset-password` and `/email-confirmed` pages; the sidebar and top bar show the account. `HttpClient` is configured to send the XSRF header.
 
+Implemented (Phase 6a-2): sign-in providers.
+
+* `AccountSetup.AddProviders` registers Google and GitHub handlers when `Accounts:Providers:{Google|GitHub}:ClientId` and `ClientSecret` are set. They sign into Identity's external cookie.
+* `ExternalSignIn` turns a provider identity into a session: existing link → sign in; matching email verified by the provider → link and confirm; email in use otherwise → refused; no email → refused; else a new account.
+* Callbacks are `/signin-google` and `/signin-github`. In Development the Angular dev server proxies them (and `/api`) to the API, so the registered redirect URIs are `http://localhost:4200/signin-…`.
+* The frontend's `ProviderButtons` asks `GET /api/auth/providers` and shows a "Continue with …" link per provider, with the provider's own logo colours.
+
 ---
 
 # 39. Authorization

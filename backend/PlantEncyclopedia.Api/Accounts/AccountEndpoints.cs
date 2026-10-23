@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using PlantEncyclopedia.Api.Errors;
@@ -32,8 +33,89 @@ public static class AccountEndpoints
         auth.MapPost("/reset-password", ResetPasswordAsync).RequireCsrfToken();
         auth.MapPost("/resend-confirmation", ResendConfirmationAsync).RequireCsrfToken().RequireAuthorization();
         auth.MapGet("/confirm-email", ConfirmEmailAsync);
+
+        app.MapGet("/api/auth/providers", GetProviders);
+        auth.MapGet("/external/{provider}", StartExternalSignIn);
+        auth.MapGet("/external/callback", FinishExternalSignInAsync);
         return app;
     }
+
+    // The configured sign-in providers, in a fixed order: id (for /external/{id}) and display name.
+    private static readonly (string Id, string Scheme, Func<ExternalProviderOptions, ProviderKeys> Keys)[] Providers =
+    [
+        ("google", ExternalSignIn.Google, p => p.Google),
+        ("github", ExternalSignIn.GitHub, p => p.GitHub)
+    ];
+
+    // GET /api/auth/providers: which "Continue with …" buttons to show.
+    private static IResult GetProviders(ExternalProviderOptions options) =>
+        Results.Ok(new
+        {
+            data = Providers.Where(p => p.Keys(options).IsConfigured).Select(p => new { id = p.Id, name = p.Scheme }).ToList()
+        });
+
+    // GET /api/auth/external/{provider}?returnUrl=/plants/… : a full-page navigation that goes to the provider.
+    private static IResult StartExternalSignIn(
+        string provider,
+        string? returnUrl,
+        ExternalProviderOptions options,
+        SignInManager<ApplicationUser> signIn)
+    {
+        var match = Providers.FirstOrDefault(p => p.Id == provider && p.Keys(options).IsConfigured);
+        if (match.Scheme is null)
+        {
+            return ApiErrors.NotFound("PROVIDER_NOT_FOUND", "This sign-in provider is not available.");
+        }
+
+        var callback = $"/api/auth/external/callback?returnUrl={Uri.EscapeDataString(SafeReturnUrl(returnUrl))}";
+        var properties = signIn.ConfigureExternalAuthenticationProperties(match.Scheme, callback);
+        return Results.Challenge(properties, [match.Scheme]);
+    }
+
+    // GET /api/auth/external/callback?returnUrl=… : where the provider sign-in ends. Signs in (see ExternalSignIn for
+    // how accounts are matched) and returns to the app; problems go to /login?error=….
+    private static async Task<IResult> FinishExternalSignInAsync(
+        HttpContext context,
+        string? returnUrl,
+        SignInManager<ApplicationUser> signIn,
+        ExternalSignIn external,
+        UserManager<ApplicationUser> users,
+        IAccountEmailSender emails,
+        AccountOptions options,
+        CancellationToken cancellationToken)
+    {
+        var target = SafeReturnUrl(returnUrl);
+        var info = await signIn.GetExternalLoginInfoAsync();
+        if (info is null) return RedirectToLogin(options, "external-failed", target);
+
+        var (status, user) = await external.SignInAsync(ExternalIdentity.From(info));
+        await context.SignOutAsync(IdentityConstants.ExternalScheme);
+
+        if (status == ExternalSignInStatus.Created && user is { EmailConfirmed: false, Email: not null })
+        {
+            await SendConfirmationAsync(user, users, emails, options, cancellationToken);
+        }
+
+        return status switch
+        {
+            ExternalSignInStatus.SignedIn or ExternalSignInStatus.Created or ExternalSignInStatus.Linked =>
+                Results.Redirect(new Uri(BaseUri(options), target.TrimStart('/')).ToString()),
+            ExternalSignInStatus.EmailInUse => RedirectToLogin(options, "email-in-use", target),
+            ExternalSignInStatus.EmailRequired => RedirectToLogin(options, "email-required", target),
+            ExternalSignInStatus.Locked => RedirectToLogin(options, "locked", target),
+            _ => RedirectToLogin(options, "external-failed", target)
+        };
+    }
+
+    private static IResult RedirectToLogin(AccountOptions options, string error, string returnUrl) =>
+        Results.Redirect(new Uri(BaseUri(options), $"login?error={error}&returnUrl={Uri.EscapeDataString(returnUrl)}").ToString());
+
+    /// <summary>A path inside the app ("/plants/…"); anything else (another site, "//host") becomes /explore.</summary>
+    public static string SafeReturnUrl(string? value) =>
+        value is not null && value.StartsWith('/') && !value.StartsWith("//", StringComparison.Ordinal)
+            && !value.StartsWith("/\\", StringComparison.Ordinal) && !value.Any(char.IsControl)
+            ? value
+            : "/explore";
 
     // GET /api/me: the signed-in user, or 401. Always issues a fresh CSRF token for the browser.
     private static async Task<IResult> GetMeAsync(HttpContext context, UserManager<ApplicationUser> users)

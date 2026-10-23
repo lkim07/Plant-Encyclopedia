@@ -3,6 +3,7 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Auth } from '../../core/auth/auth';
 import { FormSubmission, safeReturnUrl } from './account-form';
+import { ProviderButtons } from './provider-buttons';
 
 /**
  * Create an account with email and password (D-070). The new account is signed in straight away; confirming the
@@ -10,7 +11,7 @@ import { FormSubmission, safeReturnUrl } from './account-form';
  */
 @Component({
   selector: 'app-signup-page',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, ProviderButtons],
   template: `
     <section class="account" aria-labelledby="signup-heading">
       @if (createdFor(); as email) {
@@ -23,6 +24,8 @@ import { FormSubmission, safeReturnUrl } from './account-form';
         <a class="action as-link" [routerLink]="returnUrl">Continue</a>
       } @else {
         <h1 id="signup-heading">Create an account</h1>
+
+        <app-provider-buttons [returnUrl]="returnUrl" />
 
         <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
           <div class="field">

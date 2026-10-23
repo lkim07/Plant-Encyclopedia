@@ -26,9 +26,16 @@ describe('Accounts', () => {
 
   afterEach(() => http.verify());
 
-  async function open(url: string): Promise<{ harness: RouterTestingHarness; page: HTMLElement }> {
+  /** Opens a page; the sign-in and sign-up pages also ask which providers exist (none, unless given). */
+  async function open(
+    url: string,
+    providers: { id: string; name: string }[] = [],
+  ): Promise<{ harness: RouterTestingHarness; page: HTMLElement }> {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl(url);
+    for (const request of http.match('/api/auth/providers')) {
+      request.flush({ data: providers });
+    }
     await harness.fixture.whenStable();
     return { harness, page: harness.routeNativeElement as HTMLElement };
   }
@@ -89,17 +96,15 @@ describe('Accounts', () => {
     type(page, '#login-email', 'rose@example.org');
     type(page, '#login-password', 'wrong password');
     submit(page);
-    http
-      .expectOne('/api/auth/login')
-      .flush(
-        {
-          error: {
-            code: 'INVALID_CREDENTIALS',
-            message: 'The email address or password is incorrect.',
-          },
+    http.expectOne('/api/auth/login').flush(
+      {
+        error: {
+          code: 'INVALID_CREDENTIALS',
+          message: 'The email address or password is incorrect.',
         },
-        { status: 401, statusText: 'Unauthorized' },
-      );
+      },
+      { status: 401, statusText: 'Unauthorized' },
+    );
     let shown = await settle(harness);
     expect(shown.querySelector('[role="alert"]')?.textContent).toContain(
       'The email address or password is incorrect.',
@@ -151,6 +156,38 @@ describe('Accounts', () => {
     shown = await settle(harness);
     expect(shown.querySelector('h1')?.textContent).toBe('Check your email');
     expect(shown.textContent).toContain('rose@example.org');
+  });
+
+  // Protects against: buttons for providers that are not set up, or provider sign-in losing the requested page.
+  it('offers only the configured providers, each returning to the requested page', async () => {
+    const { page } = await open('/login?returnUrl=%2Fplants%2Fabc', [
+      { id: 'google', name: 'Google' },
+      { id: 'github', name: 'GitHub' },
+    ]);
+
+    const buttons = Array.from(page.querySelectorAll<HTMLAnchorElement>('.provider'));
+    expect(buttons.map((a) => a.textContent?.trim())).toEqual([
+      'Continue with Google',
+      'Continue with GitHub',
+    ]);
+    expect(buttons.map((a) => a.getAttribute('href'))).toEqual([
+      '/api/auth/external/google?returnUrl=%2Fplants%2Fabc',
+      '/api/auth/external/github?returnUrl=%2Fplants%2Fabc',
+    ]);
+  });
+
+  it('shows no provider buttons when none are configured', async () => {
+    const { page } = await open('/signup');
+    expect(page.querySelector('.provider')).toBeNull();
+    expect(page.querySelector('.divider')).toBeNull();
+  });
+
+  // Protects against: a provider sign-in that failed sending the user back with no explanation.
+  it('explains why a provider sign-in came back', async () => {
+    const { page } = await open('/login?error=email-in-use');
+    expect(page.querySelector('[role="alert"]')?.textContent).toContain(
+      'An account already uses this email address',
+    );
   });
 
   // Protects against: the reset request revealing whether the address has an account.

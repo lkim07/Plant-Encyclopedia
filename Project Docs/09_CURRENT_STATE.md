@@ -169,13 +169,20 @@ Implemented and verified:
     * Plant Detail attributions
   * **Total:** 268 backend tests pass with 0 build warnings. No migration; no live GBIF requests were made in 11c.
   * **Manually verified** by the developer on 2026-10-17 in the browser against real GBIF (Development).
+* Sign-in with Google and GitHub, Phase 6a-2 (D-070), 2026-10-21. Microsoft sign-in was built and then removed at the developer's request (2026-10-22).
+  * **Backend:** `GET /api/auth/providers`, `/api/auth/external/{provider}` and `/api/auth/external/callback`; providers are registered only when their keys are in User Secrets (none are configured yet, so no button shows).
+  * **Matching:** a provider joins an existing account only when Google verifies the same email; GitHub emails are treated as unverified, so an address already in use is refused (no account takeover). New GitHub accounts get a confirmation email; a provider without an email is refused.
+  * **Frontend:** "Continue with Google / GitHub" buttons with the providers' logos on Sign in and Create account, only for configured providers; messages for `email-in-use`, `email-required`, `locked` and `external-failed`. The dev proxy forwards `/signin-google` and `/signin-github`.
+  * **Packages:** Microsoft.AspNetCore.Authentication.Google 10.0.12; AspNet.Security.OAuth.GitHub 10.0.0 (Apache-2.0).
+  * **Tests:** 18 new backend tests (new account and returning sign-in, verified linking, takeover refused — confirmed to fail when the check is removed, unconfirmed new accounts, no email refused, display names, trusted claims, provider list, redirect to Google with the site callback, callback without an answer, safe return paths) and 3 new frontend tests. 445 backend and 96 frontend tests pass; 0 build warnings.
+  * **Not verified yet:** a real sign-in with each provider (needs the developer's OAuth apps).
 * Accounts with email + password, Phase 6a-1 (D-070), 2026-10-21.
   * **Backend:** ASP.NET Core Identity in PostgreSQL (migration `AddUserAccounts`, applied to `plant_encyclopedia_dev`); `GET /api/me` and `/api/auth/register`, `login`, `logout`, `forgot-password`, `reset-password`, `resend-confirmation`, `confirm-email` (API_SPEC §6).
   * **Security:** HttpOnly Secure SameSite=Lax session cookie (14 days, sliding); antiforgery tokens on every state-changing account request; passwords 8–128 characters; lockout after 5 failures for 15 minutes; 10 requests/minute per client; no account discovery through sign-in or reset; links valid 3 hours. Emails are written to `App_Data/emails` in Development; other environments refuse to start without an email service.
   * **Frontend:** Sign in, Create account, Forgot password, Reset password and Email confirmed pages; the sidebar shows Sign in, or the user's initial and name with Sign out; the mobile top bar shows the initial or a Sign in link. Sign-in returns only to paths inside the app.
   * **Packages:** Microsoft.AspNetCore.Identity.EntityFrameworkCore 10.0.12.
   * **Tests:** 15 new backend tests (cookie flags, CSRF rejection — confirmed to fail when the check is removed, validation, 8-character minimum, taken email, same answer for unknown email and wrong password, lockout, sign-out, reset without account discovery and with a forged token, confirmation, rate limit, no passwords in logs) and 7 new frontend tests. 427 backend and 93 frontend tests pass; 0 build warnings; `ng build` without warnings.
-  * **Not verified yet:** a manual check in the browser. Google, Microsoft and GitHub sign-in come in 6a-2.
+  * **Not verified yet:** a manual check in the browser. Google and GitHub sign-in come in 6a-2.
 * Cloudflare R2 image storage, Phase 11d-3, 2026-10-20 (ARCHITECTURE §19).
   * **Setup:** bucket `plant-encyclopedia-images`, an Account API token limited to Object Read & Write on it (keys in User Secrets), public reads through `https://pub-1a7886f8403245e981ef4d9f1944e825.r2.dev`. Development uses `Storage: R2`; the default is still Local.
   * **Code:** `R2ImageStorage` (AWSSDK.S3 4.0.104.5, Apache-2.0); startup validation of account ID, keys, bucket and public address; `check-r2` and `migrate-images-to-r2` commands.
