@@ -105,6 +105,50 @@ namespace PlantEncyclopedia.Infrastructure.Persistence.Migrations
                     b.ToTable("user_tokens", (string)null);
                 });
 
+            modelBuilder.Entity("PlantEncyclopedia.Domain.Favorites.Favorite", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("PlantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("plant_id");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer")
+                        .HasColumnName("position");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_favorites");
+
+                    b.HasIndex("PlantId")
+                        .HasDatabaseName("ix_favorites_plant_id");
+
+                    b.HasIndex("UserId", "PlantId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_favorites_user_plant");
+
+                    b.HasIndex("UserId", "Position")
+                        .HasDatabaseName("ix_favorites_user_position");
+
+                    b.ToTable("favorites", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_favorites_position", "position > 0");
+                        });
+                });
+
             modelBuilder.Entity("PlantEncyclopedia.Domain.Plants.Category", b =>
                 {
                     b.Property<Guid>("Id")
@@ -783,6 +827,25 @@ namespace PlantEncyclopedia.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_user_tokens_users_user_id");
+                });
+
+            modelBuilder.Entity("PlantEncyclopedia.Domain.Favorites.Favorite", b =>
+                {
+                    b.HasOne("PlantEncyclopedia.Domain.Plants.Plant", "Plant")
+                        .WithMany()
+                        .HasForeignKey("PlantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_favorites_plants_plant_id");
+
+                    b.HasOne("PlantEncyclopedia.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_favorites_users_user_id");
+
+                    b.Navigation("Plant");
                 });
 
             modelBuilder.Entity("PlantEncyclopedia.Domain.Plants.Plant", b =>

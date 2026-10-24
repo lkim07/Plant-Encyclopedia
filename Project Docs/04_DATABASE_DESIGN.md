@@ -751,6 +751,8 @@ Conceptually:
 UNIQUE(UserId, PlantId)
 ```
 
+Implemented (Phase 6b, migration `AddFavorites`): table `favorites` (`id`, `user_id`, `plant_id`, `position`, `created_at`) with the unique index `ux_favorites_user_plant`. Rows are deleted with their user or plant (cascade). `UpdatedAt` was left out: a favorite never changes except its position.
+
 ---
 
 # 27. Favorite Ordering
@@ -768,6 +770,8 @@ Plant C → Order 3
 The exact ordering implementation may use integers or another suitable strategy.
 
 Pixel coordinates must not be stored.
+
+Implemented (Phase 6b): an integer `position` (CHECK `position > 0`, index on `user_id, position`), kept 1…n without gaps per user. The column is named `position` because `order` is a reserved SQL word; the API calls it `order`. Changes to one user's favorites take a transaction-level advisory lock for that user, so simultaneous saves cannot give two favorites the same position.
 
 ---
 

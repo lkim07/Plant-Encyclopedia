@@ -181,6 +181,8 @@ The application must not assume that possession of an ID grants access.
 
 Security tests should explicitly attempt unauthorized access to another user's resources.
 
+Implemented for Favorites (Phase 6b): every query and change is filtered by the signed-in user's ID taken from the session, never from the request. Another user's favorite ID behaves as if it did not exist (`404`), and a reorder that names one is refused. `FavoriteEndpointTests.Users_CannotTouchEachOthersFavorites` attempts this and was confirmed to fail when the ownership filter is removed.
+
 ---
 
 # 7. API Security

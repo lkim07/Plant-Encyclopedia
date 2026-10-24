@@ -169,6 +169,12 @@ Implemented and verified:
     * Plant Detail attributions
   * **Total:** 268 backend tests pass with 0 build warnings. No migration; no live GBIF requests were made in 11c.
   * **Manually verified** by the developer on 2026-10-17 in the browser against real GBIF (Development).
+* Favorites API, Phase 6b (API_SPEC §31–34), 2026-10-23.
+  * **Database:** `favorites` table (migration `AddFavorites`, applied to `plant_encyclopedia_dev`): one row per user and plant, an integer position kept 1…n per user, deleted with its user or plant.
+  * **Endpoints:** `GET`, `POST` and `DELETE /api/favorites` and `PATCH /api/favorites/order`. Sign-in required; changes need the CSRF token; 60 requests per minute per user. Saving is repeat-safe (`200` with the existing favorite), needs a confirmed email, accepts an `order` for Undo, only takes Published plants and stops at 500 favorites.
+  * **Safety:** every operation is limited to the signed-in user's favorites (another user's ID answers `404`); one user's changes are serialized with a PostgreSQL advisory lock.
+  * **Tests:** 11 new backend tests (sign-in required, confirmed email, repeat-safe save, unpublished plants, remove and Undo position, all-or-nothing reorder, ownership, CSRF, simultaneous saves, the limit, hidden unpublished favorites). The ownership and simultaneous-save tests were confirmed to fail when the ownership filter and the lock are removed. The account tests' test browser moved to a shared `TestBrowser`. 456 backend tests pass; 0 build warnings.
+  * **Not done yet:** the bookmark toggle, Favorites page, Undo and sign-in prompt (6c).
 * Sign-in with Google and GitHub, Phase 6a-2 (D-070), 2026-10-21. Microsoft sign-in was built and then removed at the developer's request (2026-10-22).
   * **Backend:** `GET /api/auth/providers`, `/api/auth/external/{provider}` and `/api/auth/external/callback`; providers are registered only when their keys are in User Secrets (none are configured yet, so no button shows).
   * **Matching:** a provider joins an existing account only when Google verifies the same email; GitHub emails are treated as unverified, so an address already in use is refused (no account takeover). New GitHub accounts get a confirmation email; a provider without an email is refused.

@@ -1069,6 +1069,10 @@ The endpoint should not expose another user's history.
 
 Favorites require authentication.
 
+Implemented (Phase 6b, 2026-10-23). Every favorites endpoint requires sign-in (`401 UNAUTHENTICATED` otherwise) and works only on the signed-in user's favorites. `POST`, `DELETE` and `PATCH` also require the CSRF token (`X-XSRF-TOKEN`, §6). All are limited to 60 requests per minute per user (`429`).
+
+The implemented item shape is `{ "favoriteId", "order", "plant": { "id", "name", "plantGroup", "imageUrl" } }`. `imageUrl` is the card image (a photo when there is one, otherwise an illustration) or `null`. Only Published plants are listed; favorites of plants that stop being Published are kept but hidden, and `order` counts only the listed favorites (1…n).
+
 ## Get Favorites
 
 ```http
@@ -1123,7 +1127,15 @@ If the plant is already favorited:
 
 or the API may implement idempotent behavior.
 
-The final behavior should be chosen during implementation and documented consistently.
+Implemented (Phase 6b): **idempotent**, so the bookmark can work as a toggle and a double click is harmless.
+
+* `201 Created` with `{ "data": <favorite> }` when the plant is saved.
+* `200 OK` with the existing favorite when the plant was already saved.
+* Optional `order` (1 or more, clamped to the end) saves the plant at that position; Undo uses it to put a removed favorite back where it was. Without it, the plant is added at the end.
+* `403 EMAIL_NOT_CONFIRMED` until the user has confirmed their email address (D-041).
+* `404 PLANT_NOT_FOUND` when the plant does not exist or is not Published.
+* `409 FAVORITES_LIMIT` when the user already has 500 favorites.
+* `400 VALIDATION_ERROR` for a missing `plantId` or an `order` below 1.
 
 ---
 
@@ -1136,6 +1148,8 @@ DELETE /api/favorites/{favoriteId}
 Authentication required.
 
 The backend must verify ownership.
+
+Implemented (Phase 6b): another user's favorite ID answers `404 FAVORITE_NOT_FOUND`, the same as an ID that does not exist. The remaining favorites move up to close the gap.
 
 Successful response:
 
@@ -1173,6 +1187,8 @@ Example:
 ```
 
 The operation should maintain a valid ordering state.
+
+Implemented (Phase 6b): the list must contain each of the user's listed favorites exactly once, with orders 1…n; otherwise `400 VALIDATION_ERROR` and nothing changes. A valid list is saved in one transaction and answers `204 No Content`.
 
 ---
 

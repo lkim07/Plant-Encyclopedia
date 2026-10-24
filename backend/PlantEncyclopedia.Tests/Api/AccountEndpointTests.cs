@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using Microsoft.AspNetCore.Mvc.Testing;
 using PlantEncyclopedia.Tests.Persistence;
 
 namespace PlantEncyclopedia.Tests.Api;
@@ -22,7 +21,7 @@ public partial class AccountEndpointTests(PostgresDatabaseFixture fixture)
     public async Task Register_SignsIn_SetsASecureSessionCookie_AndEmailsAConfirmationLink()
     {
         await using var factory = new TestApiFactory(fixture.ConnectionString);
-        var browser = await Browser.OpenAsync(factory);
+        var browser = await TestBrowser.OpenAsync(factory);
         var email = NewEmail();
 
         var response = await browser.PostAsync("/api/auth/register", new { email, password = Password, displayName = "Rose Lover" });
@@ -51,7 +50,7 @@ public partial class AccountEndpointTests(PostgresDatabaseFixture fixture)
     public async Task StateChangingRequests_NeedTheCsrfToken()
     {
         await using var factory = new TestApiFactory(fixture.ConnectionString);
-        var browser = await Browser.OpenAsync(factory);
+        var browser = await TestBrowser.OpenAsync(factory);
         var body = new { email = NewEmail(), password = Password, displayName = "Mallory" };
 
         var missing = await browser.Client.PostAsJsonAsync("/api/auth/register", body);
@@ -77,7 +76,7 @@ public partial class AccountEndpointTests(PostgresDatabaseFixture fixture)
     public async Task Register_ValidatesInput(string scenario, object body, string field)
     {
         await using var factory = new TestApiFactory(fixture.ConnectionString);
-        var browser = await Browser.OpenAsync(factory);
+        var browser = await TestBrowser.OpenAsync(factory);
 
         var response = await browser.PostAsync("/api/auth/register", body);
 
@@ -92,12 +91,12 @@ public partial class AccountEndpointTests(PostgresDatabaseFixture fixture)
     public async Task Register_AcceptsEightCharacters_AndRefusesATakenEmail()
     {
         await using var factory = new TestApiFactory(fixture.ConnectionString);
-        var browser = await Browser.OpenAsync(factory);
+        var browser = await TestBrowser.OpenAsync(factory);
         var email = NewEmail();
 
         Assert.Equal(HttpStatusCode.Created, (await browser.PostAsync("/api/auth/register", new { email, password = "12345678", displayName = "A" })).StatusCode);
 
-        var other = await Browser.OpenAsync(factory);
+        var other = await TestBrowser.OpenAsync(factory);
         var taken = await other.PostAsync("/api/auth/register", new { email = email.ToUpperInvariant(), password = Password, displayName = "B" });
         Assert.Equal(HttpStatusCode.Conflict, taken.StatusCode);
         Assert.Contains("EMAIL_TAKEN", await taken.Content.ReadAsStringAsync());
@@ -109,7 +108,7 @@ public partial class AccountEndpointTests(PostgresDatabaseFixture fixture)
     {
         await using var factory = new TestApiFactory(fixture.ConnectionString);
         var email = await RegisterAsync(factory);
-        var browser = await Browser.OpenAsync(factory);
+        var browser = await TestBrowser.OpenAsync(factory);
 
         var unknown = await browser.PostAsync("/api/auth/login", new { email = NewEmail(), password = Password });
         var wrong = await browser.PostAsync("/api/auth/login", new { email, password = "wrong password" });
@@ -131,7 +130,7 @@ public partial class AccountEndpointTests(PostgresDatabaseFixture fixture)
     {
         await using var factory = new TestApiFactory(fixture.ConnectionString);
         var email = await RegisterAsync(factory);
-        var browser = await Browser.OpenAsync(factory);
+        var browser = await TestBrowser.OpenAsync(factory);
         Assert.Null(await browser.MeAsync());
 
         Assert.Equal(HttpStatusCode.OK, (await browser.PostAsync("/api/auth/login", new { email, password = Password })).StatusCode);
@@ -148,7 +147,7 @@ public partial class AccountEndpointTests(PostgresDatabaseFixture fixture)
     {
         await using var factory = new TestApiFactory(fixture.ConnectionString);
         var email = await RegisterAsync(factory);
-        var browser = await Browser.OpenAsync(factory);
+        var browser = await TestBrowser.OpenAsync(factory);
 
         var unknown = await browser.PostAsync("/api/auth/forgot-password", new { email = NewEmail() });
         var known = await browser.PostAsync("/api/auth/forgot-password", new { email });
@@ -173,7 +172,7 @@ public partial class AccountEndpointTests(PostgresDatabaseFixture fixture)
     public async Task ConfirmEmail_WithABadToken_SaysInvalid()
     {
         await using var factory = new TestApiFactory(fixture.ConnectionString);
-        var browser = await Browser.OpenAsync(factory);
+        var browser = await TestBrowser.OpenAsync(factory);
 
         var response = await browser.Client.GetAsync($"/api/auth/confirm-email?userId={Guid.NewGuid()}&token=Zm9yZ2Vk");
 
@@ -184,7 +183,7 @@ public partial class AccountEndpointTests(PostgresDatabaseFixture fixture)
     public async Task ResendConfirmation_NeedsASignedInUser()
     {
         await using var factory = new TestApiFactory(fixture.ConnectionString);
-        var browser = await Browser.OpenAsync(factory);
+        var browser = await TestBrowser.OpenAsync(factory);
 
         var response = await browser.PostAsync("/api/auth/resend-confirmation", new { });
 
@@ -197,7 +196,7 @@ public partial class AccountEndpointTests(PostgresDatabaseFixture fixture)
     public async Task AccountEndpoints_AreRateLimited_AndNeverLogPasswords()
     {
         await using var factory = new TestApiFactory(fixture.ConnectionString);
-        var browser = await Browser.OpenAsync(factory);
+        var browser = await TestBrowser.OpenAsync(factory);
         const string secret = "my-secret-password-123";
 
         var statuses = new List<HttpStatusCode>();
@@ -215,7 +214,7 @@ public partial class AccountEndpointTests(PostgresDatabaseFixture fixture)
     private static async Task<string> RegisterAsync(TestApiFactory factory)
     {
         var email = NewEmail();
-        var browser = await Browser.OpenAsync(factory);
+        var browser = await TestBrowser.OpenAsync(factory);
         var response = await browser.PostAsync("/api/auth/register", new { email, password = Password, displayName = "Tester" });
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         return email;
@@ -232,54 +231,4 @@ public partial class AccountEndpointTests(PostgresDatabaseFixture fixture)
 
     [GeneratedRegex(@"https://\S+")]
     private static partial Regex LinkPattern();
-
-    /// <summary>
-    /// A browser: HTTPS (the session cookie is Secure), cookies kept, redirects not followed, and the XSRF-TOKEN cookie
-    /// copied into the X-XSRF-TOKEN header like Angular does.
-    /// </summary>
-    private sealed class Browser
-    {
-        private string? _xsrf;
-
-        private Browser(HttpClient client) => Client = client;
-
-        public HttpClient Client { get; }
-
-        public static async Task<Browser> OpenAsync(TestApiFactory factory)
-        {
-            var browser = new Browser(factory.CreateClient(new WebApplicationFactoryClientOptions
-            {
-                BaseAddress = new Uri("https://localhost"),
-                AllowAutoRedirect = false
-            }));
-            await browser.MeAsync();
-            return browser;
-        }
-
-        /// <summary>The signed-in user's data, or null when signed out. Also picks up the CSRF token.</summary>
-        public async Task<JsonElement?> MeAsync()
-        {
-            var response = await Client.GetAsync("/api/me");
-            Remember(response);
-            if (response.StatusCode == HttpStatusCode.Unauthorized) return null;
-            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-            return json.RootElement.GetProperty("data").Clone();
-        }
-
-        public async Task<HttpResponseMessage> PostAsync(string path, object body)
-        {
-            using var request = new HttpRequestMessage(HttpMethod.Post, path) { Content = JsonContent.Create(body) };
-            if (_xsrf is not null) request.Headers.Add("X-XSRF-TOKEN", _xsrf);
-            var response = await Client.SendAsync(request);
-            Remember(response);
-            return response;
-        }
-
-        private void Remember(HttpResponseMessage response)
-        {
-            if (!response.Headers.TryGetValues("Set-Cookie", out var cookies)) return;
-            var xsrf = cookies.FirstOrDefault(c => c.StartsWith("XSRF-TOKEN=", StringComparison.Ordinal));
-            if (xsrf is not null) _xsrf = Uri.UnescapeDataString(xsrf["XSRF-TOKEN=".Length..].Split(';')[0]);
-        }
-    }
 }

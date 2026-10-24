@@ -426,7 +426,7 @@ Do not build a machine-learning recommendation system at this stage.
   - Priority: Low
 * [x] Implement user identity model (`users`, `user_logins`, `user_claims`, `user_tokens`)
 * [x] Implement authorization (cookie authentication; 401 JSON for APIs)
-* [-] Protect authenticated endpoints (account endpoints; Favorites in 6b)
+* [x] Protect authenticated endpoints (account endpoints, Favorites)
 * [x] Add authentication tests
 * [ ] Manually verify sign-up, confirmation, sign-in, sign-out and password reset in the browser
   - Priority: High
@@ -454,13 +454,13 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 
 ## Backend
 
-* [ ] Create Favorite entity
-* [ ] Implement `GET /api/favorites`
-* [ ] Implement `POST /api/favorites`
-* [ ] Implement `DELETE /api/favorites/{favoriteId}`
-* [ ] Implement `PATCH /api/favorites/order`
-* [ ] Enforce authorization
-* [ ] Prevent duplicate favorites
+* [x] Create Favorite entity
+* [x] Implement `GET /api/favorites`
+* [x] Implement `POST /api/favorites`
+* [x] Implement `DELETE /api/favorites/{favoriteId}`
+* [x] Implement `PATCH /api/favorites/order`
+* [x] Enforce authorization
+* [x] Prevent duplicate favorites
 
 ## Frontend
 
@@ -721,7 +721,7 @@ iOS remains deferred unless the development environment changes.
 * [-] Database operations (persistence round trips and CHECK constraints covered)
 * [ ] Plant Detail API
 * [ ] Search API
-* [ ] Favorites API
+* [x] Favorites API
 * [ ] Identification boundary
 * [ ] Authentication/authorization
 
