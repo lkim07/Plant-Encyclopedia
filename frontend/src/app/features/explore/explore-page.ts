@@ -40,8 +40,7 @@ type FeedState =
 /**
  * Explore (UX §12–17): category pills, then the discovery feed of image cards, loaded 20 at a time as the user
  * scrolls (a Load more button is the fallback). The feed order comes from the API (API_SPEC §22).
- * Deferred: personalization, restoring the feed and scroll position on Back, masonry, hover, bookmarks,
- * edge fades and desktop drag scrolling for the pills.
+ * Deferred: personalization, restoring the feed and scroll position on Back, masonry, hover, edge fades and desktop drag scrolling for the pills.
  */
 @Component({
   selector: 'app-explore-page',

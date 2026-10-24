@@ -29,6 +29,7 @@ import { goBack } from '../../core/navigation/go-back';
 import { CareCard } from './care-card';
 import { ImageCreditLine } from './image-credit';
 import { formatTemperature } from './format-temperature';
+import { BookmarkButton } from '../../shared/bookmark/bookmark-button';
 import { Icon, IconName } from '../../shared/icons/icon';
 import { isDesktopPointer, loadGsap, motionAllowed } from '../../shared/motion';
 
@@ -53,7 +54,7 @@ interface CareCardView {
  */
 @Component({
   selector: 'app-plant-detail-page',
-  imports: [RouterLink, CareCard, ImageCreditLine, Icon],
+  imports: [RouterLink, CareCard, ImageCreditLine, Icon, BookmarkButton],
   templateUrl: './plant-detail-page.html',
   styleUrl: './plant-detail-page.css',
 })

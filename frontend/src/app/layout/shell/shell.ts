@@ -9,6 +9,9 @@ import {
 } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Auth } from '../../core/auth/auth';
+import { Favorites } from '../../core/favorites/favorites';
+import { SavePrompt } from '../../shared/bookmark/save-prompt';
+import { SnackbarHost } from '../../shared/snackbar/snackbar';
 import { Sidebar } from '../sidebar/sidebar';
 import { TopBar } from '../top-bar/top-bar';
 import { Icon } from '../../shared/icons/icon';
@@ -23,7 +26,7 @@ import { isDesktopPointer, motionAllowed } from '../../shared/motion';
  */
 @Component({
   selector: 'app-shell',
-  imports: [RouterOutlet, Sidebar, TopBar, Icon],
+  imports: [RouterOutlet, Sidebar, TopBar, Icon, SavePrompt, SnackbarHost],
   templateUrl: './shell.html',
   styleUrl: './shell.css',
 })
@@ -36,6 +39,8 @@ export class Shell {
   constructor() {
     // Who is signed in (and a CSRF token for requests that change data).
     inject(Auth).refresh().subscribe();
+    // Loads the saved plants after sign-in, so every bookmark shows its state.
+    inject(Favorites);
 
     const destroyRef = inject(DestroyRef);
     afterNextRender(async () => {

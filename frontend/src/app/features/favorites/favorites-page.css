@@ -1,0 +1,101 @@
+:host {
+  display: block;
+}
+
+h1 {
+  margin: 0 0 var(--space-4);
+}
+
+/* Two columns on mobile, more as space allows (as on Explore). */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 48rem) {
+  .card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  }
+}
+
+.card-skeleton {
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .card-skeleton {
+    animation: pulse 1.2s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes pulse {
+  to {
+    opacity: 0.55;
+  }
+}
+
+.notice,
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  text-align: center;
+}
+
+.notice {
+  margin-top: var(--space-8);
+}
+
+.notice p,
+.empty p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+/* Three example plants that fade out toward the call to action (UX §41). Not links. */
+.decorations {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 36rem;
+  -webkit-mask-image: linear-gradient(to bottom, #000 35%, transparent);
+  mask-image: linear-gradient(to bottom, #000 35%, transparent);
+  pointer-events: none;
+}
+
+.decorations img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-6);
+  border-radius: var(--radius-sm);
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.retry {
+  min-height: var(--touch-target);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-text);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+}

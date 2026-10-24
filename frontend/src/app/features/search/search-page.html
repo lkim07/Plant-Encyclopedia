@@ -50,6 +50,7 @@
               [name]="result.name"
               [imageUrl]="result.imageUrl"
               [link]="'/plants/' + result.id"
+              [plantId]="result.id"
             />
           </li>
         }
@@ -90,6 +91,7 @@
                 [name]="lookup.plant.name"
                 [imageUrl]="lookup.plant.imageUrl"
                 [link]="'/plants/' + lookup.plant.id"
+                [plantId]="lookup.plant.id"
               />
             </li>
           </ul>

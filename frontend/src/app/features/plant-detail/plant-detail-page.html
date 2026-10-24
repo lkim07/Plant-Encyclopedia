@@ -30,7 +30,10 @@
         </div>
       }
       <div class="names">
-        <h1>{{ s.plant.name }}</h1>
+        <div class="title-row">
+          <h1>{{ s.plant.name }}</h1>
+          <app-bookmark-button [plantId]="s.plant.id" [plantName]="s.plant.name" />
+        </div>
         @if (s.plant.plantGroup) {
           <p class="group">{{ s.plant.plantGroup }}</p>
         }

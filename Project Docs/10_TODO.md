@@ -464,13 +464,14 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 
 ## Frontend
 
-* [ ] Implement Favorites page
-* [ ] Implement bookmark state
-* [ ] Implement save-to-favorites flow
-* [ ] Implement login-required bottom sheet/modal
-* [ ] Implement immediate removal
-* [ ] Implement Undo snackbar
-* [ ] Implement empty state
+* [x] Implement Favorites page
+* [x] Implement bookmark state
+* [x] Implement save-to-favorites flow
+* [x] Implement login-required bottom sheet/modal
+* [x] Implement immediate removal
+* [x] Implement Undo snackbar
+* [x] Implement empty state
+* [ ] Manually verify bookmarks, the sign-in prompt, Undo and the empty state in the browser (phone and desktop)
 * [ ] Implement Arrange mode
 
 ## Arrange Mode

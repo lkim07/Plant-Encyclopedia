@@ -114,6 +114,14 @@
   margin: 0;
 }
 
+/* The name with its bookmark beside it. */
+.title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
 .group,
 .scientific {
   margin: var(--space-1) 0 0;
