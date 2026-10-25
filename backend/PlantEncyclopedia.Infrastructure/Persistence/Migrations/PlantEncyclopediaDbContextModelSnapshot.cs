@@ -149,6 +149,77 @@ namespace PlantEncyclopedia.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("PlantEncyclopedia.Domain.History.SearchHistoryEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Query")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("query");
+
+                    b.Property<string>("QueryKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("query_key");
+
+                    b.Property<DateTimeOffset>("SearchedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("searched_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_search_history");
+
+                    b.HasIndex("UserId", "QueryKey")
+                        .IsUnique()
+                        .HasDatabaseName("ux_search_history_user_query_key");
+
+                    b.HasIndex("UserId", "SearchedAt")
+                        .HasDatabaseName("ix_search_history_user_searched_at");
+
+                    b.ToTable("search_history", (string)null);
+                });
+
+            modelBuilder.Entity("PlantEncyclopedia.Domain.History.ViewHistoryEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("PlantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("plant_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<DateTimeOffset>("ViewedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("viewed_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_view_history");
+
+                    b.HasIndex("PlantId")
+                        .HasDatabaseName("ix_view_history_plant_id");
+
+                    b.HasIndex("UserId", "ViewedAt")
+                        .HasDatabaseName("ix_view_history_user_viewed_at");
+
+                    b.ToTable("view_history", (string)null);
+                });
+
             modelBuilder.Entity("PlantEncyclopedia.Domain.Plants.Category", b =>
                 {
                     b.Property<Guid>("Id")
@@ -844,6 +915,35 @@ namespace PlantEncyclopedia.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_favorites_users_user_id");
+
+                    b.Navigation("Plant");
+                });
+
+            modelBuilder.Entity("PlantEncyclopedia.Domain.History.SearchHistoryEntry", b =>
+                {
+                    b.HasOne("PlantEncyclopedia.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_search_history_users_user_id");
+                });
+
+            modelBuilder.Entity("PlantEncyclopedia.Domain.History.ViewHistoryEntry", b =>
+                {
+                    b.HasOne("PlantEncyclopedia.Domain.Plants.Plant", "Plant")
+                        .WithMany()
+                        .HasForeignKey("PlantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_view_history_plants_plant_id");
+
+                    b.HasOne("PlantEncyclopedia.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_view_history_users_user_id");
 
                     b.Navigation("Plant");
                 });

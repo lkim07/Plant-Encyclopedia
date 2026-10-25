@@ -1031,6 +1031,15 @@ DELETE /api/history/searches/{searchId}
 
 Deleting search history does not delete plant data.
 
+## Implemented (Phase 7a, 2026-10-25)
+
+Search history exists only for signed-in users (the developer's choice): every history endpoint requires sign-in (`401 UNAUTHENTICATED` otherwise) and works only on the signed-in user's own entries. `POST` and `DELETE` also require the CSRF token (`X-XSRF-TOKEN`, §6). All history endpoints share a limit of 120 requests per minute per user (`429`). Visitors who are not signed in keep their recent searches in their browser only.
+
+* `GET /api/history/searches` returns the 10 most recent searches, newest first: `{ "data": [{ "searchId", "query", "searchedAt" }] }`.
+* `POST /api/history/searches` with `{ "query": "Rose" }` records a search the user ran (the frontend sends it when a search is submitted) and returns `200` with the entry. The text is validated and normalized like `q` in §24 (`400 VALIDATION_ERROR` with `details.query`). The same text, ignoring case, is one entry: searching it again moves it to the top with the new spelling and keeps its `searchId`.
+* `DELETE /api/history/searches/{searchId}` returns `204`, or `404 SEARCH_NOT_FOUND` when the user has no such entry (another user's ID answers the same).
+* Only the newest 50 searches per user are kept; older ones are deleted. Search text is never written to server logs.
+
 ---
 
 # 29. View History
@@ -1051,6 +1060,8 @@ Example request:
 
 The backend may choose to record views asynchronously if appropriate.
 
+Implemented (Phase 7a, 2026-10-25): signed-in users only (`401` otherwise), CSRF token required, same rate limit as §28. Returns `204`. The plant must exist and be Published (`404 PLANT_NOT_FOUND`); a missing `plantId` returns `400 VALIDATION_ERROR`. Opening the same plant again within 30 minutes is not recorded as a new view. Only the newest 200 views per user are kept. The frontend records a view each time Plant Detail loads a plant for a signed-in user.
+
 ---
 
 # 30. View History Retrieval
@@ -1062,6 +1073,8 @@ GET /api/history/views
 Authentication is optional depending on the identity model.
 
 The endpoint should not expose another user's history.
+
+Not implemented: view history is not shown to users in the MVP (PRD §17).
 
 ---
 

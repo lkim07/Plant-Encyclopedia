@@ -24,6 +24,8 @@ import {
   switchMap,
 } from 'rxjs';
 import { PlantApi } from '../../core/api/plant-api';
+import { Auth } from '../../core/auth/auth';
+import { ViewHistory } from '../../core/history/view-history';
 import { PlantDetail } from '../../core/api/plant-detail.model';
 import { goBack } from '../../core/navigation/go-back';
 import { CareCard } from './care-card';
@@ -51,6 +53,7 @@ interface CareCardView {
  * Plant Detail (UX §25–29): hero, naming hierarchy, description, Quick Care. When motion is welcome, the hero
  * image and its name panel ease in (GSAP), and on desktop the image drifts slower than the page as it scrolls
  * away. The page is complete without any of it.
+ * For a signed-in user, each loaded plant is recorded once as a view (a recommendation signal, PRD §17).
  */
 @Component({
   selector: 'app-plant-detail-page',
@@ -63,10 +66,14 @@ export class PlantDetailPage {
   private readonly router = inject(Router);
   private readonly location = inject(Location);
   private readonly plantApi = inject(PlantApi);
+  private readonly auth = inject(Auth);
+  private readonly viewHistory = inject(ViewHistory);
   private readonly retry$ = new Subject<void>();
   private readonly host = inject(ElementRef<HTMLElement>);
   private readonly injector = inject(Injector);
   private heroAnimation?: { revert(): void };
+  /** The loaded plant already recorded as a view; a reload (Try Again, another plant) counts again. */
+  private recordedView: PlantDetail | null = null;
 
   protected readonly skeletonCards = [1, 2, 3, 4];
 
@@ -128,6 +135,18 @@ export class PlantDetailPage {
       });
     });
     inject(DestroyRef).onDestroy(() => this.heroAnimation?.revert());
+
+    // Waits for the sign-in check when the page is opened directly.
+    effect(() => {
+      const state = this.state();
+      const signedIn = this.auth.signedIn();
+      untracked(() => {
+        if (state.status === 'loaded' && signedIn && this.recordedView !== state.plant) {
+          this.recordedView = state.plant;
+          this.viewHistory.record(state.plant.id);
+        }
+      });
+    });
   }
 
   protected attributionLabel(type: string): string {

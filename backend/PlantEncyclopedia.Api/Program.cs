@@ -8,6 +8,7 @@ using PlantEncyclopedia.Api.Dev;
 using PlantEncyclopedia.Api.Errors;
 using PlantEncyclopedia.Api.Explore;
 using PlantEncyclopedia.Api.Favorites;
+using PlantEncyclopedia.Api.History;
 using PlantEncyclopedia.Api.Health;
 using PlantEncyclopedia.Api.PlantGroups;
 using PlantEncyclopedia.Api.Plants;
@@ -47,6 +48,7 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddSearchProtection();
 builder.Services.AddAccounts(builder.Configuration, builder.Environment);
 builder.Services.AddFavorites();
+builder.Services.AddHistory();
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<PlantEncyclopediaDbContext>("database");
@@ -123,6 +125,7 @@ app.MapSearchEndpoints();
 app.MapExploreEndpoints();
 app.MapAccountEndpoints();
 app.MapFavoriteEndpoints();
+app.MapHistoryEndpoints();
 
 // Unauthenticated development tools (image review). Never mapped in other environments.
 if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))

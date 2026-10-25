@@ -792,6 +792,8 @@ CreatedAt
 
 The exact anonymous identity strategy will be determined during implementation.
 
+Implemented (Phase 7a, migration `AddHistory`): table `search_history` (`id`, `user_id`, `query`, `query_key`, `searched_at`) for signed-in users only; anonymous visitors have no server-side history (the developer's choice). `query` is the normalized text (at most 100 characters); `query_key` is its lower-case form, unique per user (`ux_search_history_user_query_key`), so a repeated search updates `searched_at` instead of adding a row. Index `ix_search_history_user_searched_at`. Only the newest 50 rows per user are kept. Rows are deleted with their user (cascade).
+
 ---
 
 # 29. Search History Rules
@@ -825,6 +827,8 @@ ViewedAt
 Multiple views may be useful as behavioral signals.
 
 The application may later aggregate or deduplicate these events for recommendation purposes.
+
+Implemented (Phase 7a, migration `AddHistory`): table `view_history` (`id`, `user_id`, `plant_id`, `viewed_at`) for signed-in users only. Repeat views are separate rows, except that a view of the same plant within 30 minutes of the last one is not recorded. Indexes `ix_view_history_user_viewed_at` and `ix_view_history_plant_id`. Only the newest 200 rows per user are kept. Rows are deleted with their user or plant (cascade). Writes for one user are serialized with a PostgreSQL advisory lock.
 
 ---
 

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using PlantEncyclopedia.Domain.Common;
 using PlantEncyclopedia.Domain.Favorites;
+using PlantEncyclopedia.Domain.History;
 using PlantEncyclopedia.Domain.Plants;
 using PlantEncyclopedia.Infrastructure.Identity;
 using PlantEncyclopedia.Infrastructure.Persistence.Configurations;
@@ -21,6 +22,8 @@ public class PlantEncyclopediaDbContext(DbContextOptions<PlantEncyclopediaDbCont
     public DbSet<PlantSource> PlantSources => Set<PlantSource>();
     public DbSet<PlantCare> PlantCare => Set<PlantCare>();
     public DbSet<Favorite> Favorites => Set<Favorite>();
+    public DbSet<SearchHistoryEntry> SearchHistory => Set<SearchHistoryEntry>();
+    public DbSet<ViewHistoryEntry> ViewHistory => Set<ViewHistoryEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

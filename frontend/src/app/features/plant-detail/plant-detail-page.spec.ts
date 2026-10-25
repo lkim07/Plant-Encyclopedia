@@ -7,6 +7,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { routes } from '../../app.routes';
 import { ApiResponse } from '../../core/api/api-response.model';
 import { Attribution, PlantDetail, PlantImage, QuickCare } from '../../core/api/plant-detail.model';
+import { Auth } from '../../core/auth/auth';
 
 const PLANT_ID = 'd5e00000-0000-4000-8000-000000000001';
 const URL = `/api/plants/${PLANT_ID}`;
@@ -303,5 +304,31 @@ describe('PlantDetailPage', () => {
     page.querySelector<HTMLButtonElement>('button[aria-label="Back"]')!.click();
 
     expect(back).toHaveBeenCalledOnce();
+  });
+  // Protects against: views missing from the recommendation signals, counted twice, or recorded for signed-out visitors.
+  it('records one view of the loaded plant for a signed-in user, also when sign-in is confirmed later', async () => {
+    const harness = await openPlant();
+    http.expectOne(URL).flush(plant());
+    await settle(harness);
+    http.expectNone('/api/history/views');
+
+    TestBed.inject(Auth).refresh().subscribe();
+    http.expectOne('/api/me').flush({
+      data: { id: 'u1', displayName: 'Rose Lover', email: null, emailConfirmed: true },
+    });
+    await settle(harness);
+    http.expectOne('/api/favorites').flush({ data: [] });
+    await settle(harness);
+
+    const view = http.expectOne({ method: 'POST', url: '/api/history/views' });
+    expect(view.request.body).toEqual({ plantId: PLANT_ID });
+    view.flush(null, { status: 204, statusText: '' });
+
+    TestBed.inject(Auth).refresh().subscribe();
+    http.expectOne('/api/me').flush({
+      data: { id: 'u1', displayName: 'Rose Lover', email: null, emailConfirmed: true },
+    });
+    await settle(harness);
+    http.expectNone('/api/history/views');
   });
 });

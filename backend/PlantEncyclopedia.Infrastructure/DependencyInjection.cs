@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using PlantEncyclopedia.Application.Categories;
 using PlantEncyclopedia.Application.Explore;
 using PlantEncyclopedia.Application.Favorites;
+using PlantEncyclopedia.Application.History;
 using PlantEncyclopedia.Application.ExternalData;
 using PlantEncyclopedia.Application.ExternalData.Images;
 using PlantEncyclopedia.Application.PlantGroups;
@@ -36,6 +37,7 @@ public static class DependencyInjection
         services.AddScoped<ISearchQueries, SearchQueries>();
         services.AddScoped<IExploreQueries, ExploreQueries>();
         services.AddScoped<IFavoriteStore, FavoriteStore>();
+        services.AddScoped<IHistoryStore, HistoryStore>();
 
         return services;
     }

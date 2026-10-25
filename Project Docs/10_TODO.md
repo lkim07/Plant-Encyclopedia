@@ -392,25 +392,27 @@ Do not build a machine-learning recommendation system at this stage.
 
 ## Search History
 
-* [ ] Implement search history model
-* [ ] Implement `GET /api/history/searches`
-* [ ] Implement deletion endpoint
-* [ ] Store recent searches
-* [ ] Remove recommendation influence when explicitly deleted
+* [x] Implement search history model (7a: signed-in users only)
+* [x] Implement `GET /api/history/searches`
+* [x] Implement deletion endpoint
+* [x] Store recent searches (server for signed-in users, browser otherwise)
+* [ ] Remove recommendation influence when explicitly deleted (7b)
+* [ ] Check history in the browser (the `AddHistory` migration is applied to the development database)
+  - Priority: High
 
 ## View History
 
-* [ ] Implement view history model
-* [ ] Implement `POST /api/history/views`
-* [ ] Implement `GET /api/history/views`
-* [ ] Record meaningful Plant Detail views
-* [ ] Use view history as a recommendation signal
+* [x] Implement view history model
+* [x] Implement `POST /api/history/views`
+* [~] Implement `GET /api/history/views` (view history is not shown in the MVP, PRD §17)
+* [x] Record meaningful Plant Detail views (signed-in users; repeats within 30 minutes count once)
+* [ ] Use view history as a recommendation signal (7b)
 
 ## Anonymous State
 
-* [ ] Decide implementation for anonymous identifiers
-* [ ] Store anonymous history safely
-* [ ] Define behavior when anonymous user authenticates
+* [x] Decide implementation for anonymous identifiers (no server-side history for visitors who are not signed in; developer's choice, 2026-10-25)
+* [~] Store anonymous history safely (not stored on the server; recent searches stay in the browser)
+* [x] Define behavior when anonymous user authenticates (browser recent searches stay in the browser and are not uploaded)
 
 ---
 

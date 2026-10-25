@@ -169,6 +169,13 @@ Implemented and verified:
     * Plant Detail attributions
   * **Total:** 268 backend tests pass with 0 build warnings. No migration; no live GBIF requests were made in 11c.
   * **Manually verified** by the developer on 2026-10-17 in the browser against real GBIF (Development).
+* Search and view history, Phase 7a (PRD §16–17, API_SPEC §28–29), 2026-10-25.
+  * **Scope:** signed-in users only (the developer's choice). Visitors who are not signed in have no server-side history; their recent searches stay in their browser as before.
+  * **Database:** `search_history` and `view_history` tables (migration `AddHistory`, applied to `plant_encyclopedia_dev` on 2026-10-25). Newest 50 searches and 200 views kept per user; deleted with the user (views also with the plant).
+  * **Endpoints:** `GET`, `POST /api/history/searches`, `DELETE /api/history/searches/{searchId}`, `POST /api/history/views`. Sign-in required; changes need the CSRF token; 120 requests per minute per user. A repeated search (ignoring case) moves to the top; the same plant opened again within 30 minutes is one view. `GET /api/history/views` is not implemented (view history is not shown).
+  * **Frontend:** Recent Searches come from the server when signed in (changes show at once, requests run in order, a failure reloads the list) and from this browser otherwise; signing out shows this browser's list again. Plant Detail records a view of each loaded plant for a signed-in user, also when the sign-in check finishes after the plant loaded.
+  * **Tests:** 8 new backend tests (sign-in required, newest first with repeats moved up and normalized text, validation, ownership on removal, search cap, view repeat window and hidden plants, view cap, CSRF); the cap and repeat-window tests were confirmed to fail when those rules are broken. 464 backend tests pass; 0 build warnings. 5 new frontend tests (server list without browser storage, removal also right after adding, reload after a failure, back to the browser list after sign-out, one recorded view). 115 frontend tests pass; `ng build` without warnings.
+  * **Not yet:** using the history in Explore (7b); a manual check in the browser.
 * Favorites Arrange mode, Phase 6d (PRD §20, UX §40), 2026-10-25.
   * **Entering:** an Arrange button on the Favorites page (shown on phones too), or a half-second long press on a card on touch screens (a short tap or a scroll does not count). Done or Esc leaves.
   * **While arranging:** cards jiggle (a dashed outline with reduced motion), are inert (no link, no bookmark), and show a minus control that removes with "Removed from Favorites. Undo". Cards can be dragged (mouse and touch) or moved with Move earlier / Move later buttons for keyboard and screen-reader users; each move is announced ("Fern moved to position 2 of 5").
@@ -1130,7 +1137,7 @@ The exact authentication provider and implementation details should follow the a
 
 ## Status
 
-**Behavior defined; implementation pending**
+**Implemented for signed-in users (Phase 7a); not yet used for recommendations**
 
 Search History represents explicit user search activity.
 
@@ -1150,7 +1157,7 @@ Removing a search history item does not delete the underlying plant from the dat
 
 ## Status
 
-**Behavior defined; implementation pending**
+**Recorded for signed-in users (Phase 7a); not yet used for recommendations**
 
 View History records plant-detail interactions and may contribute to recommendations.
 

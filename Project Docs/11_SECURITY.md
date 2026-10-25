@@ -183,6 +183,8 @@ Security tests should explicitly attempt unauthorized access to another user's r
 
 Implemented for Favorites (Phase 6b): every query and change is filtered by the signed-in user's ID taken from the session, never from the request. Another user's favorite ID behaves as if it did not exist (`404`), and a reorder that names one is refused. `FavoriteEndpointTests.Users_CannotTouchEachOthersFavorites` attempts this and was confirmed to fail when the ownership filter is removed.
 
+Implemented for search and view history (Phase 7a) the same way: entries are read, added and removed only for the user ID from the session; another user's search ID answers `404` (`HistoryEndpointTests.Remove_DeletesOnlyTheUsersOwnSearch`). History is kept only for signed-in users, capped per user (50 searches, 200 views), deleted with the account, and search text is never logged.
+
 ---
 
 # 7. API Security
