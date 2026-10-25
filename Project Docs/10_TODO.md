@@ -507,7 +507,7 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
   - Why: Cloudflare rate-limits `r2.dev` and does not recommend it for production
   - Priority: Before deployment
 * [ ] Choose a plant's image by hand from its candidates
-  - Why: Automatic choice cannot see what a photo shows; Sugar maple (seeds), Peppermint and Rosa rugosa still have unsuitable images
+  - Why: Automatic choice cannot see what a photo shows; Sugar maple (seeds), Peppermint, Rosa rugosa and Dog rose (a stem with one thorn) still have unsuitable images
   - Shape: list a plant's acceptable candidates with thumbnails, pick one, store it; needs authorization before it leaves Development
   - Priority: Medium (also listed under Future features in README.md)
 * [x] Reject a wrong image and take the next candidate (`rejected_at`, Development endpoint)
@@ -599,8 +599,11 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 * [x] Secure API credentials (User Secrets; never logged)
 * [x] Handle provider failures
 * [x] Prevent excessive usage/cost (budget, cache, rate limit)
-* [ ] Create a Pl@ntNet account and key, add it to User Secrets, and make one approved live identification to confirm the response and error codes
-  - Priority: High
+* [x] Create a Pl@ntNet account and key, add it to User Secrets, and make an approved live identification (2026-10-25: response format confirmed; non-plant images come back as 200 with low scores)
+* [ ] Confirm Pl@ntNet's error status codes (still undocumented and unseen; all are treated as unavailable)
+  - Priority: Low
+* [ ] Fix the development setup: the dev proxy forwards http://localhost:4200 to the API over plain HTTP, but the session and antiforgery cookies require HTTPS, so `GET /api/me` and every CSRF-protected request fail with 500 in the browser (found during the identification live check, 2026-10-25)
+  - Priority: High (blocks all manual browser checks of accounts, Favorites, history and identification)
 * [ ] Review Pl@ntNet's terms of use (free plan, non-commercial conditions, query logging) before public release
   - Priority: Before public release
 
