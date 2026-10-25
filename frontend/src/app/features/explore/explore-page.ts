@@ -10,11 +10,13 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { catchError, map, Observable, of, startWith, Subject, Subscription, switchMap } from 'rxjs';
 import { CategorySummary } from '../../core/api/browse.model';
 import { CategoryApi } from '../../core/api/category-api';
 import { ExploreApi, ExploreCard } from '../../core/api/explore-api';
+import { Auth } from '../../core/auth/auth';
+import { ExploreFeedMemory } from './explore-feed-memory';
 import { ImageCard } from '../../shared/image-card/image-card';
 import { WhenVisible } from '../../shared/when-visible';
 import { Icon } from '../../shared/icons/icon';
@@ -43,7 +45,9 @@ type FeedState =
  * Explore (UX §12–17): category pills, then the discovery feed of image cards, loaded 20 at a time as the user
  * scrolls (a Load more button is the fallback). The feed order comes from the API (API_SPEC §22), personalized for
  * signed-in users with enough activity.
- * Deferred: restoring the feed and scroll position on Back, masonry, hover, edge fades and desktop drag scrolling for the pills.
+ * Back (or Forward) to Explore shows the feed as it was left, at the same scroll position, without loading it again
+ * (UX §15); arriving any other way (sidebar, links) loads a fresh feed. A feed is only restored for the same user.
+ * Deferred: masonry, hover, edge fades and desktop drag scrolling for the pills.
  */
 @Component({
   selector: 'app-explore-page',
@@ -55,6 +59,9 @@ export class ExplorePage {
   private readonly categoryApi = inject(CategoryApi);
   private readonly exploreApi = inject(ExploreApi);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly auth = inject(Auth);
+  private readonly memory = inject(ExploreFeedMemory);
+  private readonly router = inject(Router);
   private readonly retry$ = new Subject<void>();
   private feedSubscription?: Subscription;
 
@@ -72,12 +79,16 @@ export class ExplorePage {
   protected readonly feed = signal<FeedState>({ status: 'loading' });
 
   constructor() {
-    this.loadFeed();
+    const restored = this.restoreFeed();
+    if (!restored) {
+      this.loadFeed();
+    }
+    this.destroyRef.onDestroy(() => this.saveFeed());
 
     // The title and category pills slide in once, the first time the categories arrive (when motion is welcome).
     const host: HTMLElement = inject(ElementRef).nativeElement;
     const injector = inject(Injector);
-    let introduced = false;
+    let introduced = restored; // returning to the page: no intro again
     let intro: { revert(): void } | undefined;
     effect(() => {
       if (this.categories().status !== 'loaded' || introduced || !motionAllowed()) {
@@ -154,6 +165,46 @@ export class ExplorePage {
         },
         error: () => this.feed.set({ ...state, more: 'error' }),
       });
+  }
+
+  /** On Back or Forward, shows the feed this user left and scrolls to where they were. */
+  private restoreFeed(): boolean {
+    const saved = this.memory.saved;
+    const userId = this.auth.user()?.id ?? null;
+    if (
+      !saved ||
+      saved.userId !== userId ||
+      this.router.currentNavigation()?.trigger !== 'popstate'
+    ) {
+      return false;
+    }
+
+    this.feed.set({
+      status: 'loaded',
+      cards: saved.cards,
+      page: saved.page,
+      hasNext: saved.hasNext,
+      feedAt: saved.feedAt,
+      more: 'idle',
+    });
+    afterNextRender(() => window.scrollTo({ top: saved.scrollY, behavior: 'instant' }));
+    return true;
+  }
+
+  /** Remembers the loaded feed and scroll position when leaving Explore (the page has not scrolled yet). */
+  private saveFeed(): void {
+    const state = this.feed();
+    this.memory.saved =
+      state.status === 'loaded'
+        ? {
+            cards: state.cards,
+            page: state.page,
+            hasNext: state.hasNext,
+            feedAt: state.feedAt,
+            scrollY: window.scrollY,
+            userId: this.auth.user()?.id ?? null,
+          }
+        : null;
   }
 
   private loadCategories(): Observable<CategoriesState> {

@@ -362,7 +362,8 @@ This vertical slice should validate the architecture before a large amount of fu
 * [x] Add category diversity
 * [x] Prevent duplicate plant/cultivar cards
 * [x] Support pagination/infinite scrolling
-* [ ] Restore the Explore feed and scroll position on Back (UX §15)
+* [x] Restore the Explore feed and scroll position on Back (UX §15; 7c)
+* [ ] Manually check Back to Explore in the browser (phone and desktop)
   - Priority: Medium
 
 ## Anonymous/New User Feed

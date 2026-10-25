@@ -4,11 +4,14 @@ import {
   provideHttpClientTesting,
   TestRequest,
 } from '@angular/common/http/testing';
+import { Location } from '@angular/common';
+import { provideLocationMocks } from '@angular/common/testing';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { routes } from '../../app.routes';
 import { ExploreCard } from '../../core/api/explore-api';
+import { ExploreFeedMemory } from './explore-feed-memory';
 
 /** Lets tests decide when the end of the feed comes into view. */
 class FakeIntersectionObserver {
@@ -49,7 +52,13 @@ describe('ExplorePage', () => {
     FakeIntersectionObserver.instances = [];
     vi.stubGlobal('IntersectionObserver', FakeIntersectionObserver);
     TestBed.configureTestingModule({
-      providers: [provideRouter(routes), provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideRouter(routes),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        // Back and Forward without a real browser history.
+        provideLocationMocks(),
+      ],
     });
     http = TestBed.inject(HttpTestingController);
   });
@@ -57,6 +66,7 @@ describe('ExplorePage', () => {
   afterEach(() => {
     http.verify();
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   async function openExplore(): Promise<RouterTestingHarness> {
@@ -236,5 +246,79 @@ describe('ExplorePage', () => {
     page = await settle(harness);
 
     expect(cardNames(page)).toEqual(['Plant 1']);
+  });
+  describe('returning to Explore', () => {
+    /** The router handles Back a moment after the history changes. */
+    async function back(): Promise<void> {
+      TestBed.inject(Location).back();
+      await new Promise<void>((resolve) => setTimeout(resolve));
+    }
+
+    const PLANT_URL = `/plants/${card(2).id}`;
+
+    /** Explore with two cards and more to come, scrolled down, then a plant opened from it. */
+    async function leaveForAPlant(): Promise<RouterTestingHarness> {
+      // In the app this starts with the first navigation; tests navigate without it.
+      TestBed.inject(Router).setUpLocationChangeListener();
+      const harness = await openExplore();
+      http.expectOne('/api/categories').flush({ data: [] });
+      flushFeed(1, [card(1), card(2)], true);
+      await settle(harness);
+      vi.spyOn(window, 'scrollY', 'get').mockReturnValue(640);
+
+      await harness.navigateByUrl(PLANT_URL);
+      http
+        .expectOne(`/api/plants/${card(2).id}`)
+        .flush(
+          { error: { code: 'PLANT_NOT_FOUND', message: '' } },
+          { status: 404, statusText: '' },
+        );
+      await settle(harness);
+      return harness;
+    }
+
+    // Protects against: Back from a plant losing the user's place in a long feed (UX §15).
+    it('Back shows the same cards at the same scroll position without loading the feed again', async () => {
+      const harness = await leaveForAPlant();
+      const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+
+      await back();
+      const page = await settle(harness);
+      http.expectOne('/api/categories').flush({ data: [] });
+
+      http.expectNone((req) => req.url === '/api/explore');
+      expect(cardNames(page)).toEqual(['Plant 1', 'Plant 2']);
+      expect(scrollTo).toHaveBeenCalledWith({ top: 640, behavior: 'instant' });
+
+      // The restored feed continues where it was, in the same order.
+      FakeIntersectionObserver.instances.at(-1)!.scrollIntoView();
+      flushFeed(2, [card(3)]);
+      expect(cardNames(await settle(harness))).toEqual(['Plant 1', 'Plant 2', 'Plant 3']);
+    });
+
+    // Protects against: a stale feed when the user comes back to Explore on purpose (UX §15: it may refresh).
+    it('arriving from a link or the sidebar loads a fresh feed', async () => {
+      const harness = await leaveForAPlant();
+
+      await harness.navigateByUrl('/explore');
+      http.expectOne('/api/categories').flush({ data: [] });
+      flushFeed(1, [card(3)]);
+
+      expect(cardNames(await settle(harness))).toEqual(['Plant 3']);
+    });
+
+    // Protects against: one person's personalized feed shown to the next person on a shared device.
+    it('does not restore a feed that belonged to someone else', async () => {
+      const harness = await leaveForAPlant();
+      const memory = TestBed.inject(ExploreFeedMemory);
+      memory.saved = { ...memory.saved!, userId: 'someone-else' };
+
+      await back();
+      await settle(harness);
+      http.expectOne('/api/categories').flush({ data: [] });
+      flushFeed(1, [card(3)]);
+
+      expect(cardNames(await settle(harness))).toEqual(['Plant 3']);
+    });
   });
 });

@@ -169,12 +169,17 @@ Implemented and verified:
     * Plant Detail attributions
   * **Total:** 268 backend tests pass with 0 build warnings. No migration; no live GBIF requests were made in 11c.
   * **Manually verified** by the developer on 2026-10-17 in the browser against real GBIF (Development).
+* Explore feed restored on Back, Phase 7c (UX §15), 2026-10-25.
+  * **Behavior:** leaving Explore remembers the loaded cards, page, `feedAt` and scroll position (in memory, this visit only). Back or Forward to Explore shows them again and scrolls to the same place without reloading the feed; further pages continue the same order. Arriving any other way (sidebar, links) loads a fresh feed. A remembered feed is only restored for the same user (or signed-out visitor), so a personalized feed is never shown to someone else.
+  * **Code:** `ExploreFeedMemory` (features/explore) and the Explore page; detection uses the router's `popstate` navigation trigger. Category pills still reload.
+  * **Tests:** 3 new frontend tests (Back restores cards and scroll without a feed request and continues paging; a link loads a fresh feed; another user's feed is not restored — confirmed to fail without the check). 118 frontend tests pass; `ng build` without warnings. No backend change.
+  * **Not verified yet:** in a real browser (phone and desktop, including the smooth scrolling on desktop).
 * Personalized Explore, Phase 7b (PRD §10–12, D-020–D-023, API_SPEC §20–22), 2026-10-25.
   * **Who:** signed-in users with enough activity (total signal weight 3, e.g. three plant views or one saved plant). Everyone else gets the default order.
   * **Rules:** `PersonalizedFeed` (Application/Explore). Views count 1, saved plants 3, searches 2 shared among the plant groups they match; each halves every 14 days. Every 10 cards: 6 from groups with interest, 2 from other groups of those categories, 2 from untouched categories (an empty kind gives its turn to the next). Groups take turns inside each kind; plants already viewed or saved come after the others in their group. Each plant once.
   * **Stable pages:** responses return `feedAt`; Explore sends it with later pages, so activity while scrolling does not reorder the feed. A removed search stops counting at once.
   * **Tests:** 8 new unit tests (threshold, 6/2/2 in every 10, turn-taking, each plant once, empty kind, ageing, seen plants later, same order for the same input) and 5 new API tests (feed follows viewed group and stays mixed, feedAt keeps one feed's order while a new feed uses new activity — confirmed to fail without the cutoff, removed search, another user's activity, feedAt validation). 477 backend tests pass; 0 build warnings. Frontend: the Explore paging test now checks `feedAt` (confirmed to fail without it). 115 frontend tests pass; `ng build` without warnings.
-  * **Not yet:** a manual check in the browser; restoring the feed and scroll position on Back (7c).
+  * **Not yet:** a manual check in the browser.
 * Search and view history, Phase 7a (PRD §16–17, API_SPEC §28–29), 2026-10-25.
   * **Scope:** signed-in users only (the developer's choice). Visitors who are not signed in have no server-side history; their recent searches stay in their browser as before.
   * **Database:** `search_history` and `view_history` tables (migration `AddHistory`, applied to `plant_encyclopedia_dev` on 2026-10-25). Newest 50 searches and 200 views kept per user; deleted with the user (views also with the plant).
@@ -497,7 +502,7 @@ There is no persistent mobile bottom navigation.
 
 ## Status
 
-**Implemented: default feed (Phase 7) and personalization for signed-in users (Phase 7b); restoring the feed on Back pending**
+**Implemented: default feed (Phase 7), personalization for signed-in users (Phase 7b), feed and scroll position restored on Back (Phase 7c)**
 
 Explore is discovery-first.
 
