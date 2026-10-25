@@ -31,6 +31,8 @@ class FakeIntersectionObserver {
   }
 }
 
+const FEED_AT = '2026-10-25T01:00:00.0000000Z';
+
 function card(n: number, imageUrl: string | null = null): ExploreCard {
   return {
     id: `d5e00000-0000-4000-8000-0000000000${String(n).padStart(2, '0')}`,
@@ -68,17 +70,23 @@ describe('ExplorePage', () => {
     return harness.routeNativeElement as HTMLElement;
   }
 
+  /** Later pages continue the first page's feed (API_SPEC §20: feedAt). */
   function feedRequest(page: number): TestRequest {
     return http.expectOne(
       (req) =>
         req.url === '/api/explore' &&
         req.params.get('page') === String(page) &&
-        req.params.get('pageSize') === '20',
+        req.params.get('pageSize') === '20' &&
+        req.params.get('feedAt') === (page === 1 ? null : FEED_AT),
     );
   }
 
   function flushFeed(page: number, cards: ExploreCard[], hasNext = false): void {
-    feedRequest(page).flush({ data: cards, pagination: { page, pageSize: 20, hasNext } });
+    feedRequest(page).flush({
+      data: cards,
+      pagination: { page, pageSize: 20, hasNext },
+      feedAt: FEED_AT,
+    });
   }
 
   function cardNames(page: HTMLElement): string[] {
@@ -161,7 +169,8 @@ describe('ExplorePage', () => {
     expect(page.querySelector('.load-more')).toBeNull();
   });
 
-  // Protects against: the feed stopping after 20 cards, or a card shown twice across pages.
+  // Protects against: the feed stopping after 20 cards, a card shown twice across pages, or a later page
+  // reordered by activity since the first (it sends feedAt).
   it('loads the next page as the end comes into view, without duplicates', async () => {
     const harness = await openExplore();
     http.expectOne('/api/categories').flush({ data: [] });

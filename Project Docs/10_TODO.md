@@ -374,13 +374,18 @@ This vertical slice should validate the architecture before a large amount of fu
 
 ## Behavioral Personalization
 
-* [ ] Implement view signals
-* [ ] Implement bookmark signals
-* [ ] Implement search signals
-* [ ] Implement plant-group signals
-* [ ] Implement category signals
-* [ ] Implement approximate 60/20/20 recommendation philosophy
-* [ ] Add diversity safeguards
+* [x] Implement view signals (7b, signed-in users)
+* [x] Implement bookmark signals
+* [x] Implement search signals (whole search text matched to plant groups)
+* [x] Implement plant-group signals
+* [x] Implement category signals (a category's interest is the sum of its groups')
+* [x] Implement approximate 60/20/20 recommendation philosophy (6/2/2 in every 10 cards)
+* [x] Add diversity safeguards (turn-taking inside each kind, each plant once, seen plants later)
+* [ ] Manually check the personalized feed in the browser
+  - Priority: High
+* [ ] Cache the personalized order if the catalogue grows large
+  - Why: Every page request loads all feed plants to order them
+  - Priority: Low (until the catalogue is much larger)
 
 Start with transparent rule-based recommendation logic.
 
@@ -396,7 +401,7 @@ Do not build a machine-learning recommendation system at this stage.
 * [x] Implement `GET /api/history/searches`
 * [x] Implement deletion endpoint
 * [x] Store recent searches (server for signed-in users, browser otherwise)
-* [ ] Remove recommendation influence when explicitly deleted (7b)
+* [x] Remove recommendation influence when explicitly deleted (7b)
 * [ ] Check history in the browser (the `AddHistory` migration is applied to the development database)
   - Priority: High
 
@@ -406,7 +411,7 @@ Do not build a machine-learning recommendation system at this stage.
 * [x] Implement `POST /api/history/views`
 * [~] Implement `GET /api/history/views` (view history is not shown in the MVP, PRD §17)
 * [x] Record meaningful Plant Detail views (signed-in users; repeats within 30 minutes count once)
-* [ ] Use view history as a recommendation signal (7b)
+* [x] Use view history as a recommendation signal (7b)
 
 ## Anonymous State
 

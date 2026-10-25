@@ -33,14 +33,17 @@ type FeedState =
       readonly cards: readonly ExploreCard[];
       readonly page: number;
       readonly hasNext: boolean;
+      /** Sent with later pages so they continue the same order. */
+      readonly feedAt: string;
       /** The next page: not requested, on its way, or failed (Try Again). */
       readonly more: 'idle' | 'loading' | 'error';
     };
 
 /**
  * Explore (UX §12–17): category pills, then the discovery feed of image cards, loaded 20 at a time as the user
- * scrolls (a Load more button is the fallback). The feed order comes from the API (API_SPEC §22).
- * Deferred: personalization, restoring the feed and scroll position on Back, masonry, hover, edge fades and desktop drag scrolling for the pills.
+ * scrolls (a Load more button is the fallback). The feed order comes from the API (API_SPEC §22), personalized for
+ * signed-in users with enough activity.
+ * Deferred: restoring the feed and scroll position on Back, masonry, hover, edge fades and desktop drag scrolling for the pills.
  */
 @Component({
   selector: 'app-explore-page',
@@ -120,6 +123,7 @@ export class ExplorePage {
             cards: response.data,
             page: 1,
             hasNext: response.pagination.hasNext,
+            feedAt: response.feedAt,
             more: 'idle',
           }),
         error: () => this.feed.set({ status: 'error' }),
@@ -135,13 +139,13 @@ export class ExplorePage {
 
     this.feed.set({ ...state, more: 'loading' });
     this.feedSubscription = this.exploreApi
-      .getFeed(state.page + 1)
+      .getFeed(state.page + 1, state.feedAt)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
           const shown = new Set(state.cards.map((card) => card.id));
           this.feed.set({
-            status: 'loaded',
+            ...state,
             cards: [...state.cards, ...response.data.filter((card) => !shown.has(card.id))],
             page: state.page + 1,
             hasNext: response.pagination.hasNext,

@@ -719,7 +719,8 @@ Implemented (Phase 7, feed for visitors without behavioral data):
       "imageUrl": "/media/plants/…/…-medium.webp"
     }
   ],
-  "pagination": { "page": 1, "pageSize": 20, "hasNext": true }
+  "pagination": { "page": 1, "pageSize": 20, "hasNext": true },
+  "feedAt": "2026-10-25T01:00:00.0000000Z"
 }
 ```
 
@@ -727,7 +728,9 @@ Implemented (Phase 7, feed for visitors without behavioral data):
 * Only `Published` plants with a plant group appear, each exactly once; cultivars are separate plants.
 * `imageUrl` is the card image (§16), or `null`.
 * The order is the same on every request (no randomness, no popularity), so pages never repeat or skip a plant; see §22.
-* `categoryId` (§21) and personalization are not implemented. Authentication is not used yet.
+* `categoryId` (§21) is not implemented.
+* Personalized for signed-in users (Phase 7b, 2026-10-25), see §22. Visitors who are not signed in get the default order.
+* `feedAt` (optional query parameter, Phase 7b): every response returns the moment the feed was composed (UTC, ISO 8601). The client sends it back with later pages; activity after it (new views, saves, searches) is then ignored, so the pages of one feed keep one order. A removed search or favorite stops counting at once. A `feedAt` in the future counts as now; one that is not a date and time returns `400 VALIDATION_ERROR` with `details.feedAt`.
 
 ### Authentication
 
@@ -780,7 +783,15 @@ For users with sufficient behavioral data:
 
 This is a recommendation guideline rather than a strict API response requirement.
 
-Implemented for new or anonymous users (Phase 7): categories take turns (every category's first plant, then every category's second, …, categories in name order); inside a category the plant groups take turns the same way; inside a group, plants with an image come first, then by name. Behavioral personalization is not implemented.
+Implemented for new or anonymous users (Phase 7): categories take turns (every category's first plant, then every category's second, …, categories in name order); inside a category the plant groups take turns the same way; inside a group, plants with an image come first, then by name.
+
+Implemented for signed-in users (Phase 7b, rule-based, D-023):
+
+* **Signals:** views (weight 1), saved plants (3) and searches (2, shared among the plant groups whose plants or group name contain the whole search text). Each counts half as much every 14 days.
+* **When:** total weight of at least 3 (for example three plant views, or one saved plant). Below that, the default order above is used.
+* **Mix:** every 10 cards follow the pattern strong, strong, adjacent, strong, strong, novel, strong, strong, adjacent, novel: 6 from plant groups with interest, 2 from other groups of the same categories, 2 from categories without interest. When one kind runs out, the next takes its turn.
+* **Inside each kind:** groups take turns, the more interesting first in each round; inside a group, plants the user has not viewed or saved come first, then plants with an image, then by name. Each plant appears once.
+* Weights are not exposed in the response.
 
 ---
 
