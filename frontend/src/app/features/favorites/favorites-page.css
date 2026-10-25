@@ -2,8 +2,26 @@
   display: block;
 }
 
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
 h1 {
-  margin: 0 0 var(--space-4);
+  margin: 0;
+}
+
+.arrange-toggle {
+  min-height: var(--touch-target);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-text);
+  border-radius: 999px;
+  background: transparent;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 /* Two columns on mobile, more as space allows (as on Explore). */
@@ -98,4 +116,99 @@ h1 {
   border-radius: var(--radius-sm);
   background: transparent;
   cursor: pointer;
+}
+
+/* Arrange mode (UX §40). No long-press callout or text selection on the cards. */
+.card-grid li {
+  position: relative;
+  -webkit-touch-callout: none;
+}
+
+.card-grid.arranging li {
+  user-select: none;
+  cursor: grab;
+}
+
+.remove {
+  position: absolute;
+  top: calc(-1 * var(--space-2));
+  left: calc(-1 * var(--space-2));
+  min-width: 2rem;
+  min-height: 2rem;
+  border-radius: 999px;
+  background: var(--color-text);
+  --icon-color: var(--color-bg);
+}
+
+/* Keeps a full touch target around the small round control. */
+.remove::after {
+  content: '';
+  position: absolute;
+  inset: calc(-1 * var(--space-2));
+}
+
+.moves {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-1);
+}
+
+.moves .icon-button:disabled {
+  visibility: hidden;
+}
+
+/* A subtle wobble, offset per card so they do not move in step. */
+@media (prefers-reduced-motion: no-preference) {
+  .card-grid.arranging li:not(.cdk-drag-preview, .cdk-drag-placeholder) app-image-card {
+    animation: jiggle 280ms ease-in-out infinite alternate;
+  }
+
+  .card-grid.arranging li:nth-child(2n) app-image-card {
+    animation-delay: -140ms;
+  }
+
+  .card-grid.arranging li:nth-child(3n) app-image-card {
+    animation-duration: 320ms;
+  }
+
+  .card-grid.cdk-drop-list-dragging li:not(.cdk-drag-placeholder) {
+    transition: transform 250ms var(--ease-out-soft);
+  }
+
+  .cdk-drag-animating {
+    transition: transform 250ms var(--ease-out-soft);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-grid.arranging li app-image-card {
+    outline: 2px dashed var(--color-icon);
+    outline-offset: 3px;
+    border-radius: var(--radius-md);
+  }
+}
+
+@keyframes jiggle {
+  from {
+    transform: rotate(-1deg);
+  }
+  to {
+    transform: rotate(1deg);
+  }
+}
+
+/* The card being dragged follows the pointer; its old place shows faintly. */
+.cdk-drag-preview {
+  list-style: none;
+  box-shadow: 0 10px 28px rgb(40 28 20 / 0.28);
+  border-radius: var(--radius-md);
+}
+
+.cdk-drag-preview .moves,
+.cdk-drag-preview .remove {
+  display: none;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.3;
 }

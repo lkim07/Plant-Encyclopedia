@@ -169,6 +169,13 @@ Implemented and verified:
     * Plant Detail attributions
   * **Total:** 268 backend tests pass with 0 build warnings. No migration; no live GBIF requests were made in 11c.
   * **Manually verified** by the developer on 2026-10-17 in the browser against real GBIF (Development).
+* Favorites Arrange mode, Phase 6d (PRD §20, UX §40), 2026-10-25.
+  * **Entering:** an Arrange button on the Favorites page (shown on phones too), or a half-second long press on a card on touch screens (a short tap or a scroll does not count). Done or Esc leaves.
+  * **While arranging:** cards jiggle (a dashed outline with reduced motion), are inert (no link, no bookmark), and show a minus control that removes with "Removed from Favorites. Undo". Cards can be dragged (mouse and touch) or moved with Move earlier / Move later buttons for keyboard and screen-reader users; each move is announced ("Fern moved to position 2 of 5").
+  * **Saving:** each move saves the whole order at once with `PATCH /api/favorites/order`, after any save or removal still on its way; if it fails, the order goes back to the server's and a message says so.
+  * **Package:** @angular/cdk 22.2.4 (MIT), drag-and-drop only, loaded with the Favorites page.
+  * **Tests:** 5 new frontend tests (Arrange, Done and Esc with inert cards and no bookmarks; move buttons with announcement and the saved order; rollback on a failed save; minus control with Undo and the order waiting for the removal — confirmed to fail without the wait; long press on touch only, not after a move). 110 frontend tests pass; `ng build` without warnings. Dragging itself is not covered by automated tests.
+  * **Not verified yet:** dragging, the jiggle and the long press in a real browser (phone and desktop).
 * Favorites screens, Phase 6c (PRD §18–21, UX §38–41), 2026-10-24.
   * **Bookmark toggle:** outlined when a plant is not saved, filled when it is, on plant cards (Explore, Plant Group, Search results) and next to the name on Plant Detail. It changes at once and the request follows; requests for one plant are sent in order; on a failure the message says why and the list is reloaded from the server. Elsewhere than the Favorites page, toggling shows no message (the developer's choice). The button sits beside the card link, so it never opens the plant, and reports its state with `aria-pressed`.
   * **Signed out:** the bookmark opens "Save this plant / Sign in to save plants to your Favorites" (bottom sheet on phones, dialog on larger screens). Sign in remembers the plant for 30 minutes in this tab (sessionStorage) and saves it after signing in, then returns to the same page.
@@ -176,7 +183,7 @@ Implemented and verified:
   * **Favorites page:** saved plants in the user's order; unbookmarking removes the card at once with "Removed from Favorites. Undo" (Undo restores the position); empty state with three decorative photos from the Explore feed and "Explore Plants →"; a sign-in prompt when signed out. The list is reloaded each time the page opens.
   * **Shared:** `Favorites` service (`core/favorites`), `BookmarkButton` and `SavePrompt` (`shared/bookmark`), `Snackbar` (`shared/snackbar`, one message, 6 seconds, paused on hover or focus), and a filled option on `Icon`.
   * **Tests:** 9 new frontend tests (immediate toggle and save, rollback with a message, unconfirmed email with resend, quick clicks in order — confirmed to fail without the per-plant queue, sign-in prompt keeping the save, Cancel forgetting it, remove and Undo position, empty state, signed-out page). 105 frontend tests pass; `ng build` without warnings.
-  * **Not verified yet:** a manual check in the browser. Arrange mode comes in 6d.
+  * **Not verified yet:** a manual check in the browser.
 * Favorites API, Phase 6b (API_SPEC §31–34), 2026-10-23.
   * **Database:** `favorites` table (migration `AddFavorites`, applied to `plant_encyclopedia_dev`): one row per user and plant, an integer position kept 1…n per user, deleted with its user or plant.
   * **Endpoints:** `GET`, `POST` and `DELETE /api/favorites` and `PATCH /api/favorites/order`. Sign-in required; changes need the CSRF token; 60 requests per minute per user. Saving is repeat-safe (`200` with the existing favorite), needs a confirmed email, accepts an `order` for Undo, only takes Published plants and stops at 500 favorites.

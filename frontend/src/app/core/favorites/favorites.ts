@@ -31,6 +31,9 @@ interface Entry {
   readonly favorite: Favorite | null;
 }
 
+/** Queue key for order changes (plant IDs are GUIDs, so it cannot clash). */
+const ORDER_QUEUE = 'order';
+
 const PENDING_KEY = 'plant-encyclopedia.pending-favorite';
 /** A save asked for before signing in is kept this long (this browser tab only). */
 export const PENDING_FAVORITE_MAX_AGE_MS = 30 * 60 * 1000;
@@ -101,6 +104,40 @@ export class Favorites {
     } else {
       this.save(plant.id);
     }
+  }
+
+  /**
+   * Arrange mode (PRD §20): moves a saved plant to `toIndex` (0-based) at once, then saves the whole order. Order
+   * changes wait for saves and removals still on their way, so the list sent matches the server's; each sends the
+   * latest order. If saving fails, the order goes back to the server's.
+   */
+  move(plantId: string, toIndex: number): void {
+    const entries = [...this.entries()];
+    const from = entries.findIndex((entry) => entry.plantId === plantId);
+    const to = Math.max(0, Math.min(toIndex, entries.length - 1));
+    if (from < 0 || from === to) {
+      return;
+    }
+    entries.splice(to, 0, ...entries.splice(from, 1));
+    this.entries.set(entries);
+
+    this.enqueue(ORDER_QUEUE, async () => {
+      await Promise.all(
+        [...this.queues].filter(([key]) => key !== ORDER_QUEUE).map(([, work]) => work),
+      );
+      const items = this.entries()
+        .flatMap((entry) => this.serverIds.get(entry.plantId) ?? [])
+        .map((favoriteId, index) => ({ favoriteId, order: index + 1 }));
+      if (items.length === 0) {
+        return;
+      }
+      try {
+        await firstValueFrom(this.http.patch('/api/favorites/order', { items }));
+      } catch {
+        this.snackbar.show("We couldn't save the new order. Please try again.");
+        void this.reload();
+      }
+    });
   }
 
   /** "Sign in" in the prompt: remember the plant until the user has signed in. */

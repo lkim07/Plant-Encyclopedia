@@ -471,8 +471,8 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 * [x] Implement immediate removal
 * [x] Implement Undo snackbar
 * [x] Implement empty state
-* [ ] Manually verify bookmarks, the sign-in prompt, Undo and the empty state in the browser (phone and desktop)
-* [ ] Implement Arrange mode
+* [ ] Manually verify bookmarks, the sign-in prompt, Undo, the empty state and Arrange mode (drag, long press, jiggle) in the browser (phone and desktop)
+* [x] Implement Arrange mode
 
 ## Arrange Mode
 

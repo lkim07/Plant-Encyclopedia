@@ -9,6 +9,7 @@ import { SavePrompt } from '../../shared/bookmark/save-prompt';
 import { ImageCard } from '../../shared/image-card/image-card';
 import { Snackbar, SnackbarHost } from '../../shared/snackbar/snackbar';
 import { Auth, User } from '../auth/auth';
+import { LONG_PRESS_MS } from '../../features/favorites/favorites-page';
 import { Favorite, Favorites } from './favorites';
 
 const USER: User = {
@@ -307,6 +308,161 @@ describe('Favorites', () => {
       expect(page.querySelector('a.action')!.getAttribute('href')).toBe(
         '/login?returnUrl=%2Ffavorites',
       );
+    });
+    describe('Arrange mode', () => {
+      const THREE = () => [
+        favorite(ROSE_ID, 'Dog rose', 1),
+        favorite(FERN_ID, 'Fern', 2),
+        favorite(MINT_ID, 'Mint', 3),
+      ];
+
+      async function openWithThree(): Promise<{
+        harness: RouterTestingHarness;
+        page: HTMLElement;
+      }> {
+        await signIn(THREE());
+        const opened = await openPage();
+        http.expectOne('/api/favorites').flush({ data: THREE() });
+        await opened.harness.fixture.whenStable();
+        return opened;
+      }
+
+      const names = (page: HTMLElement) =>
+        Array.from(page.querySelectorAll('.name')).map((n) => n.textContent);
+      const button = (page: HTMLElement, label: string) =>
+        page.querySelector<HTMLButtonElement>(`button[aria-label="${label}"]`)!;
+      const toggle = (page: HTMLElement) =>
+        page.querySelector<HTMLButtonElement>('.arrange-toggle')!;
+
+      function touch(target: Element, type: string, x = 10, y = 10): void {
+        target.dispatchEvent(
+          Object.assign(new MouseEvent(type, { bubbles: true, clientX: x, clientY: y }), {
+            pointerType: 'touch',
+          }),
+        );
+      }
+
+      // Protects against: cards that still open plants or toggle bookmarks while being arranged.
+      it('turns cards into arrangeable items and back with Arrange, Done and Esc', async () => {
+        const { harness, page } = await openWithThree();
+        expect(toggle(page).textContent!.trim()).toBe('Arrange');
+        expect(page.querySelectorAll('app-bookmark-button').length).toBe(3);
+
+        toggle(page).click();
+        await harness.fixture.whenStable();
+        expect(toggle(page).textContent!.trim()).toBe('Done');
+        expect(page.querySelector('.card-grid')!.classList).toContain('arranging');
+        expect(page.querySelector('app-image-card')!.hasAttribute('inert')).toBe(true);
+        expect(page.querySelectorAll('app-bookmark-button').length).toBe(0);
+        expect(button(page, 'Remove Fern from Favorites')).not.toBeNull();
+
+        toggle(page).click();
+        await harness.fixture.whenStable();
+        expect(page.querySelector('app-image-card')!.hasAttribute('inert')).toBe(false);
+
+        toggle(page).click();
+        await harness.fixture.whenStable();
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+        await harness.fixture.whenStable();
+        expect(toggle(page).textContent!.trim()).toBe('Arrange');
+      });
+
+      // Protects against: an order that only changes on screen, or no way to reorder without dragging (WCAG 2.5.7).
+      it('moves cards with the buttons, announces it and saves the whole order', async () => {
+        const { harness, page } = await openWithThree();
+        toggle(page).click();
+        await harness.fixture.whenStable();
+
+        expect(button(page, 'Move Dog rose earlier').disabled).toBe(true);
+        button(page, 'Move Mint earlier').click();
+        await harness.fixture.whenStable();
+
+        expect(names(page)).toEqual(['Dog rose', 'Mint', 'Fern']);
+        expect(page.querySelector('[role="status"]')!.textContent).toBe(
+          'Mint moved to position 2 of 3.',
+        );
+        const save = http.expectOne({ method: 'PATCH', url: '/api/favorites/order' });
+        expect(save.request.body).toEqual({
+          items: [
+            { favoriteId: 'f-Dog rose', order: 1 },
+            { favoriteId: 'f-Mint', order: 2 },
+            { favoriteId: 'f-Fern', order: 3 },
+          ],
+        });
+        save.flush(null, { status: 204, statusText: '' });
+      });
+
+      // Protects against: the screen showing an order the server did not keep.
+      it('puts the order back when saving it fails', async () => {
+        const { harness, page } = await openWithThree();
+        toggle(page).click();
+        await harness.fixture.whenStable();
+
+        button(page, 'Move Dog rose later').click();
+        await settle();
+        http
+          .expectOne({ method: 'PATCH', url: '/api/favorites/order' })
+          .flush(
+            { error: { code: 'INTERNAL_ERROR', message: '' } },
+            { status: 500, statusText: '' },
+          );
+        await settle();
+        http.expectOne('/api/favorites').flush({ data: THREE() });
+        await settle();
+        await harness.fixture.whenStable();
+
+        expect(names(page)).toEqual(['Dog rose', 'Fern', 'Mint']);
+        expect(TestBed.inject(Snackbar).message()?.text).toBe(
+          "We couldn't save the new order. Please try again.",
+        );
+      });
+
+      // Protects against: an order sent while a removal is still on its way (the server would refuse it).
+      it('removes with the minus control and Undo, and orders only after the removal', async () => {
+        const { harness, page } = await openWithThree();
+        toggle(page).click();
+        await harness.fixture.whenStable();
+
+        button(page, 'Remove Fern from Favorites').click();
+        await harness.fixture.whenStable();
+        button(page, 'Move Mint earlier').click();
+        await harness.fixture.whenStable();
+        await settle();
+        expect(names(page)).toEqual(['Mint', 'Dog rose']);
+        http.expectNone({ method: 'PATCH', url: '/api/favorites/order' });
+
+        http
+          .expectOne({ method: 'DELETE', url: '/api/favorites/f-Fern' })
+          .flush(null, { status: 204, statusText: '' });
+        await settle();
+        expect(
+          http.expectOne({ method: 'PATCH', url: '/api/favorites/order' }).request.body.items,
+        ).toEqual([
+          { favoriteId: 'f-Mint', order: 1 },
+          { favoriteId: 'f-Dog rose', order: 2 },
+        ]);
+        expect(TestBed.inject(Snackbar).message()?.action?.label).toBe('Undo');
+      });
+
+      // Protects against: a scroll or a short tap starting Arrange mode, or a long press not starting it (UX §40).
+      it('starts with a long press on touch screens only', async () => {
+        const { harness, page } = await openWithThree();
+        const card = page.querySelector('.card-grid li')!;
+        const wait = () => new Promise((resolve) => setTimeout(resolve, LONG_PRESS_MS + 50));
+
+        touch(card, 'pointerdown');
+        touch(card, 'pointerup');
+        touch(card, 'pointerdown');
+        touch(card, 'pointermove', 40, 10);
+        await wait();
+        await harness.fixture.whenStable();
+        expect(toggle(page).textContent!.trim()).toBe('Arrange');
+
+        touch(card, 'pointerdown');
+        await wait();
+        await harness.fixture.whenStable();
+        expect(toggle(page).textContent!.trim()).toBe('Done');
+      });
     });
   });
 });
