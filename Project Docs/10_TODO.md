@@ -602,8 +602,7 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 * [x] Create a Pl@ntNet account and key, add it to User Secrets, and make an approved live identification (2026-10-25: response format confirmed; non-plant images come back as 200 with low scores)
 * [ ] Confirm Pl@ntNet's error status codes (still undocumented and unseen; all are treated as unavailable)
   - Priority: Low
-* [ ] Fix the development setup: the dev proxy forwards http://localhost:4200 to the API over plain HTTP, but the session and antiforgery cookies require HTTPS, so `GET /api/me` and every CSRF-protected request fail with 500 in the browser (found during the identification live check, 2026-10-25)
-  - Priority: High (blocks all manual browser checks of accounts, Favorites, history and identification)
+* [x] Fix the development setup: the dev proxy now reaches the API over HTTPS (run the API with the `https` launch profile); OAuth return addresses keep the public http://localhost:4200 scheme (2026-10-25)
 * [ ] Review Pl@ntNet's terms of use (free plan, non-commercial conditions, query logging) before public release
   - Priority: Before public release
 

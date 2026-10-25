@@ -147,6 +147,25 @@ public class ExternalSignInTests(PostgresDatabaseFixture fixture)
         Assert.Equal(HttpStatusCode.NotFound, unknown.StatusCode);
     }
 
+    // Protects against: the development return address turning into https://localhost:4200/... (which the dev server
+    // does not serve and Google and GitHub do not know) when the dev proxy reaches the API over HTTPS.
+    [Fact]
+    public async Task Start_UsesThePublicAddressScheme_ForTheCallback()
+    {
+        await using var factory = WithGoogle().WithWebHostBuilder(b => b.UseSetting("Accounts:PublicBaseUrl", "http://localhost"));
+        using var site = factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost"), AllowAutoRedirect = false });
+        using var otherHost = factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://api.internal"), AllowAutoRedirect = false });
+
+        var start = await site.GetAsync("/api/auth/external/google");
+        var direct = await otherHost.GetAsync("/api/auth/external/google");
+
+        Assert.Equal("http://localhost/signin-google", RedirectUri(start));
+        Assert.Equal("https://api.internal/signin-google", RedirectUri(direct)); // other hosts are left alone
+    }
+
+    private static string? RedirectUri(HttpResponseMessage response) =>
+        System.Web.HttpUtility.ParseQueryString(response.Headers.Location!.Query)["redirect_uri"];
+
     // Protects against: a callback without a provider answer signing anyone in, or returning to another site.
     [Fact]
     public async Task Callback_WithoutAProviderAnswer_GoesBackToSignIn()

@@ -161,6 +161,32 @@ public static class AccountSetup
     }
 
     /// <summary>
+    /// The Google and GitHub return address must be exactly the one registered with each provider: /signin-google or
+    /// /signin-github on the site's public address (Accounts:PublicBaseUrl). The provider handlers build it from the
+    /// request, so for the sign-in start and the provider callbacks, a request for the public host takes the public
+    /// address's scheme. In development the site is http://localhost:4200 while the dev proxy reaches the API over
+    /// HTTPS (the cookies require it); in production both are HTTPS and nothing changes. Runs after the HTTPS
+    /// redirection, so it never causes a redirect.
+    /// </summary>
+    public static IApplicationBuilder UseExternalSignInAddress(this IApplicationBuilder app)
+    {
+        var publicBase = new Uri(app.ApplicationServices.GetRequiredService<AccountOptions>().PublicBaseUrl!);
+        return app.Use((context, next) =>
+        {
+            var path = context.Request.Path;
+            var isSignInRoute = path.StartsWithSegments("/signin-google")
+                || path.StartsWithSegments("/signin-github")
+                || (path.StartsWithSegments("/api/auth/external") && !path.StartsWithSegments("/api/auth/external/callback"));
+            if (isSignInRoute && string.Equals(context.Request.Host.Value, publicBase.Authority, StringComparison.OrdinalIgnoreCase))
+            {
+                context.Request.Scheme = publicBase.Scheme;
+            }
+
+            return next(context);
+        });
+    }
+
+    /// <summary>
     /// Issues the readable XSRF-TOKEN cookie for the current user. Antiforgery tokens are bound to the signed-in user,
     /// so a new one is issued whenever the user changes (sign in, sign out) and on GET /api/me.
     /// </summary>

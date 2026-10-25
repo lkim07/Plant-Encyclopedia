@@ -1,22 +1,22 @@
 {
   "/api": {
-    "target": "http://localhost:5034",
+    "target": "https://localhost:7071",
     "secure": false
   },
   "/health": {
-    "target": "http://localhost:5034",
+    "target": "https://localhost:7071",
     "secure": false
   },
   "/media": {
-    "target": "http://localhost:5034",
+    "target": "https://localhost:7071",
     "secure": false
   },
   "/signin-google": {
-    "target": "http://localhost:5034",
+    "target": "https://localhost:7071",
     "secure": false
   },
   "/signin-github": {
-    "target": "http://localhost:5034",
+    "target": "https://localhost:7071",
     "secure": false
   }
 }

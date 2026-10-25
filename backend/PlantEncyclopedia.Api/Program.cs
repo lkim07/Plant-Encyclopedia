@@ -87,6 +87,7 @@ if (args.Contains("migrate-images-to-r2"))
 // only runs if GlobalExceptionHandler does not handle the exception; it returns a bare 500 with no body.
 app.UseExceptionHandler(_ => { });
 app.UseHttpsRedirection();
+app.UseExternalSignInAddress();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
