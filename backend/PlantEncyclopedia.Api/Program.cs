@@ -10,6 +10,7 @@ using PlantEncyclopedia.Api.Explore;
 using PlantEncyclopedia.Api.Favorites;
 using PlantEncyclopedia.Api.History;
 using PlantEncyclopedia.Api.Health;
+using PlantEncyclopedia.Api.Identification;
 using PlantEncyclopedia.Api.PlantGroups;
 using PlantEncyclopedia.Api.Plants;
 using PlantEncyclopedia.Api.Search;
@@ -17,6 +18,7 @@ using PlantEncyclopedia.Application.ExternalData;
 using PlantEncyclopedia.Infrastructure;
 using PlantEncyclopedia.Infrastructure.ExternalData.Gbif;
 using PlantEncyclopedia.Infrastructure.ExternalData.Images;
+using PlantEncyclopedia.Infrastructure.Identification;
 using PlantEncyclopedia.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,11 +35,16 @@ builder.Services.AddInfrastructure(connectionString);
 var gbif = builder.Configuration.GetSection(GbifOptions.SectionName).Get<GbifOptions>() ?? new GbifOptions();
 var images = builder.Configuration.GetSection(PlantImageOptions.SectionName).Get<PlantImageOptions>() ?? new PlantImageOptions();
 images.StoragePath = Path.GetFullPath(images.StoragePath, builder.Environment.ContentRootPath);
+// Plant identification (POST /api/identification). The Pl@ntNet API key comes from User Secrets.
+var plantNet = builder.Configuration.GetSection(PlantNetOptions.SectionName).Get<PlantNetOptions>() ?? new PlantNetOptions();
 if (builder.Environment.IsEnvironment("Testing"))
 {
     gbif.Enabled = false;
     images.Enabled = false;
+    plantNet.Enabled = false;
 }
+
+builder.Services.AddIdentification(plantNet);
 
 builder.Services.AddExternalPlantData(
     gbif,
@@ -49,6 +56,7 @@ builder.Services.AddSearchProtection();
 builder.Services.AddAccounts(builder.Configuration, builder.Environment);
 builder.Services.AddFavorites();
 builder.Services.AddHistory();
+builder.Services.AddIdentificationEndpoints();
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<PlantEncyclopediaDbContext>("database");
@@ -126,6 +134,7 @@ app.MapExploreEndpoints();
 app.MapAccountEndpoints();
 app.MapFavoriteEndpoints();
 app.MapHistoryEndpoints();
+app.MapIdentificationEndpoints();
 
 // Unauthenticated development tools (image review). Never mapped in other environments.
 if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))

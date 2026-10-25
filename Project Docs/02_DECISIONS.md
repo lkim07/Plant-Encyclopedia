@@ -1678,6 +1678,28 @@ Identity is Microsoft's maintained, well-tested account system (SECURITY §4: no
 
 ---
 
+## D-071 — Plant Identification with Pl@ntNet, Open to Everyone
+
+**Status:** Accepted (2026-10-25)
+
+### Decision
+
+* The first identification provider is the Pl@ntNet identification API (the developer's choice), behind `IPlantIdentificationProvider` so it can be replaced (ARCHITECTURE §26).
+* Identification is open to everyone, signed in or not (Identify is the home screen, UX §6), protected by a per-client rate limit, an app-wide daily budget below Pl@ntNet's free 500 per day, a size limit, a timeout and the CSRF token.
+* Only Published encyclopedia plants matching a suggested scientific name are shown (D-011). Suggestions never create plants. Uploaded photos are re-encoded without metadata, sent to Pl@ntNet, and never stored.
+
+### Rationale
+
+Pl@ntNet is built for plant identification and returns scientific names, which is how encyclopedia plants are identified. Its terms (read 2026-10-25) state a free plan of 500 identifications per day and that submitted photos are kept only in memory during identification; it does keep a query log (date, time, image URLs) to manage quotas.
+
+### Consequences
+
+* The developer creates the Pl@ntNet account and key; the key lives in User Secrets.
+* Pl@ntNet's terms of use and its non-commercial conditions must be reviewed again before public release.
+* Pl@ntNet's documentation does not list its error codes, so every error answer is treated as "unavailable" until they are verified with an approved live request.
+
+---
+
 # 17. Decision Principles
 
 When future decisions are unclear, use these principles in order:

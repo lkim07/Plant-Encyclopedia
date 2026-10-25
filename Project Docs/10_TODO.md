@@ -579,35 +579,41 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 * [ ] Implement image preview
 * [ ] Implement Retake
 * [ ] Implement Choose Another Photo
-* [ ] Validate image type
-* [ ] Validate image size
-* [ ] Validate image dimensions where appropriate
+* [x] Validate image type (8a: from the bytes)
+* [x] Validate image size (8a: 10 MB)
+* [x] Validate image dimensions where appropriate (8a: 64–16,000 px, scaled decoding)
 
 ## Identification API
 
-* [ ] Implement `POST /api/identification`
-* [ ] Define identification request model
-* [ ] Define identification candidate model
-* [ ] Implement validation
-* [ ] Implement error handling
-* [ ] Implement rate limiting
+* [x] Implement `POST /api/identification` (8a)
+* [x] Define identification request model (multipart `image`)
+* [x] Define identification candidate model (`rank`, `plant`)
+* [x] Implement validation
+* [x] Implement error handling (`422 IDENTIFICATION_FAILED`, `503 IDENTIFICATION_UNAVAILABLE`)
+* [x] Implement rate limiting (6 per minute per client; app-wide 20 per minute, 400 per day)
 
 ## AI Provider
 
-* [ ] Define AI provider abstraction
-* [ ] Implement selected vision API provider
-* [ ] Secure API credentials
-* [ ] Handle provider failures
-* [ ] Prevent excessive usage/cost
+* [x] Define AI provider abstraction (`IPlantIdentificationProvider`)
+* [x] Implement selected vision API provider (Pl@ntNet, D-071)
+* [x] Secure API credentials (User Secrets; never logged)
+* [x] Handle provider failures
+* [x] Prevent excessive usage/cost (budget, cache, rate limit)
+* [ ] Create a Pl@ntNet account and key, add it to User Secrets, and make one approved live identification to confirm the response and error codes
+  - Priority: High
+* [ ] Review Pl@ntNet's terms of use (free plan, non-commercial conditions, query logging) before public release
+  - Priority: Before public release
 
 ## Candidate Pipeline
 
-* [ ] Generate candidates
-* [ ] Normalize candidate names
-* [ ] Match candidates against own database
-* [ ] Rank validated candidates
-* [ ] Return maximum three actual candidates
-* [ ] Keep More separate from candidates
+* [x] Generate candidates
+* [x] Normalize candidate names
+* [x] Match candidates against own database (scientific identity, Published only)
+* [x] Rank validated candidates (provider order; species before cultivars)
+* [x] Return maximum three actual candidates
+* [ ] Keep More separate from candidates (with the More page, 8c)
+* [ ] Decide whether suggestions missing from the encyclopedia may be imported through Catalogue of Life (8c)
+  - Priority: Medium
 
 ## Result UI
 

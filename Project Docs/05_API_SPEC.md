@@ -1264,6 +1264,14 @@ image=<uploaded image>
 
 Optional metadata may be added later.
 
+### Implemented (Phase 8a, 2026-10-25)
+
+* Open to everyone (D-071). Requires the CSRF token (`X-XSRF-TOKEN`, §6), because a multipart POST could otherwise be sent from any site. 6 requests per minute per client IP (`429 RATE_LIMITED`); a 20-second request timeout (`503 REQUEST_TIMEOUT`).
+* `image`: one file of at most 10 MB (`413 PAYLOAD_TOO_LARGE`), JPEG, PNG or WebP as judged from its bytes (the name and declared type are ignored), at least 64 pixels on each side. Anything else returns `400 VALIDATION_ERROR` with `details.image`.
+* `200`: the response in §37 without `requestId` (nothing is stored, so there is nothing to refer to). Each candidate also has `plant.scientificName`; there are at most three, and no score of any kind.
+* `422 IDENTIFICATION_FAILED`: the provider answered, but none of its likely suggestions is a Published encyclopedia plant (§38). The message says the photo may be unclear or the plant may not be in the encyclopedia yet.
+* `503 IDENTIFICATION_UNAVAILABLE`: identification is not configured, the app-wide budget is used up, or the provider failed or timed out.
+
 ---
 
 # 37. Identification Response
@@ -1341,6 +1349,8 @@ completed
 failed
 ```
 
+Implemented synchronously (Phase 8a): a successful response has `status: "completed"`; failures are the errors in §36. `GET /api/identification/{requestId}` does not exist.
+
 If asynchronous processing becomes necessary:
 
 ```text
@@ -1376,6 +1386,8 @@ Potential controls include:
 
 Exact thresholds are deferred.
 
+Implemented (Phase 8a): 6 requests per minute per client IP; app-wide at most 20 provider calls per minute and 400 per day (in memory, per API instance); an identical photo within 24 hours is answered from a cache of suggested names without a provider call.
+
 ---
 
 # 41. Image Validation
@@ -1399,6 +1411,8 @@ The backend should not blindly pass arbitrary uploaded files to the AI provider.
 The API should not retain user-uploaded images indefinitely without a clear purpose.
 
 If images are retained for debugging or evaluation, the retention policy should be documented separately.
+
+Implemented (Phase 8a): uploads are processed in memory and never stored or logged. The copy sent to Pl@ntNet is a JPEG of at most 1280 pixels with no metadata (location included). The cache keeps only suggested names and scores, keyed by a hash of that copy.
 
 ---
 

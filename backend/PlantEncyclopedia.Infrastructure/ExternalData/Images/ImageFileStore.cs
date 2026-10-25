@@ -160,8 +160,9 @@ internal sealed partial class ImageFileStore(HttpClient http, IImageStorage stor
         }
     }
 
-    // Draws the pixels upright according to the EXIF orientation; the decoder itself does not rotate.
-    private static SKBitmap Orient(SKBitmap bitmap, SKEncodedOrigin origin)
+    // Draws the pixels upright according to the EXIF orientation; the decoder itself does not rotate. Also used for
+    // identification uploads.
+    internal static SKBitmap Orient(SKBitmap bitmap, SKEncodedOrigin origin)
     {
         if (origin == SKEncodedOrigin.TopLeft) return bitmap;
 

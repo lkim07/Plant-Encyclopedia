@@ -268,6 +268,8 @@ The backend should enforce:
 
 The original filename supplied by a user must never determine a filesystem path.
 
+Implemented for identification uploads (Phase 8a): at most 10 MB per photo (the request body is capped too); the format is read from the bytes (JPEG, PNG, WebP), the dimensions from the header before decoding (64 to 16,000 pixels per side, at most 100 megapixels, and whole decoding only up to 25 megapixels), and the photo is re-encoded. Nothing is written to disk and the file name is ignored.
+
 Uploaded images should not automatically become publicly accessible.
 
 ---
@@ -293,6 +295,8 @@ Future implementation should consider:
 * signed URLs when temporary access is required
 
 The application should not expose uploaded images publicly by default.
+
+Implemented (Phase 8a): identification photos are never stored. The copy sent to the provider has no EXIF or other metadata, so no location leaves the server. Pl@ntNet states that it keeps submitted photos only in memory during identification, and logs queries for quota purposes (D-071).
 
 ---
 
@@ -321,6 +325,8 @@ AI Provider using embedded secret key
 AI requests should contain only the information required for the identification task.
 
 AI output must not automatically become authoritative plant information.
+
+Implemented (Phase 8a): the Pl@ntNet key is read from configuration (User Secrets in development) and validated at startup; it is sent in the request query string, so the HTTP client's request logging is removed and failures are logged without the URL (a test checks the key never appears in logs). Suggested names are treated as untrusted text: normalized, length-checked, and only used as bound SQL parameters to find existing Published plants.
 
 ---
 

@@ -5,6 +5,7 @@ using PlantEncyclopedia.Application.Categories;
 using PlantEncyclopedia.Application.Explore;
 using PlantEncyclopedia.Application.Favorites;
 using PlantEncyclopedia.Application.History;
+using PlantEncyclopedia.Application.Identification;
 using PlantEncyclopedia.Application.ExternalData;
 using PlantEncyclopedia.Application.ExternalData.Images;
 using PlantEncyclopedia.Application.PlantGroups;
@@ -16,6 +17,7 @@ using PlantEncyclopedia.Infrastructure.ExternalData.Gbif;
 using PlantEncyclopedia.Infrastructure.ExternalData.Images;
 using PlantEncyclopedia.Infrastructure.ExternalData.INaturalist;
 using PlantEncyclopedia.Infrastructure.ExternalData.Wikimedia;
+using PlantEncyclopedia.Infrastructure.Identification;
 using PlantEncyclopedia.Infrastructure.Persistence;
 using PlantEncyclopedia.Infrastructure.Persistence.Queries;
 
@@ -39,6 +41,38 @@ public static class DependencyInjection
         services.AddScoped<IFavoriteStore, FavoriteStore>();
         services.AddScoped<IHistoryStore, HistoryStore>();
 
+        return services;
+    }
+
+    /// <summary>
+    /// Plant identification (ARCHITECTURE §25–30). When Pl@ntNet is disabled, every identification is Unavailable and
+    /// no HTTP client is registered. Invalid settings fail here, at startup.
+    /// </summary>
+    public static IServiceCollection AddIdentification(this IServiceCollection services, PlantNetOptions plantNet)
+    {
+        plantNet.Validate();
+
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddSingleton<IIdentificationImageProcessor, IdentificationImageProcessor>();
+        services.AddScoped<IIdentificationQueries, IdentificationQueries>();
+        services.AddScoped<PlantIdentificationService>();
+
+        if (!plantNet.Enabled)
+        {
+            services.AddSingleton<IPlantIdentificationProvider, UnavailableIdentificationProvider>();
+            return services;
+        }
+
+        services.AddSingleton(plantNet);
+        services.AddHttpClient<PlantNetIdentificationProvider>(PlantNetIdentificationProvider.ConfigureClient)
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false })
+            // The request URL carries the API key; the default handlers would log it.
+            .RemoveAllLoggers();
+
+        // Shared by every request: the cache and the app-wide budget must outlive a single identification.
+        services.AddSingleton<IdentificationCache>();
+        services.AddSingleton<IdentificationCallBudget>();
+        services.AddTransient<IPlantIdentificationProvider, GuardedIdentificationProvider>();
         return services;
     }
 

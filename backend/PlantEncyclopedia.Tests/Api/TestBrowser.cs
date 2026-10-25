@@ -17,7 +17,7 @@ internal sealed class TestBrowser
 
     public HttpClient Client { get; }
 
-    public static async Task<TestBrowser> OpenAsync(TestApiFactory factory)
+    public static async Task<TestBrowser> OpenAsync(WebApplicationFactory<Program> factory)
     {
         var browser = new TestBrowser(factory.CreateClient(new WebApplicationFactoryClientOptions
         {
@@ -40,10 +40,14 @@ internal sealed class TestBrowser
 
     public Task<HttpResponseMessage> PostAsync(string path, object body) => SendAsync(HttpMethod.Post, path, body);
 
-    public async Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, object? body = null)
+    public async Task<HttpResponseMessage> SendAsync(HttpMethod method, string path, object? body = null) =>
+        await SendContentAsync(method, path, body is null ? null : JsonContent.Create(body));
+
+    /// <summary>Sends any body (e.g. a multipart upload), with the CSRF header like Angular.</summary>
+    public async Task<HttpResponseMessage> SendContentAsync(HttpMethod method, string path, HttpContent? content)
     {
         using var request = new HttpRequestMessage(method, path);
-        if (body is not null) request.Content = JsonContent.Create(body);
+        request.Content = content;
         if (_xsrf is not null) request.Headers.Add("X-XSRF-TOKEN", _xsrf);
         var response = await Client.SendAsync(request);
         Remember(response);

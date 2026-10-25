@@ -950,6 +950,8 @@ Client
 
 ---
 
+Implemented (Phase 8a): `POST /api/identification` → `PlantIdentificationService` (Application/Identification) → `IIdentificationImageProcessor` (SkiaSharp: format from the bytes, size from the header, scaled decoding for large photos, EXIF orientation, at most 1280 px, JPEG without metadata) → `IPlantIdentificationProvider` (Infrastructure: `GuardedIdentificationProvider` with a 24-hour cache and an app-wide budget, around `PlantNetIdentificationProvider`) → `IIdentificationQueries` (Published plants with the same `plant_scientific_identity` as a suggestion; the species before its cultivars). Suggestions below a provider score of 0.05 are ignored; at most ten names are looked up and three plants returned, in the provider's order. No identification request is stored.
+
 # 26. AI Provider Abstraction
 
 The AI provider must be replaceable.

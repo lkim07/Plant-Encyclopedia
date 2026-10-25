@@ -169,6 +169,13 @@ Implemented and verified:
     * Plant Detail attributions
   * **Total:** 268 backend tests pass with 0 build warnings. No migration; no live GBIF requests were made in 11c.
   * **Manually verified** by the developer on 2026-10-17 in the browser against real GBIF (Development).
+* Plant identification backend, Phase 8a (PRD §8–9, API_SPEC §36–42, D-071), 2026-10-25.
+  * **Endpoint:** `POST /api/identification` (multipart, field `image`), open to everyone; CSRF token required; 6 per minute per client; 20-second timeout. Returns up to three Published plants (`rank`, `plant` with id, name, plant group, scientific name, image), no scores; `422 IDENTIFICATION_FAILED` when nothing matches; `503 IDENTIFICATION_UNAVAILABLE` when the provider is off, over budget or failing.
+  * **Photo handling:** at most 10 MB; JPEG, PNG or WebP from the bytes; 64–16,000 px; decoded at reduced scale where possible; turned upright; re-encoded as a JPEG of at most 1280 px without metadata; never stored or logged.
+  * **Provider:** Pl@ntNet (`Identification:PlantNet` settings: `Enabled`, `ApiKey` in User Secrets, `Project` = `all`), behind `IPlantIdentificationProvider`; off unless configured, always off in tests. App-wide budget 20 per minute and 400 per day; 24-hour cache of suggested names by photo hash. Any non-200 answer counts as unavailable (Pl@ntNet does not document its error codes).
+  * **Matching:** suggestions with a score of at least 0.05, in the provider's order, matched to Published plants by scientific identity (species before its cultivars); unmatched suggestions are dropped, never imported.
+  * **Tests:** 20 new backend tests: Pl@ntNet request shape and parsing against a response constructed from the documented fields (not a recorded live response), error statuses as unavailable with the key never logged, invalid answers, settings; photo shrinking and format, metadata removal and orientation (confirmed to fail without the rotation), rejection of other files; cache and budget; candidate rules; and API tests for published-only matches in order (confirmed to fail without the Published filter), no match, no provider, upload checks, CSRF and the rate limit. 497 backend tests pass; 0 build warnings.
+  * **Not verified yet:** a real Pl@ntNet request (needs the developer's key and an approved one-off live check). The screens come in 8b.
 * Explore feed restored on Back, Phase 7c (UX §15), 2026-10-25.
   * **Behavior:** leaving Explore remembers the loaded cards, page, `feedAt` and scroll position (in memory, this visit only). Back or Forward to Explore shows them again and scrolls to the same place without reloading the feed; further pages continue the same order. Arriving any other way (sidebar, links) loads a fresh feed. A remembered feed is only restored for the same user (or signed-out visitor), so a personalized feed is never shown to someone else.
   * **Code:** `ExploreFeedMemory` (features/explore) and the Explore page; detection uses the router's `popstate` navigation trigger. Category pills still reload.
@@ -879,7 +886,7 @@ More
 
 ## Status
 
-**UX and architecture defined; implementation pending**
+**Backend implemented (Phase 8a, Pl@ntNet); screens pending (8b)**
 
 The intended flow is:
 
@@ -1098,7 +1105,7 @@ Planned performance techniques include:
 
 ## Status
 
-**Architecture defined; implementation pending**
+**Implemented in the backend (Phase 8a): Pl@ntNet behind `IPlantIdentificationProvider`, rate limit, budget and cache**
 
 AI should primarily answer:
 
