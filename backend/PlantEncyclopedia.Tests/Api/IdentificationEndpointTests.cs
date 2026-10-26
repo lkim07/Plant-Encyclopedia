@@ -5,8 +5,11 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using PlantEncyclopedia.Api.Identification;
+using Microsoft.EntityFrameworkCore;
+using PlantEncyclopedia.Application.ExternalData;
 using PlantEncyclopedia.Application.Identification;
 using PlantEncyclopedia.Domain.Plants;
+using PlantEncyclopedia.Tests.ExternalData;
 using PlantEncyclopedia.Tests.Identification;
 using PlantEncyclopedia.Tests.Persistence;
 
@@ -52,6 +55,36 @@ public class IdentificationEndpointTests(PostgresDatabaseFixture fixture)
             $$$"""{"rank":1,"plant":{"id":"{{{other.Id}}}","name":"Sweet briar","plantGroup":"Roses","plantGroupId":"{{{other.PlantGroup!.Slug}}}","scientificName":"{{{other.ScientificName}}}","imageUrl":null}}""",
             candidates[0].GetRawText());
         Assert.Equal(1, provider.Calls);
+    }
+
+    // Protects against: a likely species missing from the results only because the encyclopedia did not have it yet
+    // (D-072), the import using anything but Catalogue of Life's data, or importing it again for the next photo.
+    [Fact]
+    public async Task Identify_ImportsAMissingSpeciesFromCatalogueOfLife_AndShowsIt()
+    {
+        var genus = TestData.NewGenus();
+        var catalogue = new FakePlantDataProvider(TaxonLookupResult.Found(ExternalTaxa.Species(genus)));
+        var identifier = new FakeProvider(ProviderIdentification.Answered([new($"{genus} vulgaris", 0.8)]));
+        await using var factory = new TestApiFactory(fixture.ConnectionString).WithWebHostBuilder(b => b.ConfigureTestServices(services =>
+        {
+            services.AddSingleton<IPlantIdentificationProvider>(identifier);
+            services.AddSingleton<IPlantDataProvider>(catalogue);
+        }));
+        var browser = await TestBrowser.OpenAsync(factory);
+
+        var first = await browser.SendContentAsync(HttpMethod.Post, Url, Photo(TestPhotos.Jpeg()));
+        var again = await browser.SendContentAsync(HttpMethod.Post, Url, Photo(TestPhotos.Jpeg()));
+
+        Assert.Equal((HttpStatusCode.OK, HttpStatusCode.OK), (first.StatusCode, again.StatusCode));
+        using var json = JsonDocument.Parse(await first.Content.ReadAsStringAsync());
+        var plant = json.RootElement.GetProperty("data").GetProperty("candidates")[0].GetProperty("plant");
+        Assert.Equal($"{genus} vulgaris", plant.GetProperty("scientificName").GetString());
+        Assert.Equal(JsonValueKind.Null, plant.GetProperty("plantGroupId").ValueKind);
+        Assert.Equal(1, catalogue.Calls); // the second photo finds the stored plant
+
+        await using var db = fixture.CreateDbContext();
+        var stored = await db.Plants.SingleAsync(p => p.Id == plant.GetProperty("id").GetGuid());
+        Assert.Equal((PlantStatus.Published, (Guid?)null), (stored.Status, stored.PlantGroupId));
     }
 
     // Protects against: claiming a plant does not exist, or a dead end, when nothing matched (UX §44).

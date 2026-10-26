@@ -613,8 +613,9 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 * [x] Match candidates against own database (scientific identity, Published only)
 * [x] Rank validated candidates (provider order; species before cultivars)
 * [x] Return maximum three actual candidates
-* [ ] Keep More separate from candidates (with the More page, 8c)
-* [ ] Decide whether suggestions missing from the encyclopedia may be imported through Catalogue of Life (8c)
+* [x] Keep More separate from candidates (8c: More page outside the ranked list)
+* [x] Decide whether suggestions missing from the encyclopedia may be imported through Catalogue of Life (D-072: yes, published without a group when the genus is unmapped)
+* [ ] Assign plant groups to plants published without one (part of the review tool)
   - Priority: Medium
 
 ## Result UI
@@ -624,7 +625,7 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 * [x] Implement #1 candidate
 * [x] Implement #2 candidate
 * [x] Implement #3 candidate
-* [-] Implement More (8b: opens the #1 candidate's plant group; the contextual More page comes in 8c)
+* [x] Implement More (8c: `/identify/more`, related plants by group, genus, family and category)
 * [x] Implement failure state
 * [x] Navigate candidates to Plant Detail
 * [ ] Check Identify and the results in a real browser on a phone and desktop, with a photo that matches an encyclopedia plant
@@ -644,11 +645,11 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 
 ## More
 
-* [ ] Implement contextual identification results
-* [ ] Implement `GET /api/identification/{requestId}/more` if required
-* [ ] Preserve identification context
-* [ ] Prevent duplicate candidates
-* [ ] Keep More distinct from Explore
+* [x] Implement contextual identification results (8c: related to the candidates)
+* [~] Implement `GET /api/identification/{requestId}/more` if required (not needed: `GET /api/identification/related?plantId=…` takes the candidates, since identifications are not stored)
+* [x] Preserve identification context (candidate IDs in the More page address)
+* [x] Prevent duplicate candidates (each plant once; candidates left out)
+* [x] Keep More distinct from Explore
 
 ---
 

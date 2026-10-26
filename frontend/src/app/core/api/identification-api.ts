@@ -1,7 +1,8 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { catchError, map, Observable, throwError } from 'rxjs';
-import { ApiResponse } from './api-response.model';
+import { ApiResponse, PagedResponse } from './api-response.model';
+import { EXPLORE_PAGE_SIZE, ExploreCard } from './explore-api';
 
 /** Largest photo the API accepts (API_SPEC §36). */
 export const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
@@ -49,6 +50,19 @@ export class IdentificationApi {
         map((response) => response.data.candidates),
         catchError((error: unknown) => throwError(() => toFailure(error))),
       );
+  }
+
+  /**
+   * GET /api/identification/related: the More page, plants related to up to three candidates, closest first, with
+   * the same card shape and paging as Explore. Errors surface as HttpErrorResponse.
+   */
+  getRelated(
+    plantIds: readonly string[],
+    page: number,
+  ): Observable<PagedResponse<readonly ExploreCard[]>> {
+    return this.http.get<PagedResponse<readonly ExploreCard[]>>('/api/identification/related', {
+      params: { plantId: [...plantIds], page, pageSize: EXPLORE_PAGE_SIZE },
+    });
   }
 }
 

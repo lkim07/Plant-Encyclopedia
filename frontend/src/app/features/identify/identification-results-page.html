@@ -57,19 +57,18 @@
       </ol>
     }
 
-    @if (first.plant.plantGroupId; as groupId) {
-      <a
-        class="more"
-        [routerLink]="'/plant-groups/' + groupId"
-        [attr.aria-label]="'More ' + first.plant.plantGroup"
-      >
-        <span class="more-tile">
-          <span class="more-label">More</span>
-          <app-icon name="arrow-right" />
-        </span>
-        <span class="name">{{ first.plant.plantGroup }}</span>
-      </a>
-    }
+    <a
+      class="more"
+      routerLink="/identify/more"
+      [queryParams]="{ plants: candidateIds() }"
+      aria-label="More related plants"
+    >
+      <span class="more-tile">
+        <span class="more-label">More</span>
+        <app-icon name="arrow-right" />
+      </span>
+      <span class="name">Related plants</span>
+    </a>
   </div>
 }
 

@@ -56,6 +56,8 @@ public static class DependencyInjection
         services.AddSingleton<IIdentificationImageProcessor, IdentificationImageProcessor>();
         services.AddScoped<IIdentificationQueries, IdentificationQueries>();
         services.AddScoped<PlantIdentificationService>();
+        // Uses the Catalogue of Life import registered by AddExternalPlantData (Unavailable when GBIF is off).
+        services.AddScoped<ISuggestionImporter, CatalogueOfLifeSuggestionImporter>();
 
         if (!plantNet.Enabled)
         {

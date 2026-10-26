@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http.Timeouts;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using PlantEncyclopedia.Api.Accounts;
+using PlantEncyclopedia.Api.Common;
 using PlantEncyclopedia.Api.Errors;
+using PlantEncyclopedia.Api.Explore;
 using PlantEncyclopedia.Api.Search;
 using PlantEncyclopedia.Application.Identification;
 
@@ -26,7 +29,8 @@ public static class IdentificationEndpoints
     public const string RateLimitPolicy = "identification";
     public const string TimeoutPolicy = "identification";
     public const int RequestsPerMinute = 6;
-    public static readonly TimeSpan Timeout = TimeSpan.FromSeconds(20);
+    // Pl@ntNet (up to 10 s) plus up to three Catalogue of Life imports (each up to 4.5 s).
+    public static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
 
     /// <summary>Largest accepted photo. Room is left for the multipart framing around it.</summary>
     public const int MaxImageBytes = 10 * 1024 * 1024;
@@ -55,7 +59,43 @@ public static class IdentificationEndpoints
             .RequireCsrfToken()
             .RequireRateLimiting(RateLimitPolicy)
             .WithRequestTimeout(TimeoutPolicy);
+        app.MapGet("/api/identification/related", GetRelatedAsync);
         return app;
+    }
+
+    /// <summary>Candidates a More page may be based on (D-012: #1, #2, #3).</summary>
+    public const int MaxRelatedSeeds = 3;
+
+    // GET /api/identification/related?plantId=…&plantId=…&page=&pageSize= — the More page (API_SPEC §44): plants related
+    // to the identification's candidates. Stateless (no identification is stored), so the candidates are passed in.
+    private static async Task<IResult> GetRelatedAsync(
+        [FromQuery(Name = "plantId")] string[]? plantIds,
+        string? page,
+        string? pageSize,
+        IIdentificationQueries queries,
+        CancellationToken cancellationToken)
+    {
+        var (request, error) = Pagination.Parse(page, pageSize);
+        if (error is not null) return error;
+
+        var ids = new List<Guid>();
+        foreach (var value in plantIds ?? [])
+        {
+            if (!Guid.TryParse(value, out var id) || id == Guid.Empty) return ApiErrors.Validation("plantId", "Plant ID must be a valid UUID.");
+            if (!ids.Contains(id)) ids.Add(id);
+        }
+
+        if (ids.Count is 0 or > MaxRelatedSeeds)
+        {
+            return ApiErrors.Validation("plantId", $"Give 1 to {MaxRelatedSeeds} candidate plant IDs.");
+        }
+
+        var related = await queries.GetRelatedAsync(ids, request.Page, request.PageSize, cancellationToken);
+        return Results.Ok(new
+        {
+            data = related.Cards.Select(ExploreCardResponse.From).ToList(),
+            pagination = new PaginationResponse(request.Page, request.PageSize, related.HasNext)
+        });
     }
 
     // POST /api/identification, multipart/form-data with one file field "image".

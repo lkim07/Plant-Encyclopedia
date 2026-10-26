@@ -1,3 +1,5 @@
+using PlantEncyclopedia.Application.Explore;
+
 namespace PlantEncyclopedia.Application.Identification;
 
 /// <summary>A species the provider suggests for a photo; the score is internal and never shown (D-013).</summary>
@@ -54,4 +56,14 @@ public interface IIdentificationQueries
     /// in the order of the names; for each name, the species itself before its cultivars.
     /// </summary>
     Task<IReadOnlyList<MatchedPlant>> FindPublishedAsync(IReadOnlyList<string> scientificNames, CancellationToken cancellationToken);
+
+    /// <summary>The plant, when it is Published (used after an import); its CandidateIndex is 0.</summary>
+    Task<MatchedPlant?> FindPublishedByIdAsync(Guid plantId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The More page (PRD §30, UX §37): Published plants related to the candidates, closest first: the same plant group,
+    /// then the same genus, the same family, the same category; the earlier candidate first within each; then plants
+    /// with an image, then by name. Each plant once; the candidates themselves are left out.
+    /// </summary>
+    Task<ExplorePage> GetRelatedAsync(IReadOnlyList<Guid> candidateIds, int page, int pageSize, CancellationToken cancellationToken);
 }

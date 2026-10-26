@@ -167,7 +167,9 @@ describe('Identify', () => {
     ).toEqual(['Sweet briar', 'Field rose']);
     expect(results.querySelector('.rest')!.getAttribute('start')).toBe('2');
     const more = results.querySelector<HTMLAnchorElement>('a.more')!;
-    expect(more.getAttribute('href')).toBe('/plant-groups/roses');
+    expect(more.getAttribute('href')).toBe(
+      '/identify/more?plants=' + [1, 2, 3].map((rank) => candidate(rank, '').plant.id).join(','),
+    );
     expect(more.closest('ol')).toBeNull(); // More is not a fourth candidate
     expect(results.textContent).not.toContain('%');
   });

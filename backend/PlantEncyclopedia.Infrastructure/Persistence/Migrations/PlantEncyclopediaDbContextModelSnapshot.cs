@@ -339,8 +339,6 @@ namespace PlantEncyclopedia.Infrastructure.Persistence.Migrations
 
                     b.ToTable("plants", null, t =>
                         {
-                            t.HasCheckConstraint("ck_plants_published_requires_group", "status <> 'Published' OR plant_group_id IS NOT NULL");
-
                             t.HasCheckConstraint("ck_plants_status", "status IN ('Draft', 'Validated', 'Published', 'NeedsReview', 'Archived')");
                         });
                 });

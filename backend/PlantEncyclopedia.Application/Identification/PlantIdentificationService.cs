@@ -24,13 +24,16 @@ public sealed record IdentificationResult(IdentificationStatus Status, IReadOnly
 
 /// <summary>
 /// Plant identification (PRD §8–9, ARCHITECTURE §25–28): check and re-encode the photo, ask the provider, keep its
-/// reasonably likely suggestions in its order, and match them against Published plants. Only matched plants are
-/// returned (D-011), at most <see cref="MaxCandidates"/>; a suggestion never creates a plant. Nothing is stored.
+/// reasonably likely suggestions in its order, and match them against Published plants. A suggestion missing from
+/// the encyclopedia is imported through Catalogue of Life (D-072; at most <see cref="MaxImports"/> per photo), so the
+/// plant data always comes from Catalogue of Life, never from the identification provider (D-011). Only Published
+/// plants are returned, at most <see cref="MaxCandidates"/>, in the provider's order. The photo is not stored.
 /// </summary>
 public sealed class PlantIdentificationService(
     IIdentificationImageProcessor images,
     IPlantIdentificationProvider provider,
-    IIdentificationQueries queries)
+    IIdentificationQueries queries,
+    ISuggestionImporter importer)
 {
     /// <summary>Candidates returned (D-012: #1, #2, #3; More is separate).</summary>
     public const int MaxCandidates = 3;
@@ -40,6 +43,9 @@ public sealed class PlantIdentificationService(
 
     /// <summary>Suggestions looked up in the database.</summary>
     public const int MaxNamesLookedUp = 10;
+
+    /// <summary>Catalogue of Life imports tried per photo (each may take a few seconds and uses the GBIF budget).</summary>
+    public const int MaxImports = 3;
 
     public async Task<IdentificationResult> IdentifyAsync(byte[] upload, CancellationToken cancellationToken)
     {
@@ -69,11 +75,26 @@ public sealed class PlantIdentificationService(
             return IdentificationResult.Of(IdentificationStatus.NotIdentified);
         }
 
-        var plants = (await queries.FindPublishedAsync(names, cancellationToken))
-            .OrderBy(p => p.CandidateIndex)
-            .DistinctBy(p => p.Id)
-            .Take(MaxCandidates)
-            .ToList();
+        var known = (await queries.FindPublishedAsync(names, cancellationToken)).ToLookup(p => p.CandidateIndex);
+        var plants = new List<MatchedPlant>();
+        var imports = 0;
+        for (var index = 0; index < names.Count && plants.Count < MaxCandidates; index++)
+        {
+            var forName = known[index].ToList();
+            if (forName.Count == 0 && imports < MaxImports)
+            {
+                imports++;
+                if (await importer.ImportAsync(names[index], cancellationToken) is { } plantId
+                    && await queries.FindPublishedByIdAsync(plantId, cancellationToken) is { } imported)
+                {
+                    forName = [imported with { CandidateIndex = index }];
+                }
+            }
+
+            plants.AddRange(forName.Where(p => plants.All(existing => existing.Id != p.Id)));
+        }
+
+        plants = plants.Take(MaxCandidates).ToList();
         return plants.Count == 0
             ? IdentificationResult.Of(IdentificationStatus.NotIdentified)
             : new IdentificationResult(IdentificationStatus.Identified, plants);

@@ -17,6 +17,12 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'identify/more',
+    title: 'More like your plant · Plant Encyclopedia',
+    loadComponent: () =>
+      import('./features/identify/identification-more-page').then((m) => m.IdentificationMorePage),
+  },
+  {
     path: 'explore',
     title: 'Explore · Plant Encyclopedia',
     loadComponent: () => import('./features/explore/explore-page').then((m) => m.ExplorePage),

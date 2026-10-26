@@ -11,9 +11,8 @@ internal sealed class PlantConfiguration : IEntityTypeConfiguration<Plant>
         b.ToTable("plants", t =>
         {
             t.HasCheckConstraint("ck_plants_status", SqlConstraints.InEnum<PlantStatus>("status"));
-            t.HasCheckConstraint(
-                "ck_plants_published_requires_group",
-                $"status <> '{nameof(PlantStatus.Published)}' OR plant_group_id IS NOT NULL");
+            // A Published plant may have no group (D-072, migration AllowPublishedPlantsWithoutGroup): species imported
+            // for an identification whose genus has no group yet. They stay out of Explore and the category pages.
         });
 
         b.HasKey(x => x.Id);

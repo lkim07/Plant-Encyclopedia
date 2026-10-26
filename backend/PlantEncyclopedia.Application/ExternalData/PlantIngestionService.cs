@@ -33,7 +33,8 @@ public sealed record PlantImportResult(
 /// <summary>
 /// Imports one plant from an external taxonomy provider (ARCHITECTURE §22–23). Existing plants are
 /// reused and never overwritten. A new plant is Published only when its genus maps to an existing
-/// plant group and no near-duplicate name exists; otherwise it is saved as NeedsReview.
+/// plant group (or the caller allows publishing without one) and no near-duplicate name exists; otherwise it is
+/// saved as NeedsReview.
 /// Common names in the app's languages are imported with it; the display name is the English name chosen
 /// by <see cref="CommonNamePolicy"/>, or the scientific name when there is none. A created plant is queued
 /// for image import, which runs in the background (<see cref="IPlantImageQueue"/>).
@@ -45,7 +46,14 @@ public sealed class PlantIngestionService(
     IPlantImageQueue imageQueue,
     TimeProvider timeProvider)
 {
-    public async Task<PlantImportResult> ImportAsync(string scientificName, CancellationToken cancellationToken)
+    /// <param name="publishWithoutPlantGroup">
+    /// Publish a plant whose genus is not mapped to a plant group, without a group (identification imports, D-072).
+    /// Such a plant has a detail page and cards but stays out of Explore and categories until it gets a group.
+    /// </param>
+    public async Task<PlantImportResult> ImportAsync(
+        string scientificName,
+        CancellationToken cancellationToken,
+        bool publishWithoutPlantGroup = false)
     {
         var requested = ExternalTaxonPolicy.NormalizeRequestedName(scientificName);
         if (requested is null)
@@ -90,7 +98,9 @@ public sealed class PlantIngestionService(
         var slug = plantGroups.FindSlug(taxon.Classification.Genus);
         var plantGroupId = slug is null ? null : await store.FindPlantGroupIdAsync(slug, cancellationToken);
         var nearDuplicate = await store.HasNearDuplicateAsync(taxon.ScientificName, cancellationToken);
-        var status = plantGroupId is not null && !nearDuplicate ? PlantStatus.Published : PlantStatus.NeedsReview;
+        var status = (plantGroupId is not null || publishWithoutPlantGroup) && !nearDuplicate
+            ? PlantStatus.Published
+            : PlantStatus.NeedsReview;
 
         // Only for plants about to be created: existing plants are never changed.
         var commonNames = CommonNamePolicy.Select(await provider.GetCommonNamesAsync(taxon, cancellationToken));

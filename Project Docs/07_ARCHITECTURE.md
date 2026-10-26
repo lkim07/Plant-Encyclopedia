@@ -952,6 +952,8 @@ Client
 
 Implemented (Phase 8a): `POST /api/identification` → `PlantIdentificationService` (Application/Identification) → `IIdentificationImageProcessor` (SkiaSharp: format from the bytes, size from the header, scaled decoding for large photos, EXIF orientation, at most 1280 px, JPEG without metadata) → `IPlantIdentificationProvider` (Infrastructure: `GuardedIdentificationProvider` with a 24-hour cache and an app-wide budget, around `PlantNetIdentificationProvider`) → `IIdentificationQueries` (Published plants with the same `plant_scientific_identity` as a suggestion; the species before its cultivars). Suggestions below a provider score of 0.05 are ignored; at most ten names are looked up and three plants returned, in the provider's order. No identification request is stored.
 
+Phase 8c: a suggestion with no encyclopedia plant goes to `ISuggestionImporter` (`CatalogueOfLifeSuggestionImporter` → `PlantIngestionService` with `publishWithoutPlantGroup`), at most three per photo, and the imported plant is shown if Published (D-072). The More page calls `GET /api/identification/related` (`IIdentificationQueries.GetRelatedAsync`: one SQL statement ranking Published plants by plant group, genus, family and category of the candidates).
+
 # 26. AI Provider Abstraction
 
 The AI provider must be replaceable.

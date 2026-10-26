@@ -150,7 +150,7 @@ Status
 ### Implemented Rules (InitialCreate)
 
 * `plant_group_id` is nullable so drafts and unreviewed imports can exist without a curated group.
-* A Published plant must have a group: `CHECK (status <> 'Published' OR plant_group_id IS NOT NULL)`.
+* ~~A Published plant must have a group~~: dropped by migration `AllowPublishedPlantsWithoutGroup` (2026-10-26, D-072). Species imported for an identification whose genus has no plant group are Published without one; queries that need a group (Explore, categories, plant groups) skip them.
 * `status` is stored as text and limited to `Draft`, `Validated`, `Published`, `NeedsReview`, `Archived`.
 
 ### Responsibilities

@@ -169,6 +169,12 @@ Implemented and verified:
     * Plant Detail attributions
   * **Total:** 268 backend tests pass with 0 build warnings. No migration; no live GBIF requests were made in 11c.
   * **Manually verified** by the developer on 2026-10-17 in the browser against real GBIF (Development).
+* Identification imports and the More page, Phase 8c (PRD §30, UX §37, D-072), 2026-10-26.
+  * **Imports:** a likely Pl@ntNet suggestion missing from the encyclopedia is imported through Catalogue of Life (same pipeline and rules as "Search Catalogue of Life"; at most three per photo) and shown at its rank. One whose genus has no plant group is Published without a group: it has a detail page and cards, but stays out of Explore and categories. Near-duplicates are still held for review. Search imports are unchanged.
+  * **Database:** migration `AllowPublishedPlantsWithoutGroup` drops `ck_plants_published_requires_group`; applied to `plant_encyclopedia_dev` on 2026-10-26 with the developer's approval. Identification request timeout raised to 30 seconds.
+  * **More:** `GET /api/identification/related?plantId=…` (1–3 candidates) and the page `/identify/more?plants=…`: related Published plants, closest first (same group, genus, family, then category), as an image grid with bookmarks and infinite scroll; an empty state with Explore. The More tile on the results page now opens it.
+  * **Tests:** backend 12 new: 2 service tests (import shown at its rank; at most three imports, failures skipped), 2 ingestion tests (published without a group; near-duplicates still held), 1 API test of a real import through the pipeline with fake providers (confirmed to fail without the new option), 7 related-plants API tests (closeness order — confirmed to fail with the tiers swapped —, first candidate first, stable pages, validation). 510 backend tests pass; 0 build warnings. Frontend 4 new More page tests and an updated results test. 129 frontend tests pass; `ng build` without warnings.
+  * **Not verified yet:** a real identification that imports a species (uses Pl@ntNet and GBIF), and the More page in a browser.
 * Identify screens, Phase 8b (PRD §8–9, UX §6–11, §44; D-012–D-014, D-046), 2026-10-25.
   * **Identify (`/identify`, the home screen):** Take a Photo (opens the back camera on phones) and Choose from Photos; no search field. A preview with Retake and Identify; nothing is sent until Identify. Other file types and photos over 10 MB are refused before uploading.
   * **Identifying:** the photo stays in view, dimmed slightly, with "Identifying your plant…"; no spinner or percentages.
@@ -899,7 +905,7 @@ More
 
 ## Status
 
-**Implemented: backend (Phase 8a, Pl@ntNet) and screens (Phase 8b); the contextual More page is pending (8c)**
+**Implemented: backend (Phase 8a, Pl@ntNet), screens (Phase 8b), Catalogue of Life imports and the More page (Phase 8c)**
 
 The intended flow is:
 

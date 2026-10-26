@@ -1266,10 +1266,11 @@ Optional metadata may be added later.
 
 ### Implemented (Phase 8a, 2026-10-25)
 
-* Open to everyone (D-071). Requires the CSRF token (`X-XSRF-TOKEN`, §6), because a multipart POST could otherwise be sent from any site. 6 requests per minute per client IP (`429 RATE_LIMITED`); a 20-second request timeout (`503 REQUEST_TIMEOUT`).
+* Open to everyone (D-071). Requires the CSRF token (`X-XSRF-TOKEN`, §6), because a multipart POST could otherwise be sent from any site. 6 requests per minute per client IP (`429 RATE_LIMITED`); a 30-second request timeout (`503 REQUEST_TIMEOUT`; 20 seconds before Phase 8c).
 * `image`: one file of at most 10 MB (`413 PAYLOAD_TOO_LARGE`), JPEG, PNG or WebP as judged from its bytes (the name and declared type are ignored), at least 64 pixels on each side. Anything else returns `400 VALIDATION_ERROR` with `details.image`.
 * `200`: the response in §37 without `requestId` (nothing is stored, so there is nothing to refer to). Each candidate also has `plant.scientificName` and `plant.plantGroupId` (the plant group's slug, as in Plant Detail §15, or `null`; added in Phase 8b for the More action); there are at most three, and no score of any kind.
-* `422 IDENTIFICATION_FAILED`: the provider answered, but none of its likely suggestions is a Published encyclopedia plant (§38). The message says the photo may be unclear or the plant may not be in the encyclopedia yet.
+* Since Phase 8c (D-072): a likely suggestion missing from the encyclopedia is imported through Catalogue of Life as in §27 (at most three per photo); one whose genus has no plant group is Published without one (`plantGroup` and `plantGroupId` are then `null`). If GBIF is unavailable or over its budget, the suggestion is simply skipped. Imported plants have no image at first; it is fetched in the background.
+* `422 IDENTIFICATION_FAILED`: the provider answered, but none of its likely suggestions is (or could be imported as) a Published encyclopedia plant (§38). The message says the photo may be unclear or the plant may not be in the encyclopedia yet.
 * `503 IDENTIFICATION_UNAVAILABLE`: identification is not configured, the app-wide budget is used up, or the provider failed or timed out.
 
 ---
@@ -1460,6 +1461,18 @@ GET /api/identification/{requestId}/more
 ```
 
 The exact endpoint may be combined with the identification response if appropriate.
+
+### Implemented (Phase 8c, 2026-10-26)
+
+Identifications are not stored, so the More page passes the candidates instead of a request ID:
+
+```http
+GET /api/identification/related?plantId={#1}&plantId={#2}&plantId={#3}&page=1&pageSize=20
+```
+
+* 1 to 3 `plantId` values (repeats count once); otherwise, or for an invalid UUID, `400 VALIDATION_ERROR` with `details.plantId`. `page` / `pageSize` as in §10.
+* Returns Published plants related to the candidates, closest first: the same plant group, then the same genus, the same family, then the same category; within each, the earlier candidate's relatives first; then plants with an image, then by name. Each plant once; the candidates themselves are left out. Unknown or unpublished candidate IDs simply contribute nothing.
+* Same response shape as Explore (§20): `{ data: [{ id, name, plantGroup, imageUrl }], pagination }`. Authentication: not required.
 
 ---
 

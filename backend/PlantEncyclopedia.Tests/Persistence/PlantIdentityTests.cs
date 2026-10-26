@@ -153,7 +153,7 @@ public class PlantIdentityTests(PostgresDatabaseFixture fixture)
         DisplayName = $"Test plant {Guid.NewGuid():N}",
         ScientificName = scientificName,
         CultivarName = cultivarName,
-        Status = status // without a group, so only non-Published statuses are allowed
+        Status = status // without a group
     };
 
     private async Task<string?> ScalarAsync(string function, string? input)

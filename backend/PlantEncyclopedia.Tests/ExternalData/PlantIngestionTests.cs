@@ -129,6 +129,32 @@ public class PlantIngestionTests(PostgresDatabaseFixture fixture)
         Assert.Null((await LoadAsync(result.PlantId!.Value)).PlantGroupId);
     }
 
+    // Protects against: an identified species staying hidden because its genus has no plant group yet (D-072).
+    [Fact]
+    public async Task Import_ForIdentification_PublishesWithoutAPlantGroup()
+    {
+        var genus = TestData.NewGenus();
+
+        var result = await ImportAsync(
+            new FakePlantDataProvider(TaxonLookupResult.Found(ExternalTaxa.Species(genus))), $"{genus} vulgaris", publishWithoutPlantGroup: true);
+
+        Assert.Equal((PlantImportStatus.Created, PlantStatus.Published), (result.Status, result.PlantStatus));
+        Assert.Null((await LoadAsync(result.PlantId!.Value)).PlantGroupId);
+    }
+
+    // Protects against: identification imports publishing probable duplicates (only the group rule is relaxed).
+    [Fact]
+    public async Task Import_ForIdentification_StillHoldsNearDuplicatesForReview()
+    {
+        var genus = TestData.NewGenus();
+        await InsertPlantAsync($"{genus} × vulgaris");
+
+        var result = await ImportAsync(
+            new FakePlantDataProvider(TaxonLookupResult.Found(ExternalTaxa.Species(genus))), $"{genus} vulgaris", publishWithoutPlantGroup: true);
+
+        Assert.Equal((PlantImportStatus.Created, PlantStatus.NeedsReview), (result.Status, result.PlantStatus));
+    }
+
     // Protects against: publishing a probable duplicate whose name differs only by a hybrid sign,
     // punctuation or accents ("G vulgaris" next to "G × vulgaris"). It is saved for review instead.
     [Fact]
@@ -366,12 +392,13 @@ public class PlantIngestionTests(PostgresDatabaseFixture fixture)
         IPlantDataProvider provider,
         string name,
         GenusPlantGroupMap? map = null,
-        RecordingImageQueue? imageQueue = null)
+        RecordingImageQueue? imageQueue = null,
+        bool publishWithoutPlantGroup = false)
     {
         await using var db = fixture.CreateDbContext();
         var service = new PlantIngestionService(
             provider, new PlantImportStore(db), map ?? new GenusPlantGroupMap(null), imageQueue ?? new RecordingImageQueue(), new FixedTimeProvider(Now));
-        return await service.ImportAsync(name, CancellationToken.None);
+        return await service.ImportAsync(name, CancellationToken.None, publishWithoutPlantGroup);
     }
 
     private static GenusPlantGroupMap Map(string genus, string slug) => new(new Dictionary<string, string> { [genus] = slug });

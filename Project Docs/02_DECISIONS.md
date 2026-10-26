@@ -1700,6 +1700,29 @@ Pl@ntNet is built for plant identification and returns scientific names, which i
 
 ---
 
+## D-072 — Identified Species Are Imported from Catalogue of Life
+
+**Status:** Accepted (2026-10-26)
+
+### Decision
+
+* When a likely Pl@ntNet suggestion is not in the encyclopedia, identification imports it through the existing Catalogue of Life pipeline (the developer's choice) and shows it with the other candidates. At most three imports are tried per photo.
+* Only the suggested name comes from Pl@ntNet. Everything stored (accepted name, taxonomy, common names) comes from Catalogue of Life, under the same rules as "Search Catalogue of Life": an exact, accepted Plantae species, subspecies or variety; synonyms, fuzzy matches and other kingdoms are rejected (D-011 stays intact).
+* Unlike search imports, a plant imported for an identification whose genus has no plant group is Published without a group (the developer's choice). It has a detail page and appears in identification results, Search, Favorites and More, but not in Explore or the category pages until it gets a group. Near-duplicate names are still held for review.
+* The database rule that a Published plant must have a group (`ck_plants_published_requires_group`) was dropped for this (migration `AllowPublishedPlantsWithoutGroup`, approved by the developer).
+
+### Rationale
+
+Most species Pl@ntNet recognizes are outside the 11 genera mapped to plant groups; without this they could never be shown.
+
+### Consequences
+
+* The encyclopedia grows from identifications, within the GBIF budget (30 per minute, 1,000 per day app-wide) and the 24-hour cache of names that cannot be imported.
+* Plants without a group need a way to be assigned one (the review tool in TODO).
+* An identification can take longer (up to three imports of up to 4.5 seconds each); the request timeout is 30 seconds.
+
+---
+
 # 17. Decision Principles
 
 When future decisions are unclear, use these principles in order:
