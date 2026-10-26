@@ -657,19 +657,23 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 
 ## Retailer Data
 
-* [ ] Define retailer entity
-* [ ] Define location entity
-* [ ] Define retailer type
-* [ ] Define source/provenance
-* [ ] Define approximate pricing model
-* [ ] Define availability model if reliable data becomes available
+* [x] Define retailer entity (9a: `retailers`, one row per shop location, D-073)
+* [x] Define location entity (address and coordinates on the same row)
+* [x] Define retailer type (`Nursery`, `GardenCentre`, `FlowerShop`)
+* [x] Define source/provenance (`source`, `source_id`, `retrieved_at`; OpenStreetMap attribution)
+* [~] Define approximate pricing model (no price source exists)
+* [~] Define availability model if reliable data becomes available (always "unknown" for now)
+* [ ] Check OpenStreetMap's ODbL share-alike terms for the stored shop table before public release
+  - Priority: Before public release
+* [ ] Refresh the shop snapshot periodically (`import-retailers`)
+  - Priority: Low
 
 ## API
 
-* [ ] Implement `GET /api/plants/{plantId}/retailers`
-* [ ] Implement distance sorting
-* [ ] Implement rating sorting where supported
-* [ ] Implement relevance sorting
+* [x] Implement `GET /api/plants/{plantId}/retailers` (9a)
+* [x] Implement distance sorting
+* [~] Implement rating sorting where supported (OpenStreetMap has no ratings)
+* [x] Implement relevance sorting (shop kinds by plant category)
 
 ## Location
 

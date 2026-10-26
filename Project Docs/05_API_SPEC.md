@@ -1503,6 +1503,14 @@ GET /api/plants/123/retailers?latitude=49.28&longitude=-123.12&radius=25&sort=di
 
 The exact geographic query implementation is deferred.
 
+### Implemented (Phase 9a, 2026-10-26, D-073)
+
+* `latitude` (-90…90) and `longitude` (-180…180) are required; `radius` is 1–100 km (default 25); `sort` is `distance` (default) or `relevance`; `page` / `pageSize` as in §10. Otherwise `400 VALIDATION_ERROR` with the field in `details`. An unknown or unpublished plant returns `404 PLANT_NOT_FOUND`. Authentication: not required.
+* Only shop kinds that suit the plant's category are returned: flowers → florists, garden centres, nurseries; succulents → garden centres, nurseries, florists; trees → nurseries, garden centres; fruits, vegetables, herbs → garden centres, nurseries; no category → all. `relevance` orders by that list, then distance; `distance` by straight-line distance.
+* Response: the shape in §47 with `type` `nursery`, `gardenCentre` or `flowerShop`, `location.address` (house number and street, or `null`), `location.distanceKm` (one decimal), `rating: null` and `availability.status: "unknown"` always; plus `pagination` and `attribution` `{ name: "OpenStreetMap", notice: "© OpenStreetMap contributors", license: "ODbL 1.0", url, retrievedAt }`.
+* `GET /api/retailers/places` lists towns in the shop data with the average position of their shops (`{ name, region, latitude, longitude }`, at most 50, most shops first), for choosing a location by hand (§51).
+* Online retailers are not included (D-073).
+
 ---
 
 # 46. Retailer Sort Options
@@ -1595,6 +1603,8 @@ The API should make clear that observed pricing may become outdated.
 The API should receive only the location information necessary to perform the requested retailer search.
 
 Location should not be stored as persistent user profile data unless there is a clear product requirement.
+
+Implemented (Phase 9a): the coordinates are used only in the query; they are never stored, and request URLs are not logged (ASP.NET Core logs at Warning).
 
 ---
 

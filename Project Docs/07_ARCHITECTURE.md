@@ -1349,6 +1349,8 @@ Potential sources may include:
 
 The application should not claim live inventory unless the provider supports reliable inventory information.
 
+Implemented (Phase 9a, D-073): `import-retailers` command → `RetailerImportService` (Application/Retail: cleans untrusted records, refuses a snapshot under half the stored size) → `OverpassRetailerSource` (Infrastructure: one POST to overpass-api.de, 3-minute timeout, 20 MB limit) → `RetailerStore` (one transaction). `GET /api/plants/{id}/retailers` → `RetailerRelevance` (kinds per category) → `RetailerQueries` (a latitude/longitude box, then haversine distance in one SQL statement; no PostGIS).
+
 ---
 
 # 41. Location Privacy

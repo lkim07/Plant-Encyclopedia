@@ -1723,6 +1723,28 @@ Most species Pl@ntNet recognizes are outside the 11 genera mapped to plant group
 
 ---
 
+## D-073 — Where to Buy Uses an OpenStreetMap Snapshot, Nearby Only
+
+**Status:** Accepted (2026-10-26)
+
+### Decision
+
+* Nearby shops come from OpenStreetMap (the developer's choice): one Overpass query takes BC's garden centres (`shop=garden_centre`), florists (`shop=florist`) and named plant nurseries (`landuse=plant_nursery`) into the `retailers` table with source and date. The `import-retailers` command refreshes it.
+* Results credit "© OpenStreetMap contributors" (ODbL 1.0) with every response.
+* There are no ratings or prices (OpenStreetMap has neither), and availability is always "unknown" (D-033). Sorting is by distance or relevance (shop kinds matched to the plant's category).
+* The Online section is left out until there is a reliable source (the developer's choice).
+
+### Rationale
+
+Free, openly licensed, no per-request cost or key, and no data invented by the app. Google Places would add ratings but needs a paid key and restricts storing results.
+
+### Consequences
+
+* Coverage is only as complete as OpenStreetMap; many shops lack an address or town.
+* Using the data publicly needs the ODbL attribution (done) and a check of its share-alike terms for the derived table before public release.
+
+---
+
 # 17. Decision Principles
 
 When future decisions are unclear, use these principles in order:

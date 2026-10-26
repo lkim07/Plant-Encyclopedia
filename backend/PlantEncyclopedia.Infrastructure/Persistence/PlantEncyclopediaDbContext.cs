@@ -4,6 +4,7 @@ using PlantEncyclopedia.Domain.Common;
 using PlantEncyclopedia.Domain.Favorites;
 using PlantEncyclopedia.Domain.History;
 using PlantEncyclopedia.Domain.Plants;
+using PlantEncyclopedia.Domain.Retail;
 using PlantEncyclopedia.Infrastructure.Identity;
 using PlantEncyclopedia.Infrastructure.Persistence.Configurations;
 
@@ -24,6 +25,7 @@ public class PlantEncyclopediaDbContext(DbContextOptions<PlantEncyclopediaDbCont
     public DbSet<Favorite> Favorites => Set<Favorite>();
     public DbSet<SearchHistoryEntry> SearchHistory => Set<SearchHistoryEntry>();
     public DbSet<ViewHistoryEntry> ViewHistory => Set<ViewHistoryEntry>();
+    public DbSet<Retailer> Retailers => Set<Retailer>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

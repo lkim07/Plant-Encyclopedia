@@ -18,6 +18,8 @@ using PlantEncyclopedia.Infrastructure.ExternalData.Images;
 using PlantEncyclopedia.Infrastructure.ExternalData.INaturalist;
 using PlantEncyclopedia.Infrastructure.ExternalData.Wikimedia;
 using PlantEncyclopedia.Infrastructure.Identification;
+using PlantEncyclopedia.Infrastructure.Retail;
+using PlantEncyclopedia.Application.Retail;
 using PlantEncyclopedia.Infrastructure.Persistence;
 using PlantEncyclopedia.Infrastructure.Persistence.Queries;
 
@@ -75,6 +77,27 @@ public static class DependencyInjection
         services.AddSingleton<IdentificationCache>();
         services.AddSingleton<IdentificationCallBudget>();
         services.AddTransient<IPlantIdentificationProvider, GuardedIdentificationProvider>();
+        return services;
+    }
+
+    /// <summary>
+    /// Where to Buy (ARCHITECTURE §40). The stored shops are always queryable; the OpenStreetMap refresh (the
+    /// import-retailers command) is registered only with GBIF's settings enabled, because it reuses the contact URL sent
+    /// in the User-Agent. The request logging is removed like for the other external clients.
+    /// </summary>
+    public static IServiceCollection AddRetail(this IServiceCollection services, GbifOptions contact)
+    {
+        services.AddScoped<IRetailerQueries, RetailerQueries>();
+        services.AddScoped<IRetailerStore, RetailerStore>();
+        if (!contact.Enabled)
+        {
+            return services;
+        }
+
+        services.AddHttpClient<IRetailerSource, OverpassRetailerSource>(client => OverpassRetailerSource.ConfigureClient(client, contact))
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false })
+            .RemoveAllLoggers();
+        services.AddScoped<RetailerImportService>();
         return services;
     }
 

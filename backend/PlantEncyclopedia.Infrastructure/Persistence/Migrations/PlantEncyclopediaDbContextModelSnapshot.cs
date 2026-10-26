@@ -782,6 +782,94 @@ namespace PlantEncyclopedia.Infrastructure.Persistence.Migrations
                     b.ToTable("taxonomies", (string)null);
                 });
 
+            modelBuilder.Entity("PlantEncyclopedia.Domain.Retail.Retailer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("city");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("kind");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("latitude");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("longitude");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Postcode")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("postcode");
+
+                    b.Property<string>("Region")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("region");
+
+                    b.Property<DateTimeOffset>("RetrievedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("retrieved_at");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("source");
+
+                    b.Property<string>("SourceId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("source_id");
+
+                    b.Property<string>("Street")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("street");
+
+                    b.Property<string>("Website")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("website");
+
+                    b.HasKey("Id")
+                        .HasName("pk_retailers");
+
+                    b.HasIndex("Latitude")
+                        .HasDatabaseName("ix_retailers_latitude");
+
+                    b.HasIndex("Source", "SourceId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_retailers_source_id");
+
+                    b.ToTable("retailers", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_retailers_kind", "kind IN ('Nursery', 'GardenCentre', 'FlowerShop')");
+
+                            t.HasCheckConstraint("ck_retailers_latitude", "latitude BETWEEN -90 AND 90");
+
+                            t.HasCheckConstraint("ck_retailers_longitude", "longitude BETWEEN -180 AND 180");
+                        });
+                });
+
             modelBuilder.Entity("PlantEncyclopedia.Infrastructure.Identity.ApplicationUser", b =>
                 {
                     b.Property<Guid>("Id")

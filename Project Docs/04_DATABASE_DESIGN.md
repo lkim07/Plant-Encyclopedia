@@ -1029,6 +1029,8 @@ Retailer
 
 This supports distance-based sorting.
 
+Implemented (Phase 9a, migration `AddRetailers`, D-073): one table `retailers` holds a shop location per row: `source` (`openstreetmap`), `source_id` (e.g. `node/123`, unique per source: `ux_retailers_source_id`), `name`, `kind` (`Nursery`, `GardenCentre`, `FlowerShop`; check constraint), `street`, `city`, `region`, `postcode`, `website`, `latitude`, `longitude` (range checks), `retrieved_at`; index `ix_retailers_latitude`. A refresh updates known rows, adds new ones and removes rows the source no longer has. There is no `RetailerPlant` table (§41): no reliable plant-level data exists.
+
 ---
 
 # 40. Retailer Availability

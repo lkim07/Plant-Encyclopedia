@@ -13,8 +13,10 @@ using PlantEncyclopedia.Api.Health;
 using PlantEncyclopedia.Api.Identification;
 using PlantEncyclopedia.Api.PlantGroups;
 using PlantEncyclopedia.Api.Plants;
+using PlantEncyclopedia.Api.Retail;
 using PlantEncyclopedia.Api.Search;
 using PlantEncyclopedia.Application.ExternalData;
+using PlantEncyclopedia.Application.Retail;
 using PlantEncyclopedia.Infrastructure;
 using PlantEncyclopedia.Infrastructure.ExternalData.Gbif;
 using PlantEncyclopedia.Infrastructure.ExternalData.Images;
@@ -46,6 +48,9 @@ if (builder.Environment.IsEnvironment("Testing"))
 
 builder.Services.AddIdentification(plantNet);
 
+// Where to Buy: stored OpenStreetMap shops; refreshed with the import-retailers command (needs GBIF's contact URL).
+builder.Services.AddRetail(gbif);
+
 builder.Services.AddExternalPlantData(
     gbif,
     new GenusPlantGroupMap(builder.Configuration.GetSection("ExternalPlantData:GenusPlantGroups").Get<Dictionary<string, string>>()),
@@ -62,6 +67,20 @@ builder.Services.AddHealthChecks()
     .AddDbContextCheck<PlantEncyclopediaDbContext>("database");
 
 var app = builder.Build();
+
+// Where to Buy: replaces the stored OpenStreetMap shops with a fresh snapshot (one Overpass query), then exits.
+//   dotnet run --project PlantEncyclopedia.Api -- import-retailers
+if (args.Contains("import-retailers"))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var importer = scope.ServiceProvider.GetService<RetailerImportService>()
+        ?? throw new InvalidOperationException("import-retailers needs ExternalPlantData:Gbif enabled (its Contact URL identifies the app).");
+    var result = await importer.ImportAsync(CancellationToken.None);
+    Console.WriteLine(
+        $"Retailer import: {result.Status}, received={result.Received} accepted={result.Accepted} " +
+        $"added={result.Changes?.Added} updated={result.Changes?.Updated} removed={result.Changes?.Removed}");
+    return;
+}
 
 // Connection check: upload, read back through the public address, and delete one tiny file in R2, then exit.
 //   dotnet run --project PlantEncyclopedia.Api -- check-r2
@@ -136,6 +155,7 @@ app.MapAccountEndpoints();
 app.MapFavoriteEndpoints();
 app.MapHistoryEndpoints();
 app.MapIdentificationEndpoints();
+app.MapRetailerEndpoints();
 
 // Unauthenticated development tools (image review). Never mapped in other environments.
 if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Testing"))

@@ -169,6 +169,12 @@ Implemented and verified:
     * Plant Detail attributions
   * **Total:** 268 backend tests pass with 0 build warnings. No migration; no live GBIF requests were made in 11c.
   * **Manually verified** by the developer on 2026-10-17 in the browser against real GBIF (Development).
+* Where to Buy backend, Phase 9a (PRD §27–28, API_SPEC §45–51, D-031–D-035, D-073), 2026-10-26.
+  * **Data:** `retailers` table (migration `AddRetailers`, applied to `plant_encyclopedia_dev`). First import on 2026-10-26 (approved one-time Overpass query): 354 BC shops — 192 florists, 138 garden centres, 24 nurseries; 96 of them mapped as areas and imported at their centre point; 79 have a town. OpenStreetMap data, © OpenStreetMap contributors, ODbL 1.0.
+  * **Refresh:** `dotnet run --project PlantEncyclopedia.Api -- import-retailers` (needs `ExternalPlantData:Gbif` enabled for its contact URL). Untrusted records are cleaned (text, http(s) links only, coordinates); a snapshot under half the stored size is refused.
+  * **Endpoints:** `GET /api/plants/{plantId}/retailers?latitude&longitude&radius&sort` (distance or relevance; shop kinds by plant category; availability always unknown; no ratings or prices; attribution) and `GET /api/retailers/places` (towns for choosing a location). The location is never stored or logged.
+  * **Tests:** 15 new backend tests (Overpass request and parsing against a response constructed from the documented OSM JSON shape, failures, cleaning, the size guard, relevance; nearest first within the radius — confirmed to fail without the distance check —, kinds by category, validation, unknown plants, places, refresh). 525 backend tests pass; 0 build warnings.
+  * **Not yet:** the screens (9b).
 * Identification imports and the More page, Phase 8c (PRD §30, UX §37, D-072), 2026-10-26.
   * **Imports:** a likely Pl@ntNet suggestion missing from the encyclopedia is imported through Catalogue of Life (same pipeline and rules as "Search Catalogue of Life"; at most three per photo) and shown at its rank. One whose genus has no plant group is Published without a group: it has a detail page and cards, but stays out of Explore and categories. Near-duplicates are still held for review. Search imports are unchanged.
   * **Database:** migration `AllowPublishedPlantsWithoutGroup` drops `ck_plants_published_requires_group`; applied to `plant_encyclopedia_dev` on 2026-10-26 with the developer's approval. Identification request timeout raised to 30 seconds.
