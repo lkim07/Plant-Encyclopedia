@@ -1,0 +1,76 @@
+@let photo = session.photo();
+@let first = top();
+
+<header class="results-header">
+  @if (photo) {
+    <img class="your-photo" [src]="photo.url" alt="Your plant photo" />
+  }
+  <div>
+    <h1>Possible matches</h1>
+    <p class="lead">Compare them with your plant and open one to learn more.</p>
+  </div>
+</header>
+
+@if (first) {
+  <!-- #1: the largest card (UX §10). -->
+  <ol class="first">
+    <li>
+      <a class="candidate primary" [routerLink]="'/plants/' + first.plant.id">
+        <span class="image">
+          @if (first.plant.imageUrl; as url) {
+            <img [src]="url" alt="" />
+          } @else {
+            <app-icon class="placeholder" name="leaf" />
+          }
+        </span>
+        <span class="names">
+          <span class="name">{{ first.plant.name }}</span>
+          @if (first.plant.plantGroup; as group) {
+            <span class="group">{{ group }}</span>
+          }
+          <i class="scientific">{{ first.plant.scientificName }}</i>
+        </span>
+      </a>
+    </li>
+  </ol>
+
+  <!-- #2, #3 and More share one row. More is an action, not a fourth candidate, so it is outside the list (D-012). -->
+  <div class="row">
+    @if (others().length > 0) {
+      <ol class="rest" start="2">
+        @for (candidate of others(); track candidate.plant.id) {
+          <li>
+            <a class="candidate" [routerLink]="'/plants/' + candidate.plant.id">
+              <span class="image">
+                @if (candidate.plant.imageUrl; as url) {
+                  <img [src]="url" alt="" />
+                } @else {
+                  <app-icon class="placeholder" name="leaf" />
+                }
+                <!-- Desktop hover: the image fades and the scientific name appears over it (UX §11). -->
+                <i class="hover-info" aria-hidden="true">{{ candidate.plant.scientificName }}</i>
+              </span>
+              <span class="name">{{ candidate.plant.name }}</span>
+            </a>
+          </li>
+        }
+      </ol>
+    }
+
+    @if (first.plant.plantGroupId; as groupId) {
+      <a
+        class="more"
+        [routerLink]="'/plant-groups/' + groupId"
+        [attr.aria-label]="'More ' + first.plant.plantGroup"
+      >
+        <span class="more-tile">
+          <span class="more-label">More</span>
+          <app-icon name="arrow-right" />
+        </span>
+        <span class="name">{{ first.plant.plantGroup }}</span>
+      </a>
+    }
+  </div>
+}
+
+<a class="again" routerLink="/identify">Identify another plant</a>

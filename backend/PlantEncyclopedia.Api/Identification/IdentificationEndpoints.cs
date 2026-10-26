@@ -11,7 +11,8 @@ namespace PlantEncyclopedia.Api.Identification;
 /// <summary>JSON contract for one identification candidate (API_SPEC §37). Changing it changes the public API.</summary>
 public sealed record IdentificationCandidateResponse(int Rank, IdentifiedPlantResponse Plant);
 
-public sealed record IdentifiedPlantResponse(Guid Id, string Name, string? PlantGroup, string ScientificName, string? ImageUrl);
+/// <param name="PlantGroupId">The plant group's slug, as in Plant Detail (API_SPEC §15).</param>
+public sealed record IdentifiedPlantResponse(Guid Id, string Name, string? PlantGroup, string? PlantGroupId, string ScientificName, string? ImageUrl);
 
 /// <summary>
 /// POST /api/identification (API_SPEC §36–42): a photo in, up to three encyclopedia plants out, ranked, with no
@@ -109,7 +110,7 @@ public static class IdentificationEndpoints
                     status = "completed",
                     candidates = result.Candidates
                         .Select((p, index) => new IdentificationCandidateResponse(
-                            index + 1, new IdentifiedPlantResponse(p.Id, p.Name, p.PlantGroupName, p.ScientificName, p.ImageUrl)))
+                            index + 1, new IdentifiedPlantResponse(p.Id, p.Name, p.PlantGroupName, p.PlantGroupSlug, p.ScientificName, p.ImageUrl)))
                         .ToList()
                 }
             }),

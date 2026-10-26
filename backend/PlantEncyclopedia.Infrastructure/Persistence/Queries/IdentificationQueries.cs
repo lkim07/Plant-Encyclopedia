@@ -20,7 +20,7 @@ internal sealed class IdentificationQueries(PlantEncyclopediaDbContext db) : IId
         var photo = PlantImageKind.Photo.ToString();
 
         var rows = await db.Database.SqlQuery<MatchRow>($"""
-            SELECT c.ord::int - 1 AS candidate_index, p.id, p.display_name AS name, g.name AS plant_group, p.scientific_name,
+            SELECT c.ord::int - 1 AS candidate_index, p.id, p.display_name AS name, g.name AS plant_group, g.slug AS plant_group_slug, p.scientific_name,
                    (SELECT coalesce(i.medium_url, i.url)
                     FROM plant_images i
                     WHERE i.plant_id = p.id AND i.rejected_at IS NULL
@@ -33,7 +33,7 @@ internal sealed class IdentificationQueries(PlantEncyclopediaDbContext db) : IId
             ORDER BY c.ord, (p.cultivar_name IS NOT NULL), p.display_name, p.id
             """).ToListAsync(cancellationToken);
 
-        return rows.Select(r => new MatchedPlant(r.CandidateIndex, r.Id, r.Name, r.PlantGroup, r.ScientificName, r.ImageUrl)).ToList();
+        return rows.Select(r => new MatchedPlant(r.CandidateIndex, r.Id, r.Name, r.PlantGroup, r.PlantGroupSlug, r.ScientificName, r.ImageUrl)).ToList();
     }
 
     private sealed class MatchRow
@@ -42,6 +42,7 @@ internal sealed class IdentificationQueries(PlantEncyclopediaDbContext db) : IId
         public Guid Id { get; init; }
         public required string Name { get; init; }
         public string? PlantGroup { get; init; }
+        public string? PlantGroupSlug { get; init; }
         public required string ScientificName { get; init; }
         public string? ImageUrl { get; init; }
     }

@@ -49,7 +49,7 @@ public class IdentificationEndpointTests(PostgresDatabaseFixture fixture)
         Assert.Equal([other.Id, species.Id, cultivar.Id], candidates.Select(c => c.GetProperty("plant").GetProperty("id").GetGuid()));
         Assert.Equal([1, 2, 3], candidates.Select(c => c.GetProperty("rank").GetInt32()));
         Assert.Equal(
-            $$$"""{"rank":1,"plant":{"id":"{{{other.Id}}}","name":"Sweet briar","plantGroup":"Roses","scientificName":"{{{other.ScientificName}}}","imageUrl":null}}""",
+            $$$"""{"rank":1,"plant":{"id":"{{{other.Id}}}","name":"Sweet briar","plantGroup":"Roses","plantGroupId":"{{{other.PlantGroup!.Slug}}}","scientificName":"{{{other.ScientificName}}}","imageUrl":null}}""",
             candidates[0].GetRawText());
         Assert.Equal(1, provider.Calls);
     }

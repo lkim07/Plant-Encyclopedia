@@ -1268,7 +1268,7 @@ Optional metadata may be added later.
 
 * Open to everyone (D-071). Requires the CSRF token (`X-XSRF-TOKEN`, §6), because a multipart POST could otherwise be sent from any site. 6 requests per minute per client IP (`429 RATE_LIMITED`); a 20-second request timeout (`503 REQUEST_TIMEOUT`).
 * `image`: one file of at most 10 MB (`413 PAYLOAD_TOO_LARGE`), JPEG, PNG or WebP as judged from its bytes (the name and declared type are ignored), at least 64 pixels on each side. Anything else returns `400 VALIDATION_ERROR` with `details.image`.
-* `200`: the response in §37 without `requestId` (nothing is stored, so there is nothing to refer to). Each candidate also has `plant.scientificName`; there are at most three, and no score of any kind.
+* `200`: the response in §37 without `requestId` (nothing is stored, so there is nothing to refer to). Each candidate also has `plant.scientificName` and `plant.plantGroupId` (the plant group's slug, as in Plant Detail §15, or `null`; added in Phase 8b for the More action); there are at most three, and no score of any kind.
 * `422 IDENTIFICATION_FAILED`: the provider answered, but none of its likely suggestions is a Published encyclopedia plant (§38). The message says the photo may be unclear or the plant may not be in the encyclopedia yet.
 * `503 IDENTIFICATION_UNAVAILABLE`: identification is not configured, the app-wide budget is used up, or the provider failed or timed out.
 

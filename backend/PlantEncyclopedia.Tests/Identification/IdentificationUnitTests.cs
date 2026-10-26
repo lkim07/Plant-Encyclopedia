@@ -248,7 +248,7 @@ public class IdentificationUnitTests
             LookedUp.AddRange(scientificNames);
             IReadOnlyList<MatchedPlant> matches = scientificNames
                 .SelectMany((name, index) => Plants.GetValueOrDefault(name, [])
-                    .Select(plant => new MatchedPlant(index, Guid.NewGuid(), plant, "Roses", name, null)))
+                    .Select(plant => new MatchedPlant(index, Guid.NewGuid(), plant, "Roses", "roses", name, null)))
                 .ToList();
             return Task.FromResult(matches);
         }

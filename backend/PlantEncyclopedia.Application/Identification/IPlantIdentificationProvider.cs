@@ -42,7 +42,9 @@ public interface IIdentificationImageProcessor
 
 /// <summary>A Published plant matching a provider's name.</summary>
 /// <param name="CandidateIndex">The position of the matching name in the list that was looked up.</param>
-public sealed record MatchedPlant(int CandidateIndex, Guid Id, string Name, string? PlantGroupName, string ScientificName, string? ImageUrl);
+/// <param name="PlantGroupSlug">The plant group's slug (its ID in plant-group URLs), or null without a group.</param>
+public sealed record MatchedPlant(
+    int CandidateIndex, Guid Id, string Name, string? PlantGroupName, string? PlantGroupSlug, string ScientificName, string? ImageUrl);
 
 /// <summary>Finds the encyclopedia's plants for suggested names (implemented in Infrastructure).</summary>
 public interface IIdentificationQueries

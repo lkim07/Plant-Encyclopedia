@@ -574,11 +574,11 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 
 ## Image Upload
 
-* [ ] Implement image selection
-* [ ] Implement camera/photo selection flow
-* [ ] Implement image preview
-* [ ] Implement Retake
-* [ ] Implement Choose Another Photo
+* [x] Implement image selection (8b)
+* [x] Implement camera/photo selection flow (Take a Photo opens the back camera on phones)
+* [x] Implement image preview
+* [x] Implement Retake
+* [x] Implement Choose Another Photo
 * [x] Validate image type (8a: from the bytes)
 * [x] Validate image size (8a: 10 MB)
 * [x] Validate image dimensions where appropriate (8a: 64–16,000 px, scaled decoding)
@@ -619,14 +619,16 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 
 ## Result UI
 
-* [ ] Implement identification loading state
-* [ ] Keep selected image visible while processing
-* [ ] Implement #1 candidate
-* [ ] Implement #2 candidate
-* [ ] Implement #3 candidate
-* [ ] Implement More
-* [ ] Implement failure state
-* [ ] Navigate candidates to Plant Detail
+* [x] Implement identification loading state (8b)
+* [x] Keep selected image visible while processing
+* [x] Implement #1 candidate
+* [x] Implement #2 candidate
+* [x] Implement #3 candidate
+* [-] Implement More (8b: opens the #1 candidate's plant group; the contextual More page comes in 8c)
+* [x] Implement failure state
+* [x] Navigate candidates to Plant Detail
+* [ ] Check Identify and the results in a real browser on a phone and desktop, with a photo that matches an encyclopedia plant
+  - Priority: High
 
 ---
 

@@ -9,6 +9,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/identify/identify-page').then((m) => m.IdentifyPage),
   },
   {
+    path: 'identify/results',
+    title: 'Identification results · Plant Encyclopedia',
+    loadComponent: () =>
+      import('./features/identify/identification-results-page').then(
+        (m) => m.IdentificationResultsPage,
+      ),
+  },
+  {
     path: 'explore',
     title: 'Explore · Plant Encyclopedia',
     loadComponent: () => import('./features/explore/explore-page').then((m) => m.ExplorePage),

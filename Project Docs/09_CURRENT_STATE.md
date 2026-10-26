@@ -169,6 +169,14 @@ Implemented and verified:
     * Plant Detail attributions
   * **Total:** 268 backend tests pass with 0 build warnings. No migration; no live GBIF requests were made in 11c.
   * **Manually verified** by the developer on 2026-10-17 in the browser against real GBIF (Development).
+* Identify screens, Phase 8b (PRD §8–9, UX §6–11, §44; D-012–D-014, D-046), 2026-10-25.
+  * **Identify (`/identify`, the home screen):** Take a Photo (opens the back camera on phones) and Choose from Photos; no search field. A preview with Retake and Identify; nothing is sent until Identify. Other file types and photos over 10 MB are refused before uploading.
+  * **Identifying:** the photo stays in view, dimmed slightly, with "Identifying your plant…"; no spinner or percentages.
+  * **Failures (UX §44):** the photo stays; "We couldn't identify this plant / The image may be unclear, or the plant may not be in our database yet." with Try Again and Choose Another Photo; separate messages for unavailable, too many tries, offline and unusable photos.
+  * **Identification Results (`/identify/results`):** a small copy of the user's photo, then #1 large (image, name, plant group, scientific name), then #2, #3 and More in one row. Candidates open Plant Detail, and Back returns to the results (D-014); Back from the results shows the same photo. More is outside the numbered list (not a fourth candidate) and opens the #1 candidate's plant group until the contextual More page exists (8c, the developer's choice). On desktop, hovering #2 or #3 fades the image and shows the scientific name (UX §11). No confidence values. Opened without a current identification (e.g. after a reload), it returns to Identify.
+  * **Code:** `IdentificationApi` (core/api), `IdentifySession` (core/identification: the photo and results for this visit, in memory), `IdentifyPage` and `IdentificationResultsPage` (features/identify), an `image` icon. Backend: `plantGroupId` added to identification candidates.
+  * **Tests:** 7 new frontend tests (the two choosers and the back camera, preview without sending, refusing other types and large photos — confirmed to fail without the size check, identifying with the photo in view then #1/#2/#3 and More with More outside the list, not identified with Try Again and then unavailable, the results page without results, Back to the same photo). 125 frontend tests pass; `ng build` without warnings. 20 identification backend tests pass with `plantGroupId`.
+  * **Not verified yet:** in a real browser on a phone and desktop (camera, preview, results, hover), and a real identification that matches an encyclopedia plant.
 * Development setup fixed for browser checks, 2026-10-25.
   * **Problem:** the dev proxy forwarded http://localhost:4200 to the API over plain HTTP, but the session and antiforgery cookies require HTTPS, so `GET /api/me` and every CSRF-protected request failed with 500 in the browser.
   * **Fix:** the proxy (`frontend/proxy.conf.json`) now targets `https://localhost:7071`; run the API with its `https` launch profile (`dotnet run --project PlantEncyclopedia.Api --launch-profile https`) and the frontend with `ng serve`, then open http://localhost:4200. Browsers accept the Secure cookies on localhost. For the Google and GitHub sign-in start and callbacks, a request for the public host takes the scheme of `Accounts:PublicBaseUrl` (`UseExternalSignInAddress`), so the return addresses stay `http://localhost:4200/signin-google` and `/signin-github` as registered; production (HTTPS everywhere) is unchanged.
@@ -180,7 +188,7 @@ Implemented and verified:
   * **Matching:** suggestions with a score of at least 0.05, in the provider's order, matched to Published plants by scientific identity (species before its cultivars); unmatched suggestions are dropped, never imported.
   * **Tests:** 20 new backend tests: Pl@ntNet request shape and parsing against a response constructed from the documented fields (not a recorded live response), error statuses as unavailable with the key never logged, invalid answers, settings; photo shrinking and format, metadata removal and orientation (confirmed to fail without the rotation), rejection of other files; cache and budget; candidate rules; and API tests for published-only matches in order (confirmed to fail without the Published filter), no match, no provider, upload checks, CSRF and the rate limit. 497 backend tests pass; 0 build warnings.
   * **Live check (2026-10-25, approved by the developer, 3 Pl@ntNet calls):** the real response has the documented fields (`query`, `predictedOrgans`, `language`, `preferedReferential`, `bestMatch`, `results`, `version`, `remainingIdentificationRequests`; each result with `score` and `species.scientificNameWithoutAuthor`), and the adapter read all 10 results. Our Dog rose photo (a close-up of a stem with one thorn) came back as *Smilax rotundifolia* (0.22) with roses at 0.016, so the API correctly answered `422 IDENTIFICATION_FAILED`. A plain generated image was not rejected with an error: Pl@ntNet answered 200 with scores below 0.01, which the 0.05 cut-off turns into `422`. Pl@ntNet's error status codes are still unverified. The API key appeared in no log.
-  * **Not verified yet:** a photo that should match a plant in the encyclopedia. The screens come in 8b.
+  * **Not verified yet:** a photo that should match a plant in the encyclopedia. (The screens were added in 8b.)
 * Explore feed restored on Back, Phase 7c (UX §15), 2026-10-25.
   * **Behavior:** leaving Explore remembers the loaded cards, page, `feedAt` and scroll position (in memory, this visit only). Back or Forward to Explore shows them again and scrolls to the same place without reloading the feed; further pages continue the same order. Arriving any other way (sidebar, links) loads a fresh feed. A remembered feed is only restored for the same user (or signed-out visitor), so a personalized feed is never shown to someone else.
   * **Code:** `ExploreFeedMemory` (features/explore) and the Explore page; detection uses the router's `popstate` navigation trigger. Category pills still reload.
@@ -891,7 +899,7 @@ More
 
 ## Status
 
-**Backend implemented (Phase 8a, Pl@ntNet); screens pending (8b)**
+**Implemented: backend (Phase 8a, Pl@ntNet) and screens (Phase 8b); the contextual More page is pending (8c)**
 
 The intended flow is:
 

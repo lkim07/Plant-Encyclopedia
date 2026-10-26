@@ -1,0 +1,94 @@
+@let photo = session.photo();
+@let current = step();
+@let failure = failureOf(current);
+
+<!-- Hidden choosers: capture="environment" opens the back camera on phones; elsewhere it is a file chooser. -->
+<input
+  #camera
+  class="visually-hidden"
+  type="file"
+  [accept]="accept"
+  capture="environment"
+  tabindex="-1"
+  aria-hidden="true"
+  (change)="chosen($event, 'camera')"
+/>
+<input
+  #library
+  class="visually-hidden"
+  type="file"
+  [accept]="accept"
+  tabindex="-1"
+  aria-hidden="true"
+  (change)="chosen($event, 'library')"
+/>
+
+<header class="identify-header">
+  <h1>Identify</h1>
+  @if (!photo) {
+    <p class="lead">Take or choose a photo of a plant to find out what it is.</p>
+  }
+</header>
+
+@if (!photo) {
+  <section class="choose" aria-label="Choose a photo">
+    <button type="button" class="choice primary" (click)="open('camera')">
+      <app-icon name="camera" />
+      <span>Take a Photo</span>
+    </button>
+    <button type="button" class="choice" (click)="open('library')">
+      <app-icon name="image" />
+      <span>Choose from Photos</span>
+    </button>
+    @if (choiceError(); as message) {
+      <p class="choice-error" role="alert">{{ message }}</p>
+    }
+  </section>
+} @else {
+  <!-- The photo stays visible from preview to result (D-046). -->
+  <section class="preview" [attr.aria-busy]="current === 'identifying'">
+    <figure class="photo" [class.working]="current === 'identifying'">
+      <img [src]="photo.url" alt="Your plant photo" />
+      @if (current === 'identifying') {
+        <figcaption class="working-note" role="status">Identifying your plant…</figcaption>
+      }
+    </figure>
+
+    @if (failure) {
+      @let message = failures[failure];
+      <div class="failure" role="alert">
+        <h2>{{ message.title }}</h2>
+        <p>{{ message.text }}</p>
+      </div>
+      <div class="actions">
+        @if (message.retry) {
+          <button type="button" class="action primary" (click)="identify()">Try Again</button>
+        }
+        <button type="button" class="action" (click)="chooseAgain()">Choose Another Photo</button>
+      </div>
+    } @else {
+      <div class="actions">
+        <button
+          type="button"
+          class="action"
+          [disabled]="current === 'identifying'"
+          (click)="chooseAgain()"
+        >
+          Retake
+        </button>
+        <button
+          type="button"
+          class="action primary"
+          [disabled]="current === 'identifying'"
+          (click)="identify()"
+        >
+          Identify
+        </button>
+      </div>
+    }
+
+    @if (choiceError(); as message) {
+      <p class="choice-error" role="alert">{{ message }}</p>
+    }
+  </section>
+}

@@ -1,0 +1,144 @@
+:host {
+  display: block;
+  max-width: 36rem;
+  margin: 0 auto;
+}
+
+.identify-header {
+  margin-bottom: var(--space-6);
+}
+
+h1 {
+  margin: 0;
+}
+
+.lead {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+}
+
+/* Two large, thumb-friendly choices (UX §7.1). */
+.choose {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: 4.5rem;
+  padding: 0 var(--space-6);
+  border: 1px solid var(--color-text);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 1.125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.choice app-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.choice.primary {
+  background: var(--color-text);
+  color: var(--color-bg);
+  --icon-color: var(--color-bg);
+}
+
+.choice-error {
+  margin: 0;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.preview {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.photo {
+  position: relative;
+  margin: 0;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.photo img {
+  display: block;
+  width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  transition: opacity 400ms var(--ease-out-soft);
+}
+
+/* While identifying, the photo dims slightly under a short note; no spinner, no percentages (UX §9). */
+.photo.working img {
+  opacity: 0.6;
+}
+
+.working-note {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: var(--space-4);
+  background: linear-gradient(to top, rgb(0 0 0 / 0.55), transparent);
+  color: #fff;
+  font-weight: 600;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .working-note {
+    animation: breathe 1.6s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes breathe {
+  to {
+    opacity: 0.65;
+  }
+}
+
+.failure h2 {
+  margin: 0 0 var(--space-1);
+  font-size: 1.125rem;
+}
+
+.failure p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.action {
+  min-height: var(--touch-target);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-text);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.action.primary {
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+
+.action:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
