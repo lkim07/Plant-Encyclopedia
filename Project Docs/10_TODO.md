@@ -677,19 +677,21 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 
 ## Location
 
-* [ ] Implement location permission flow
-* [ ] Handle permission denial
-* [ ] Implement Vancouver, BC fallback
-* [ ] Implement manual location change
-* [ ] Avoid unnecessary location collection
+* [x] Implement location permission flow (9b: asked only on Where to Buy, once per visit)
+* [x] Handle permission denial (note and fallback)
+* [x] Implement Vancouver, BC fallback
+* [x] Implement manual location change (towns in the shop data)
+* [x] Avoid unnecessary location collection (rounded to about 100 m, memory only, never stored or logged)
 
 ## UX
 
-* [ ] Implement Where to Buy entry card
-* [ ] Implement dedicated Where to Buy page
-* [ ] Separate nearby and online retailers
-* [ ] Avoid unsupported live inventory claims
-* [ ] Display approximate pricing with appropriate source/date information
+* [x] Implement Where to Buy entry card (9b)
+* [x] Implement dedicated Where to Buy page
+* [~] Separate nearby and online retailers (Online left out until there is a reliable source, D-073)
+* [x] Avoid unsupported live inventory claims
+* [~] Display approximate pricing with appropriate source/date information (no price source)
+* [ ] Check Where to Buy in a browser on a phone and desktop (permission prompt, chooser, list)
+  - Priority: High
 
 ---
 

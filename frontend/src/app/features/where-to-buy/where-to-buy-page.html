@@ -1,0 +1,148 @@
+@let p = plant();
+@let s = shops();
+@let location = locations.location();
+
+@if (p.status === 'not-found') {
+  <div class="message">
+    <h1>Plant not found</h1>
+    <p>We couldn't find this plant.</p>
+    <a routerLink="/explore">Go to Explore</a>
+  </div>
+} @else {
+  <header class="page-header">
+    <a class="back" [routerLink]="'/plants/' + plantId">
+      <app-icon name="arrow-left" />
+      <span>{{ p.status === 'loaded' ? p.name : 'Back to the plant' }}</span>
+    </a>
+    <h1>Where to Buy</h1>
+    <p class="lead">
+      Nurseries, garden centres and flower shops near you that may sell
+      {{ p.status === 'loaded' ? p.name : 'this plant' }}.
+    </p>
+  </header>
+
+  <div class="controls">
+    <label class="location">
+      <app-icon name="map-pin" />
+      <span class="visually-hidden">Location</span>
+      <select (change)="pickLocation($event)">
+        <option value="device" [selected]="chosen() === 'device'">Use my location</option>
+        <option value="default" [selected]="chosen() === 'default'">Vancouver, BC</option>
+        @for (town of places(); track town.name) {
+          @if (town.name !== 'Vancouver') {
+            <option [value]="'place:' + town.name" [selected]="chosen() === 'place:' + town.name">
+              {{ town.name }}{{ town.region ? ', ' + town.region : '' }}
+            </option>
+          }
+        }
+      </select>
+    </label>
+
+    <div class="sort" role="group" aria-label="Sort shops">
+      <button
+        type="button"
+        [attr.aria-pressed]="sort() === 'distance'"
+        (click)="setSort('distance')"
+      >
+        Distance
+      </button>
+      <button
+        type="button"
+        [attr.aria-pressed]="sort() === 'relevance'"
+        (click)="setSort('relevance')"
+      >
+        Relevance
+      </button>
+    </div>
+  </div>
+
+  @if (locations.fellBack() && location?.source === 'default') {
+    <p class="note" role="status">
+      We couldn't use your location, so these shops are near Vancouver, BC. You can choose a town
+      above.
+    </p>
+  }
+
+  <!-- No stock claims (D-033): only places worth checking. -->
+  <p class="note">
+    We don't know what each shop has in stock. Check their website or call before you go.
+  </p>
+
+  <section aria-labelledby="nearby-heading">
+    <h2 id="nearby-heading">Nearby</h2>
+
+    @if (s.status === 'locating' || s.status === 'loading') {
+      <p role="status" class="muted">
+        {{ s.status === 'locating' ? 'Finding your location…' : 'Finding shops…' }}
+      </p>
+    } @else if (s.status === 'error') {
+      <div class="message" role="alert">
+        <p>We couldn't load nearby shops.</p>
+        <button type="button" class="action" (click)="load()">Try Again</button>
+      </div>
+    } @else {
+      @if (s.shops.length === 0) {
+        <div class="message">
+          <p>No shops found within {{ radius() }} km of {{ location?.label }}.</p>
+          @if (nextRadius(); as next) {
+            <button type="button" class="action" (click)="widen()">
+              Search within {{ next }} km
+            </button>
+          }
+        </div>
+      } @else {
+        <ul class="shops">
+          @for (shop of s.shops; track shop.id) {
+            <li class="shop">
+              <div class="shop-main">
+                <h3>{{ shop.name }}</h3>
+                <p class="kind">{{ typeLabel(shop.type) }} · {{ shop.location.distanceKm }} km</p>
+                @if (place(shop); as where) {
+                  <p class="address">{{ where }}</p>
+                }
+              </div>
+              @if (shop.website; as website) {
+                <a
+                  class="website"
+                  [href]="website"
+                  target="_blank"
+                  rel="noopener noreferrer external"
+                >
+                  Website<span class="visually-hidden">
+                    of {{ shop.name }} (opens in a new tab)</span
+                  >
+                </a>
+              }
+            </li>
+          }
+        </ul>
+
+        @if (s.hasNext) {
+          <div class="load-more">
+            @if (s.more === 'error') {
+              <p role="alert">We couldn't load more shops.</p>
+            }
+            <button
+              type="button"
+              class="action"
+              [disabled]="s.more === 'loading'"
+              (click)="loadMore()"
+            >
+              {{
+                s.more === 'loading' ? 'Loading…' : s.more === 'error' ? 'Try Again' : 'More shops'
+              }}
+            </button>
+          </div>
+        }
+      }
+
+      <p class="attribution muted">
+        Shop data
+        <a [href]="s.attribution.url" target="_blank" rel="noopener noreferrer external">{{
+          s.attribution.notice
+        }}</a>
+        ({{ s.attribution.license }}).
+      </p>
+    }
+  </section>
+}

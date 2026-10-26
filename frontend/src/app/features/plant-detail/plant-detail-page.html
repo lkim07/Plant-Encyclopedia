@@ -71,6 +71,16 @@
       }
     </section>
 
+    <!-- Where to Buy entry card (UX §33, D-031): after the plant information, before Similar Plants. -->
+    <a class="where-to-buy" [routerLink]="'/plants/' + s.plant.id + '/where-to-buy'">
+      <app-icon name="sprout" />
+      <span class="where-to-buy-text">
+        <span class="where-to-buy-title">Where to Buy</span>
+        <span class="muted">Find nurseries, garden centres &amp; flower shops near you</span>
+      </span>
+      <span class="where-to-buy-action">Explore →</span>
+    </a>
+
     @if (s.plant.attributions.length > 0) {
       <!-- Credits for external data (e.g. Catalogue of Life, CC BY). -->
       <footer class="attributions muted">

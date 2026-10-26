@@ -55,6 +55,12 @@ export const routes: Routes = [
       import('./features/plant-detail/plant-detail-page').then((m) => m.PlantDetailPage),
   },
   {
+    path: 'plants/:plantId/where-to-buy',
+    title: 'Where to Buy · Plant Encyclopedia',
+    loadComponent: () =>
+      import('./features/where-to-buy/where-to-buy-page').then((m) => m.WhereToBuyPage),
+  },
+  {
     path: 'login',
     title: 'Sign in · Plant Encyclopedia',
     loadComponent: () => import('./features/account/login-page').then((m) => m.LoginPage),

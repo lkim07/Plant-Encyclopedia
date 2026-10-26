@@ -331,4 +331,21 @@ describe('PlantDetailPage', () => {
     await settle(harness);
     http.expectNone('/api/history/views');
   });
+  // Protects against: no way to Where to Buy (D-031), or asking for location before the user goes there (D-035).
+  it('links to Where to Buy without asking for the location', async () => {
+    const getCurrentPosition = vi.fn();
+    Object.defineProperty(navigator, 'geolocation', {
+      value: { getCurrentPosition },
+      configurable: true,
+    });
+    const harness = await openPlant();
+    http.expectOne(URL).flush(plant());
+    const page = await settle(harness);
+
+    const card = page.querySelector<HTMLAnchorElement>('a.where-to-buy')!;
+    expect(card.getAttribute('href')).toBe(`/plants/${PLANT_ID}/where-to-buy`);
+    expect(card.textContent).toContain('Find nurseries, garden centres & flower shops near you');
+    expect(getCurrentPosition).not.toHaveBeenCalled();
+    Reflect.deleteProperty(navigator, 'geolocation');
+  });
 });
