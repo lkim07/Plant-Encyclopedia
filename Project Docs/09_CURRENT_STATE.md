@@ -169,6 +169,11 @@ Implemented and verified:
     * Plant Detail attributions
   * **Total:** 268 backend tests pass with 0 build warnings. No migration; no live GBIF requests were made in 11c.
   * **Manually verified** by the developer on 2026-10-17 in the browser against real GBIF (Development).
+* Dependency and secret scanning in CI, 2026-10-27.
+  * **Job:** `security` in `.github/workflows/ci.yml`, on every push and pull request and weekly (SECURITY §20).
+  * **Secrets:** gitleaks found 3 matches in the 46-commit history, all GBIF's public Catalogue of Life dataset key (not a credential); they are ignored by exact fingerprint. A planted fake token fails the scan.
+  * **Dependencies:** .NET has no vulnerable packages. `npm audit fix` (within existing ranges) updated zod 4.6.6, undici 8.12.3, fast-uri 3.1.9 and the Angular CLI and schematics to 22.2.4; browser code now has no known vulnerabilities. Left: `vite` 8.3.0 pinned by `@angular/build` (high, development server only).
+  * **Verified locally:** each check passes on the repo; the .NET check fails on a scratch project with System.Text.Json 8.0.4 (high); actionlint finds no errors; 151 frontend tests pass and the build succeeds after the lock-file update. The first GitHub run of the job is pending.
 * End-to-end tests, Docker and CI (D-075), 2026-10-27.
   * **Docker:** `docker-compose.e2e.yml` runs the whole app at `https://localhost:8443`: Postgres 16 (`plant_encyclopedia_test`, port not published), a one-shot setup (EF Core migrations bundle, the sample data, six fake test shops), the API (`backend/Dockerfile`, as "Testing": no outside services) and the website (`frontend/Dockerfile`: the production build on nginx with a throwaway self-signed certificate; `/api`, `/health`, `/signin-*` and unknown `/media` files go to the API; `/api/dev/` is blocked).
   * **Forwarded headers:** opt-in `ForwardedHeaders` settings (`Enabled`, `KnownNetworks`); the headers are applied only from those networks (4 tests: trusted, untrusted, off by default, an invalid network stops startup).

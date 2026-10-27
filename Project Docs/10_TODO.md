@@ -829,7 +829,9 @@ Do not introduce Docker complexity that is unnecessary for local development.
 * [x] Add frontend tests/linting (Prettier check, e2e type check, unit tests, theme check; same)
 * [x] Add migration validation where appropriate (every e2e run applies all migrations to an empty database; same)
 * [ ] Add CI status checks (branch protection on GitHub, the developer's setting)
-* [ ] Add dependency vulnerability scanning and secret scanning (SECURITY §20)
+* [-] Add dependency vulnerability scanning and secret scanning (SECURITY §20; `security` job added 2026-10-27, first GitHub run pending)
+* [ ] Update `@angular/build` when a release moves past `vite` 8.3.0 (high advisory, development server only)
+* [ ] Consider GitHub's own secret scanning with push protection and Dependabot alerts (repository settings, the developer's choice)
 
 ## Quality Gates
 

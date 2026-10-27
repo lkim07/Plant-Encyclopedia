@@ -1,0 +1,8 @@
+# Secret-scan findings checked and confirmed as not secrets (CI security job, gitleaks).
+# Each line is one exact finding (commit:file:rule:line), so a new match anywhere still fails the scan.
+
+# GBIF's public dataset key for the Catalogue of Life checklist (ExternalPlantData:Gbif:ChecklistKey), a published
+# identifier, not a credential. gitleaks' generic-api-key rule matches the GUID next to the word "Key".
+34d6e71e851c79542d1c34d98ae862e518db878c:backend/PlantEncyclopedia.Api/appsettings.json:generic-api-key:12
+34d6e71e851c79542d1c34d98ae862e518db878c:backend/PlantEncyclopedia.Tests/ExternalData/ExternalDataTestDoubles.cs:generic-api-key:37
+34d6e71e851c79542d1c34d98ae862e518db878c:backend/PlantEncyclopedia.Tests/Fixtures/Gbif/README.md:generic-api-key:9

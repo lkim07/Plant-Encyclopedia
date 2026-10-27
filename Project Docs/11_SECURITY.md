@@ -533,7 +533,11 @@ Pull requests should not require developers to paste production credentials into
 
 * The workflow uses no secrets and has read-only repository permissions.
 * The end-to-end stack's database password is a fixed throwaway value for that stack only; the stack publishes only 127.0.0.1:8443.
-* Dependency and secret scanning are still to do (TODO).
+* The `security` job (every push and pull request, and weekly):
+  * **Secrets:** gitleaks 8.30.1 (image pinned by digest) scans every commit, with values redacted. `.gitleaksignore` lists checked non-secrets by exact fingerprint: three matches of GBIF's public Catalogue of Life dataset key.
+  * **.NET:** fails on any package, direct or transitive, with a known high or critical vulnerability.
+  * **npm:** fails on high or critical in what ships to browsers; fails only on critical in build and test tools, listing the rest.
+  * Known and accepted (2026-10-27): `vite` 8.3.0, pinned by `@angular/build` 22.2.x (high, `launch-editor` in the development server on Windows; development only, no fixed Angular release yet).
 
 ---
 

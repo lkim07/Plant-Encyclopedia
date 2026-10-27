@@ -1512,6 +1512,7 @@ Deployment should only occur after required quality gates pass.
 
 `.github/workflows/ci.yml` on every push and pull request, with read-only permissions; superseded runs are cancelled:
 
+* **security** (also weekly): gitleaks over the whole git history; .NET packages with high or critical advisories; `npm audit` (high for browser code, critical for tools)
 * **backend:** restore, build (Release), tests (Testcontainers Postgres on the runner)
 * **frontend:** `npm ci`, `prettier --check src e2e`, `tsc -p e2e`, unit tests, `check:theme`, production build
 * **e2e** (after both): the Docker stack, Playwright Chromium, `npm run e2e`; the report is kept for 7 days when it fails; the logs are shown and the stack removed every time

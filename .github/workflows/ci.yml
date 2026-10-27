@@ -1,10 +1,14 @@
 # Builds and tests everything on every push and pull request (design 2026-10-27): the backend, the frontend, then the
 # whole app in Docker with the Playwright end-to-end suite. No secrets and no outside services are used.
+# The security job scans the git history for secrets and the dependencies for known vulnerabilities; it also runs
+# weekly, because new advisories appear without any change to the code.
 name: CI
 
 on:
   push:
   pull_request:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC
 
 permissions:
   contents: read
@@ -14,6 +18,44 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # every commit, so a secret removed later is still found
+      # gitleaks 8.30.1, pinned by digest. Values are redacted in the output. Checked findings that are not secrets
+      # are listed by fingerprint in .gitleaksignore.
+      - name: Secret scan (git history)
+        run: >-
+          docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/repo"
+          ghcr.io/gitleaks/gitleaks@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+          git /repo --redact --no-banner --verbose
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: .NET packages with known high or critical vulnerabilities
+        working-directory: backend
+        run: |
+          dotnet restore PlantEncyclopedia.sln
+          report=$(dotnet list PlantEncyclopedia.sln package --vulnerable --include-transitive)
+          echo "$report"
+          if echo "$report" | grep -qE '^\s+>.*\b(High|Critical)\b'; then exit 1; fi
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: npm packages with known vulnerabilities
+        working-directory: frontend
+        run: |
+          npm ci --ignore-scripts
+          # What ships to browsers: fails on high or critical.
+          npm audit --omit=dev --audit-level=high
+          # Everything, build and test tools included: lists every finding, fails only on critical (tools never reach users).
+          npm audit --audit-level=critical
+
   backend:
     runs-on: ubuntu-latest
     timeout-minutes: 20
