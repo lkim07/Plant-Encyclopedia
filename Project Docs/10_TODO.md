@@ -541,7 +541,7 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 * [ ] Persistent image queue
   - Why: Queued plants are lost on restart; the startup backfill only covers plants with no image at all
   - Priority: Low (until production)
-* [-] Linux native assets for SkiaSharp (`SkiaSharp.NativeAssets.Linux.NoDependencies`) before deploying to Linux (added 2026-10-27; proven on Linux by the first CI backend run)
+* [x] Linux native assets for SkiaSharp (`SkiaSharp.NativeAssets.Linux.NoDependencies`) before deploying to Linux (added 2026-10-27; the backend tests pass on the Linux CI runner, run 40464368936)
   - Priority: Before deployment
 * [x] Store external identifiers (`plant_sources.external_id`, provider `gbif-col-xr`)
 * [x] Store provenance (Taxonomy source; no source URL yet)
@@ -823,11 +823,11 @@ Do not introduce Docker complexity that is unnecessary for local development.
 
 ## GitHub Actions
 
-* [-] Add backend build workflow (`.github/workflows/ci.yml`, 2026-10-27; first GitHub run pending)
-* [-] Add backend tests (same)
-* [-] Add frontend build (same)
-* [-] Add frontend tests/linting (Prettier check, e2e type check, unit tests, theme check; same)
-* [-] Add migration validation where appropriate (every e2e run applies all migrations to an empty database; same)
+* [x] Add backend build workflow (`.github/workflows/ci.yml`, 2026-10-27; first GitHub run passed 2026-10-27, run 40464368936)
+* [x] Add backend tests (same)
+* [x] Add frontend build (same)
+* [x] Add frontend tests/linting (Prettier check, e2e type check, unit tests, theme check; same)
+* [x] Add migration validation where appropriate (every e2e run applies all migrations to an empty database; same)
 * [ ] Add CI status checks (branch protection on GitHub, the developer's setting)
 * [ ] Add dependency vulnerability scanning and secret scanning (SECURITY §20)
 
