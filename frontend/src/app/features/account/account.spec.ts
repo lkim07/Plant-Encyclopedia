@@ -176,6 +176,13 @@ describe('Accounts', () => {
     ]);
   });
 
+  // Protects against: the near-black GitHub mark disappearing on the dark theme's dark buttons.
+  it('draws the GitHub mark in the text colour, so it shows in both themes', async () => {
+    const { page } = await open('/login', [{ id: 'github', name: 'GitHub' }]);
+
+    expect(page.querySelector('.provider svg path')!.getAttribute('fill')).toBe('currentColor');
+  });
+
   it('shows no provider buttons when none are configured', async () => {
     const { page } = await open('/signup');
     expect(page.querySelector('.provider')).toBeNull();

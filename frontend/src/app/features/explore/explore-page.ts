@@ -21,6 +21,7 @@ import { ImageCard } from '../../shared/image-card/image-card';
 import { WhenVisible } from '../../shared/when-visible';
 import { Icon } from '../../shared/icons/icon';
 import { loadGsap, motionAllowed } from '../../shared/motion';
+import { TitleRise } from '../../shared/title-rise';
 
 type CategoriesState =
   | { readonly status: 'loading' }
@@ -51,7 +52,7 @@ type FeedState =
  */
 @Component({
   selector: 'app-explore-page',
-  imports: [RouterLink, ImageCard, WhenVisible, Icon],
+  imports: [RouterLink, ImageCard, WhenVisible, Icon, TitleRise],
   templateUrl: './explore-page.html',
   styleUrl: './explore-page.css',
 })
@@ -100,7 +101,7 @@ export class ExplorePage {
           async () => {
             const { gsap } = await loadGsap();
             intro = gsap.context(() => {
-              gsap.from(['.explore-header h1', '.pills li'], {
+              gsap.from('.pills li', {
                 opacity: 0,
                 y: 14,
                 duration: 0.5,

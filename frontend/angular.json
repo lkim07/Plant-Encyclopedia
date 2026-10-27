@@ -30,6 +30,7 @@
               "@fontsource/nunito/600.css",
               "@fontsource/nunito/700.css",
               "@fontsource/gowun-dodum/400.css",
+              "@fontsource-variable/martian-mono/index.css",
               "lenis/dist/lenis.css",
               "src/styles.css"
             ]

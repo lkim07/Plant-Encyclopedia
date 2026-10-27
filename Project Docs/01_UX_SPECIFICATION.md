@@ -40,7 +40,17 @@ They must never interfere with:
 
 ## 2.1 Visual Tone
 
-Implemented (Phase 22, 2026-10-20):
+Implemented (themes and motion, 2026-10-27, D-074; design: `docs/superpowers/specs/2026-10-26-themes-and-motion-design.md`):
+
+* **Two themes**, switched with a button in the sidebar (desktop) and the top bar (phone):
+  * **Light, "Greenhouse Daylight":** pale daylight ground `#F4F1EA`, evergreen text `#1E3328`, terracotta accent `#A9532E`, sage-tinted surfaces.
+  * **Dark, "Night Greenhouse":** deep evergreen-black ground `#0E1612`, bone text `#EEF2E9`, a "new growth" lime accent `#C8E86B` used only for small areas.
+  * The first visit follows the device setting; a choice is remembered in this browser and then wins. The theme is set before the page paints, so there is no flash.
+  * Every text colour pair is at least 4.5:1 in both themes (`npm run check:theme` in `frontend/` checks it, and that no component hard-codes a colour). In the light theme, accent-coloured text sits only on the page ground.
+  * Primary calls to action use the accent; photo overlays keep fixed colours in both themes; plant photos are never recoloured.
+* **Page titles** use Martian Mono (bundled, SIL OFL 1.1), about 34 px on a phone to 64 px on a wide screen; Nunito stays for everything else; Korean falls back to Gowun Dodum.
+
+Implemented (Phase 22, 2026-10-20; colours superseded by the two themes above):
 
 * **Typography:** Nunito (rounded, readable), with Gowun Dodum for Korean text, which Nunito lacks. Both are bundled with the app (SIL Open Font License); no font service is contacted.
 * **Icons:** outlined only, in a warm mid-brown (`--color-icon`), drawn for this project in one style (24-pixel grid, 1.75 stroke, round caps). No emoji are used as icons.
@@ -49,9 +59,7 @@ Implemented (Phase 22, 2026-10-20):
 
 The primary visual language should use:
 
-* Warm neutral backgrounds
-* Warm beige tones where appropriate
-* Brown or dark-brown typography
+* The two greenhouse themes (§2.1, D-074), formerly warm neutral backgrounds with dark-brown typography
 * Natural plant photography
 * Subtle translucent surfaces
 * Generous whitespace
@@ -1298,12 +1306,21 @@ Implemented (Phase 22, 2026-10-20):
 
 * **Page changes** cross-fade (about 220 ms) using the browser's View Transitions; navigation never waits for them.
 * **Cards** fade and rise in the first time they come into view, staggered across a row of four; a newly loaded page of results animates on its own.
-* **Card images** zoom slightly (1.04) on desktop hover or focus.
+* **Card images** zoom slightly (1.04) on desktop hover or focus. Since 2026-10-27: see below.
 * **Plant Detail:** the hero image and its name panel ease in; on desktop the image drifts slower than the page as it scrolls away (GSAP ScrollTrigger).
 * **Explore:** the title and category pills slide in the first time the categories load.
 * **Smooth scrolling** (Lenis) on the whole site, on desktop with a mouse or trackpad only.
 * GSAP, ScrollTrigger and Lenis are loaded on demand, only where they run. Only `transform` and `opacity` are animated.
 * A card image growing into the Plant Detail hero is not implemented: the detail data arrives after the page changes, so there is no hero image to grow into yet.
+
+Implemented (themes and motion, 2026-10-27, D-074):
+
+* **Page titles rise in** word by word (about 900 ms) on Identify, Identification Results, More, Explore, Favorites, Category, Plant Group, Where to Buy and Not found. An aria-hidden copy of the words is animated over the real title, which is never modified, so screen readers read it once and updated titles stay correct. The Explore intro now animates only the category pills.
+* **Cards** (plant cards everywhere, identification candidates and More) lift 6 px and their image zooms to 1.06 over 900 ms on desktop hover or focus.
+* **Category pills** fill with the accent on hover or focus.
+* **Switching themes** cross-fades colours for about 300 ms.
+* **Leaf placeholders** sway once when their card is hovered (event-based, D-054).
+* No custom cursor and no scroll-jacking. Everything above is off with reduced motion (§51) and hover effects only run on devices with a real pointer.
 
 Motion should communicate:
 

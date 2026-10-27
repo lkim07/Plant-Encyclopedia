@@ -154,6 +154,18 @@ ol {
 }
 
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .candidate,
+  .more {
+    transition: transform 600ms var(--ease-out-long);
+  }
+
+  .candidate:hover,
+  .candidate:focus-visible,
+  .more:hover,
+  .more:focus-visible {
+    transform: translateY(-6px);
+  }
+
   .primary:hover .image img,
   .primary:focus-visible .image img {
     transform: scale(1.02);

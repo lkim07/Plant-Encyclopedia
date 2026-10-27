@@ -26,6 +26,20 @@ describe('Shell', () => {
     expect(labels).toEqual(['Identify', 'Explore', 'Favorites']);
   });
 
+  // Protects against: no way to switch themes on desktop or on a phone (design 2026-10-26).
+  it('offers the theme switch in the sidebar and the top bar', async () => {
+    const fixture = TestBed.createComponent(Shell);
+    await fixture.whenStable();
+    const element = fixture.nativeElement as HTMLElement;
+    const named = (root: Element) =>
+      Array.from(root.querySelectorAll('button')).some((b) =>
+        /^Switch to (dark|light) theme$/.test(b.getAttribute('aria-label') ?? ''),
+      );
+
+    expect(named(element.querySelector('aside')!)).toBe(true);
+    expect(named(element.querySelector('app-top-bar')!)).toBe(true);
+  });
+
   // Protects against: the collapse control not working or not announcing its state.
   it('collapses and expands the desktop sidebar', async () => {
     const fixture = TestBed.createComponent(Shell);

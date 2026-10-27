@@ -44,7 +44,7 @@
   border: 1px solid var(--color-surface-strong);
   border-radius: var(--radius-md);
   background: var(--color-bg);
-  box-shadow: 0 8px 24px rgb(40 28 20 / 0.12);
+  box-shadow: var(--shadow-card);
 }
 
 .suggestions li {

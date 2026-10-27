@@ -99,7 +99,7 @@ export class Snackbar {
       border-radius: var(--radius-md);
       background: var(--color-text);
       color: var(--color-bg);
-      box-shadow: 0 6px 20px rgb(40 28 20 / 0.25);
+      box-shadow: var(--shadow-lifted);
       pointer-events: auto;
     }
 

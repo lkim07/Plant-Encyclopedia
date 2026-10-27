@@ -74,8 +74,8 @@ h1 {
 }
 
 .sort button[aria-pressed='true'] {
-  background: var(--color-text);
-  color: var(--color-bg);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
   font-weight: 600;
 }
 

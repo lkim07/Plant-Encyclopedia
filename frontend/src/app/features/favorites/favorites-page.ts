@@ -6,6 +6,7 @@ import { Auth } from '../../core/auth/auth';
 import { Favorite, Favorites } from '../../core/favorites/favorites';
 import { Icon } from '../../shared/icons/icon';
 import { ImageCard } from '../../shared/image-card/image-card';
+import { TitleRise } from '../../shared/title-rise';
 
 /** Decorative plant images in the empty state (UX §41). */
 const EMPTY_STATE_IMAGES = 3;
@@ -30,7 +31,7 @@ const LONG_PRESS_TOLERANCE_PX = 10;
  */
 @Component({
   selector: 'app-favorites-page',
-  imports: [RouterLink, ImageCard, Icon, CdkDropList, CdkDrag],
+  imports: [RouterLink, ImageCard, Icon, CdkDropList, CdkDrag, TitleRise],
   host: { '(document:keydown.escape)': 'arranging.set(false)' },
   template: `
     @let user = auth.user();
@@ -38,7 +39,7 @@ const LONG_PRESS_TOLERANCE_PX = 10;
     @let saved = favorites.saved();
 
     <header class="page-header">
-      <h1>Favorites</h1>
+      <h1 appTitleRise>Favorites</h1>
       @if (user && state === 'loaded' && saved.length > 0) {
         <button type="button" class="arrange-toggle" (click)="arranging.set(!arranging())">
           {{ arranging() ? 'Done' : 'Arrange' }}

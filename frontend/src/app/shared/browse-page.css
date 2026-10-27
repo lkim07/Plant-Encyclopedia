@@ -53,8 +53,8 @@
   padding: 0 var(--space-6);
   border: none;
   border-radius: var(--radius-sm);
-  background: var(--color-text);
-  color: var(--color-bg);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
   cursor: pointer;
 }
 

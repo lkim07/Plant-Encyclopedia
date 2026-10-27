@@ -1745,6 +1745,29 @@ Free, openly licensed, no per-request cost or key, and no data invented by the a
 
 ---
 
+## D-074 — Light and Dark Greenhouse Themes, Martian Mono Titles, Calm Motion
+
+**Status:** Accepted (2026-10-26; implemented 2026-10-27)
+
+### Decision
+
+* Two exchangeable themes replace the single warm-neutral palette (the developer's choice from mockups A and B, https://claude.ai/artifact/3thztfCcY4X5NMUhREE8TK): light "Greenhouse Daylight" and dark "Night Greenhouse". The device setting decides the first visit; the visitor's choice is remembered and wins.
+* Page titles use Martian Mono (the developer's choice); body and UI text stay Nunito.
+* Motion inspired by the smoothness of OFF+BRAND's Lando Norris site, toned for plants: titles rise word by word, cards lift with a slow image zoom, pills fill with colour, themes cross-fade. No custom cursor, no scroll-jacking; nothing waits on an animation; all off with reduced motion.
+* Every text pair is at least 4.5:1 in both themes, checked by `npm run check:theme`.
+
+### Rationale
+
+The developer wants a market-level look while keeping the layout. Plant-derived colours fit the product; the reference site's neon palette does not.
+
+### Consequences
+
+* Components use colour tokens only (the check fails on hard-coded colours outside masks, provider logos and photo overlays).
+* The custom cursor and falling leaves in UX §49 are not pursued for now; D-054 still applies, so decorative effects are event-based.
+* Design: `docs/superpowers/specs/2026-10-26-themes-and-motion-design.md`; plan: `docs/superpowers/plans/2026-10-26-themes-and-motion.md`.
+
+---
+
 # 17. Decision Principles
 
 When future decisions are unclear, use these principles in order:

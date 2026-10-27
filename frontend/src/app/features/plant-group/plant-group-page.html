@@ -10,7 +10,7 @@
         <p class="eyebrow">
           <a [routerLink]="'/categories/' + s.group.category.id">{{ s.group.category.name }}</a>
         </p>
-        <h1>{{ s.group.name }}</h1>
+        <h1 appTitleRise>{{ s.group.name }}</h1>
       </div>
     } @else if (s.status === 'not-found') {
       <h1>Plant group not found</h1>

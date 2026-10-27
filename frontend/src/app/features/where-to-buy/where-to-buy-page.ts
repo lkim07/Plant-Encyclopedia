@@ -18,6 +18,7 @@ import {
   ShoppingLocationService,
 } from '../../core/location/shopping-location';
 import { Icon } from '../../shared/icons/icon';
+import { TitleRise } from '../../shared/title-rise';
 
 type PlantState =
   | { readonly status: 'loading' }
@@ -55,7 +56,7 @@ const RADII = [25, 50, 100] as const;
  */
 @Component({
   selector: 'app-where-to-buy-page',
-  imports: [RouterLink, Icon],
+  imports: [RouterLink, Icon, TitleRise],
   templateUrl: './where-to-buy-page.html',
   styleUrl: './where-to-buy-page.css',
 })

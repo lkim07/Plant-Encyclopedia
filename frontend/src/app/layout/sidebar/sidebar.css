@@ -87,6 +87,11 @@
   margin-top: auto;
 }
 
+/* The theme switch sits above the account entry, lined up with the nav items. */
+.theme {
+  display: flex;
+}
+
 .account-user {
   cursor: default;
 }
@@ -103,4 +108,11 @@
   color: var(--color-bg);
   font-size: 0.875rem;
   font-weight: 700;
+}
+
+/* The product name in the display face, like the page titles. */
+.brand-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }

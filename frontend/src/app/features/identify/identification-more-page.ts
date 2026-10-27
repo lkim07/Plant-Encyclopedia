@@ -6,6 +6,7 @@ import { ExploreCard } from '../../core/api/explore-api';
 import { IdentificationApi } from '../../core/api/identification-api';
 import { ImageCard } from '../../shared/image-card/image-card';
 import { WhenVisible } from '../../shared/when-visible';
+import { TitleRise } from '../../shared/title-rise';
 
 /** Candidates a More page is based on (D-012). */
 const MAX_CANDIDATES = 3;
@@ -31,10 +32,10 @@ type State =
  */
 @Component({
   selector: 'app-identification-more-page',
-  imports: [RouterLink, ImageCard, WhenVisible],
+  imports: [RouterLink, ImageCard, WhenVisible, TitleRise],
   template: `
     <header class="more-header">
-      <h1>More like your plant</h1>
+      <h1 appTitleRise>More like your plant</h1>
       <p class="lead">Plants related to your possible matches, closest first.</p>
     </header>
 

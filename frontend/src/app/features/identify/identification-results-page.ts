@@ -2,6 +2,7 @@ import { Component, computed, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { IdentifySession } from '../../core/identification/identify-session';
 import { Icon } from '../../shared/icons/icon';
+import { TitleRise } from '../../shared/title-rise';
 
 /**
  * Identification Results (PRD §9, UX §10–11, D-012–D-014): the #1 candidate large, then #2, #3 and More. Every
@@ -12,7 +13,7 @@ import { Icon } from '../../shared/icons/icon';
  */
 @Component({
   selector: 'app-identification-results-page',
-  imports: [RouterLink, Icon],
+  imports: [RouterLink, Icon, TitleRise],
   templateUrl: './identification-results-page.html',
   styleUrl: './identification-results-page.css',
 })

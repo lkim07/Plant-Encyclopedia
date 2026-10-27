@@ -46,9 +46,9 @@ h1 {
 }
 
 .choice.primary {
-  background: var(--color-text);
-  color: var(--color-bg);
-  --icon-color: var(--color-bg);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  --icon-color: var(--color-on-accent);
 }
 
 .choice-error {
@@ -87,8 +87,8 @@ h1 {
   position: absolute;
   inset: auto 0 0 0;
   padding: var(--space-4);
-  background: linear-gradient(to top, rgb(0 0 0 / 0.55), transparent);
-  color: #fff;
+  background: linear-gradient(to top, rgb(0 0 0 / 0.55), transparent); /* photo overlay: fixed */
+  color: #fff; /* photo overlay: fixed */
   font-weight: 600;
   text-align: center;
 }
@@ -134,8 +134,8 @@ h1 {
 }
 
 .action.primary {
-  background: var(--color-text);
-  color: var(--color-bg);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 .action:disabled {

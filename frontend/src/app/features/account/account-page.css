@@ -56,7 +56,7 @@ form {
 }
 
 .field input[aria-invalid='true'] {
-  border-color: #a4462f;
+  border-color: var(--color-danger);
 }
 
 .hint {
@@ -68,7 +68,7 @@ form {
 .form-error {
   margin: 0;
   font-size: 0.875rem;
-  color: #a4462f;
+  color: var(--color-danger);
 }
 
 .action {
@@ -76,8 +76,8 @@ form {
   padding: 0 var(--space-6);
   border: none;
   border-radius: var(--radius-sm);
-  background: var(--color-text);
-  color: var(--color-bg);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
   font-weight: 600;
   cursor: pointer;
 }

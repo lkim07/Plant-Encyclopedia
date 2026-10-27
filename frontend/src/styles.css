@@ -1,19 +1,31 @@
-/* Design tokens: warm neutral surfaces, dark-brown text (UX §2.1). */
+/*
+ * Design tokens. Two themes (design 2026-10-26): light "Greenhouse Daylight" by default, dark "Night Greenhouse" when
+ * <html data-theme="dark">. index.html and core/theme/theme.ts set the attribute. Every text pair is at least 4.5:1
+ * (npm run check:theme). In the light theme, accent-coloured text sits only on --color-bg (4.2:1 on surfaces).
+ */
 :root {
-  --color-bg: #f7f2ea;
-  --color-surface: #efe6d8;
-  --color-surface-strong: #e5d8c4;
-  --color-text: #3b2a1e;
-  --color-text-muted: #6b5847;
-  --color-focus: #8a5a2b;
-  --color-backdrop: rgb(40 28 20 / 0.4);
-  /* Outlined icons (UX §2.1): a warm mid-brown, lighter than the text. */
-  --color-icon: #7a5232;
+  color-scheme: light;
+  --color-bg: #f4f1ea;
+  --color-surface: #e9e5d9;
+  --color-surface-strong: #dcd7c8;
+  --color-text: #1e3328;
+  --color-text-muted: #4f6155;
+  --color-accent: #a9532e;
+  --color-on-accent: #ffffff;
+  --color-border: #b9c4b5;
+  --color-focus: #a9532e;
+  --color-danger: #a4462f;
+  --color-backdrop: rgb(14 22 18 / 0.45);
+  --color-icon: #4f6155;
+  --shadow-card: 0 18px 40px rgb(30 51 40 / 0.18);
+  --shadow-lifted: 0 10px 28px rgb(30 51 40 / 0.28);
 
   /* Nunito (rounded, readable) with Gowun Dodum for Korean, which Nunito lacks. Both bundled (SIL OFL). */
   --font-sans:
     'Nunito', 'Gowun Dodum', system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans KR',
     sans-serif;
+  /* Page titles only (design 2026-10-26): Martian Mono; Korean falls back to Gowun Dodum. */
+  --font-display: 'Martian Mono Variable', 'Gowun Dodum', ui-monospace, monospace;
 
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -31,6 +43,39 @@
   --touch-target: 2.75rem;
   --transition-fast: 150ms ease-out;
   --ease-out-soft: cubic-bezier(0.2, 0.7, 0.2, 1);
+  /* Large, weighty movements: titles rising, cards lifting, slow image zooms. */
+  --ease-out-long: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-bg: #0e1612;
+  --color-surface: #16211b;
+  --color-surface-strong: #1f2d25;
+  --color-text: #eef2e9;
+  --color-text-muted: #a3b1a6;
+  --color-accent: #c8e86b;
+  --color-on-accent: #0e1612;
+  --color-border: #2e3d35;
+  --color-focus: #c8e86b;
+  --color-danger: #f2917c;
+  --color-backdrop: rgb(0 0 0 / 0.55);
+  --color-icon: #a3b1a6;
+  --shadow-card: 0 18px 40px rgb(0 0 0 / 0.45);
+  --shadow-lifted: 0 10px 28px rgb(0 0 0 / 0.55);
+}
+
+/* Switching themes cross-fades colours briefly (core/theme/theme.ts adds the class for 350 ms). */
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-transition,
+  html.theme-transition * {
+    transition:
+      background-color 300ms,
+      color 300ms,
+      border-color 300ms,
+      fill 300ms,
+      stroke 300ms !important;
+  }
 }
 
 *,
@@ -54,8 +99,13 @@ body {
 
 h1 {
   margin: 0 0 var(--space-4);
-  font-size: 1.75rem;
+  font-family: var(--font-display);
+  /* About 34 px on a phone to 64 px on a wide screen. */
+  font-size: clamp(2.125rem, 1.4rem + 2.6vw, 4rem);
   font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  overflow-wrap: break-word;
 }
 
 a {
@@ -126,6 +176,21 @@ button {
     transform: translateY(0.5rem);
     transition-duration: 300ms;
   }
+}
+
+/* Title rise (shared/title-rise.ts): a hidden copy of the words animates over the real, transparent title. */
+.title-rising {
+  position: relative;
+}
+
+.title-rise-words {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.title-rise-word {
+  display: inline-block;
 }
 
 /* Page changes cross-fade (router View Transitions); the sidebar and top bar stay put. */

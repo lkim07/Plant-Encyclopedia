@@ -928,6 +928,11 @@ Only after the core product works reliably:
 
 * [x] Refine typography (Nunito with Gowun Dodum for Korean)
 * [x] Replace emoji with outlined brown icons
+* [x] Light and dark themes with a switch, Martian Mono titles (D-074, 2026-10-27)
+* [ ] Check both themes and the new motion in a browser on a phone and desktop
+  - Priority: High
+* [ ] Full QA pass in a real browser across all journeys, both themes, desktop and phone (agreed next project)
+  - Priority: High
 * [ ] Refine spacing
 * [ ] Refine image presentation
 * [-] Refine cards (outlined-leaf placeholder, fade-in, hover zoom; masonry and hover information pending)
@@ -936,8 +941,8 @@ Only after the core product works reliably:
 
 ## Botanical Interaction
 
-* [ ] Add subtle desktop cursor effect if still valuable
-* [ ] Add occasional leaf effect if still valuable
+* [~] Add subtle desktop cursor effect if still valuable (not pursued: D-074)
+* [-] Add occasional leaf effect if still valuable (leaf placeholders sway once on hover; no falling leaves)
 * [x] Add subtle hover interactions (sidebar labels, card images)
 * [ ] Add bookmark animation
 * [-] Add scroll-driven hero transition (hero ease-in and scroll drift on desktop; card-to-hero transition needs the detail data before the page changes)

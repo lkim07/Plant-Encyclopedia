@@ -28,8 +28,8 @@ import { Icon } from '../icons/icon';
 
     .bookmark {
       border-radius: 999px;
-      background: rgb(247 242 234 / 0.9);
-      box-shadow: 0 1px 4px rgb(40 28 20 / 0.18);
+      background: color-mix(in srgb, var(--color-bg) 90%, transparent);
+      box-shadow: var(--shadow-card);
       transition: transform var(--transition-fast);
     }
 

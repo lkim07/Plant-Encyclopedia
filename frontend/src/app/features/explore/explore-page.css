@@ -41,8 +41,18 @@
   font-weight: 500;
 }
 
-.pill:hover {
-  background: var(--color-surface-strong);
+@media (prefers-reduced-motion: no-preference) {
+  .pill {
+    transition:
+      background-color 300ms var(--ease-out-soft),
+      color 300ms var(--ease-out-soft);
+  }
+}
+
+.pill:hover,
+.pill:focus-visible {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 .pill.skeleton {

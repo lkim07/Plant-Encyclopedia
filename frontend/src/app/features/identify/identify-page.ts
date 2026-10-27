@@ -9,6 +9,7 @@ import {
 } from '../../core/api/identification-api';
 import { ChosenPhoto, IdentifySession } from '../../core/identification/identify-session';
 import { Icon } from '../../shared/icons/icon';
+import { TitleRise } from '../../shared/title-rise';
 
 type Step = 'ready' | 'identifying' | { readonly failure: IdentificationFailure };
 
@@ -57,7 +58,7 @@ const FAILURES: Record<
  */
 @Component({
   selector: 'app-identify-page',
-  imports: [Icon],
+  imports: [Icon, TitleRise],
   templateUrl: './identify-page.html',
   styleUrl: './identify-page.css',
 })

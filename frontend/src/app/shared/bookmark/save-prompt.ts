@@ -78,8 +78,8 @@ import { Favorites } from '../../core/favorites/favorites';
 
     .sign-in {
       border: none;
-      background: var(--color-text);
-      color: var(--color-bg);
+      background: var(--color-accent);
+      color: var(--color-on-accent);
     }
 
     .cancel {

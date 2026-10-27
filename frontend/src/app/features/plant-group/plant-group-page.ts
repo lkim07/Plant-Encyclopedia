@@ -21,6 +21,7 @@ import { PlantGroupApi } from '../../core/api/plant-group-api';
 import { goBack } from '../../core/navigation/go-back';
 import { ImageCard } from '../../shared/image-card/image-card';
 import { Icon } from '../../shared/icons/icon';
+import { TitleRise } from '../../shared/title-rise';
 
 interface LoadedState {
   readonly status: 'loaded';
@@ -41,7 +42,7 @@ type PageState =
 /** Plant Group page (UX §23): published plants of one group, loaded progressively (UX §53). */
 @Component({
   selector: 'app-plant-group-page',
-  imports: [RouterLink, ImageCard, Icon],
+  imports: [RouterLink, ImageCard, Icon, TitleRise],
   templateUrl: './plant-group-page.html',
   styleUrls: ['../../shared/browse-page.css', './plant-group-page.css'],
 })

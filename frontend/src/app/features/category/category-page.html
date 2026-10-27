@@ -6,7 +6,7 @@
       <app-icon name="arrow-left" />
     </button>
     @if (s.status === 'loaded') {
-      <h1>{{ s.category.name }}</h1>
+      <h1 appTitleRise>{{ s.category.name }}</h1>
     } @else if (s.status === 'not-found') {
       <h1>Category not found</h1>
     } @else if (s.status === 'error') {

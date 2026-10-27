@@ -169,6 +169,13 @@ Implemented and verified:
     * Plant Detail attributions
   * **Total:** 268 backend tests pass with 0 build warnings. No migration; no live GBIF requests were made in 11c.
   * **Manually verified** by the developer on 2026-10-17 in the browser against real GBIF (Development).
+* Light and dark themes, display type and motion (D-074), 2026-10-27.
+  * **Themes:** light "Greenhouse Daylight" and dark "Night Greenhouse" as colour tokens in `src/styles.css` (`html[data-theme]`). `index.html` picks the theme before the app starts (stored choice, else the device setting); `core/theme/theme.ts` follows the device until the visitor chooses, remembers the choice (guarded storage), updates the browser's theme colour and cross-fades the change. A `ThemeToggle` button in the sidebar (with a label when expanded) and the top bar.
+  * **Colours:** new tokens for the accent, text on the accent, borders, errors and shadows; primary calls to action use the accent; about 30 hard-coded colours replaced. `npm run check:theme` (frontend) prints every contrast ratio — light 4.21–11.94 for focus and text pairs, all text pairs ≥ 4.6; dark ≥ 6.43 — and fails on a hard-coded colour outside masks, provider logos, photo overlays and the theme colour.
+  * **Type:** Martian Mono for page titles and the sidebar name (`@fontsource-variable/martian-mono` 5.3.0, OFL-1.1; the Latin file is 23.5 kB), about 34–64 px; Plant Detail's hero name 28–48 px.
+  * **Motion:** `TitleRise` directive (words rise over the untouched title; stops if the title changes), card lift and slower zoom, pill fill, theme cross-fade, leaf sway once on hover (D-054). All off with reduced motion.
+  * **Tests:** 16 new frontend tests (theme: stored values, painted theme, toggle with storage and meta, blocked storage, device changes before and after a choice, stored choice over device, short cross-fade and none with reduced motion; toggle: name, icon, switch, label; shell: toggle in sidebar and top bar; title rise: reduced motion, hidden copy over untouched text, title change mid-animation — confirmed to fail without the change watcher —, cancel on destroy, the real title shown again when the animation library fails to load; the GitHub sign-in mark drawn in the text colour so it shows on dark buttons). 150 frontend tests pass; `ng build` without warnings; `check:theme` passes.
+  * **Not verified yet:** both themes and the motion in a browser on a phone and desktop; then the full QA pass.
 * Where to Buy screens, Phase 9b (PRD §27–28, UX §33–35, D-031–D-035, D-073), 2026-10-26.
   * **Entry card:** on Plant Detail after Quick Care: "Where to Buy / Find nurseries, garden centres & flower shops near you / Explore →". Opening Plant Detail never asks for location.
   * **Page (`/plants/:plantId/where-to-buy`):** asks the browser for the location only here, once per visit (10-second limit); the position is rounded to about 100 m before it is sent and is kept in memory only. Refused, unavailable or slow: Vancouver, BC, with a note saying so. A location chooser (`Use my location`, Vancouver, BC, and the towns in the shop data) and a Distance / Relevance switch. Each shop shows its kind, distance, address when known and a website link (new tab, `noopener`). A note says stock is not known and to check before going; no ratings or prices. "No shops found within 25 km" offers 50 km, then 100 km. OpenStreetMap credit under the list. No Online section (D-073).
@@ -1360,7 +1367,7 @@ Performance should take priority over decorative effects.
 
 ## Status
 
-**Concept defined; implementation pending**
+**Implemented in part: two themes, title rises, card hover motion, smooth desktop scrolling (D-074, Phase 22); no custom cursor or falling leaves**
 
 The visual direction is modern, clean, image-first, and interactive.
 

@@ -42,6 +42,7 @@
 
 <!-- Account (D-070): sign in, or the signed-in user with Sign out. Nothing shows until the first check finishes. -->
 <div class="account">
+  <app-theme-toggle class="theme" [showLabel]="!collapsed()" />
   @if (auth.user(); as user) {
     <span class="nav-item account-user" [attr.title]="user.displayName">
       <span class="avatar" aria-hidden="true">{{ initial(user.displayName) }}</span>

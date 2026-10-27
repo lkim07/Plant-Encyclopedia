@@ -2,6 +2,7 @@ import { Component, inject, input, output } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { Auth } from '../../core/auth/auth';
 import { Icon, IconName } from '../../shared/icons/icon';
+import { ThemeToggle } from '../../shared/theme-toggle/theme-toggle';
 
 interface NavItem {
   readonly path: string;
@@ -15,7 +16,7 @@ interface NavItem {
  */
 @Component({
   selector: 'app-sidebar',
-  imports: [RouterLink, RouterLinkActive, Icon],
+  imports: [RouterLink, RouterLinkActive, Icon, ThemeToggle],
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.css',
 })
