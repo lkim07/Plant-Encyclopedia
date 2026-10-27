@@ -29,7 +29,13 @@
   }
 
   @if (showSuggestions()) {
-    <ul id="search-suggestions" class="suggestions" role="listbox" aria-label="Suggestions" data-lenis-prevent>
+    <ul
+      id="search-suggestions"
+      class="suggestions"
+      role="listbox"
+      aria-label="Suggestions"
+      data-lenis-prevent
+    >
       @for (suggestion of suggestions(); track suggestion.text; let i = $index) {
         <!-- mousedown is cancelled so the input keeps focus and the click still lands. -->
         <li

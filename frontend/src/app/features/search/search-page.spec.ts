@@ -414,14 +414,14 @@ describe('SearchPage', () => {
         { status: 503, statusText: 'Service Unavailable' },
       );
       let updated = await settle(harness);
-      expect(updated.querySelector('.external-lookup [role="alert"]')?.textContent).toBe(
+      expect(updated.querySelector('.external-lookup [role="alert"]')?.textContent?.trim()).toBe(
         "Catalogue of Life can't be reached right now. Please try again later.",
       );
 
       lookupButton(updated).click();
       lookupRequest().flush(null, { status: 429, statusText: 'Too Many Requests' });
       updated = await settle(harness);
-      expect(updated.querySelector('.external-lookup [role="alert"]')?.textContent).toBe(
+      expect(updated.querySelector('.external-lookup [role="alert"]')?.textContent?.trim()).toBe(
         "You're looking up plants too quickly. Please wait a moment and try again.",
       );
 

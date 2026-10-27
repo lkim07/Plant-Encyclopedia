@@ -1457,6 +1457,22 @@ The exact containerization strategy may evolve.
 
 Docker should not be introduced merely for resume keywords.
 
+### Implemented (D-075): end-to-end stack
+
+```text
+browser ──https://localhost:8443──▶ web (nginx: Angular build, self-signed certificate)
+                                     │ /api, /health, /signin-*, unknown /media files
+                                     ▼
+                                    api (ASP.NET Core, http :8080, "Testing") ──▶ db (Postgres 16)
+                                                                                   ▲
+                                    db-setup (one-shot: migrations bundle, sample data, fake shops)
+```
+
+* `docker compose -f docker-compose.e2e.yml up --build --wait`, then `npm run e2e` in `frontend/`; `down -v` removes it.
+* Only the website is published, on 127.0.0.1:8443. The database port is not published (no clash with the development database on 5433).
+* The API trusts forwarded headers only from the stack's network (172.30.0.0/16). Account emails are files in `.e2e/emails`, read by the suite.
+* `/media` holds both the build's font files and stored plant images: nginx serves its own files first, then asks the API. `/api/dev/` is blocked.
+
 Its purpose is:
 
 * reproducibility
@@ -1491,6 +1507,14 @@ Deploy
 ```
 
 Deployment should only occur after required quality gates pass.
+
+### Implemented (D-075): CI
+
+`.github/workflows/ci.yml` on every push and pull request, with read-only permissions; superseded runs are cancelled:
+
+* **backend:** restore, build (Release), tests (Testcontainers Postgres on the runner)
+* **frontend:** `npm ci`, `prettier --check src e2e`, `tsc -p e2e`, unit tests, `check:theme`, production build
+* **e2e** (after both): the Docker stack, Playwright Chromium, `npm run e2e`; the report is kept for 7 days when it fails; the logs are shown and the stack removed every time
 
 ---
 

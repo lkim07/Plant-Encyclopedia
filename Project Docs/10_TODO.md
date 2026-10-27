@@ -541,7 +541,7 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 * [ ] Persistent image queue
   - Why: Queued plants are lost on restart; the startup backfill only covers plants with no image at all
   - Priority: Low (until production)
-* [ ] Linux native assets for SkiaSharp (`SkiaSharp.NativeAssets.Linux.NoDependencies`) before deploying to Linux
+* [-] Linux native assets for SkiaSharp (`SkiaSharp.NativeAssets.Linux.NoDependencies`) before deploying to Linux (added 2026-10-27; proven on Linux by the first CI backend run)
   - Priority: Before deployment
 * [x] Store external identifiers (`plant_sources.external_id`, provider `gbif-col-xr`)
 * [x] Store provenance (Taxonomy source; no source URL yet)
@@ -769,12 +769,12 @@ iOS remains deferred unless the development environment changes.
 
 Prioritize critical flows:
 
-* [ ] Explore → Plant Detail
-* [ ] Search → Plant Detail
-* [ ] Identify → Results → Plant Detail
-* [ ] Plant Detail → Favorites
+* [x] Explore → Plant Detail (and Back keeps the place; `frontend/e2e/journeys.spec.ts`)
+* [-] Search → Plant Detail (suggestions, results and recent searches covered; opening a result not yet)
+* [-] Identify → Results → Plant Detail (stubbed answer → Results → More; opening a plant not yet)
+* [x] Plant Detail → Favorites (sign-up, confirmation, saving, Arrange, Undo)
 * [ ] Favorites → Plant Detail
-* [ ] Plant Detail → Where to Buy
+* [-] Plant Detail → Where to Buy (the page with location granted and refused; the link from Plant Detail not yet)
 
 ## Accessibility QA
 
@@ -792,27 +792,28 @@ Prioritize critical flows:
 
 ## Backend
 
-* [ ] Create backend Dockerfile
-* [ ] Test local backend container
-* [ ] Configure environment variables
+* [x] Create backend Dockerfile (`backend/Dockerfile`, 2026-10-27)
+* [x] Test local backend container (in `docker-compose.e2e.yml`)
+* [x] Configure environment variables
 
 ## Frontend
 
-* [ ] Create production frontend build
-* [ ] Configure frontend container if appropriate
-* [ ] Verify production build
+* [x] Create production frontend build
+* [x] Configure frontend container if appropriate (`frontend/Dockerfile`, nginx over HTTPS)
+* [x] Verify production build
 
 ## Database
 
 * [ ] Create development PostgreSQL container configuration
-* [ ] Verify migrations from clean environment
-* [ ] Verify local multi-container setup
+* [x] Verify migrations from clean environment (the migrations bundle on an empty database, at every stack start)
+* [x] Verify local multi-container setup
 
 ## Compose
 
-* [ ] Create Docker Compose configuration where useful
-* [ ] Verify full local environment startup
-* [ ] Document local development commands
+* [x] Create Docker Compose configuration where useful (`docker-compose.e2e.yml`)
+* [x] Verify full local environment startup
+* [x] Document local development commands (header of `docker-compose.e2e.yml`, ARCHITECTURE §45)
+* [ ] Production images and settings (real certificate, email service, R2, no Testing environment), with deployment
 
 Do not introduce Docker complexity that is unnecessary for local development.
 
@@ -822,12 +823,13 @@ Do not introduce Docker complexity that is unnecessary for local development.
 
 ## GitHub Actions
 
-* [ ] Add backend build workflow
-* [ ] Add backend tests
-* [ ] Add frontend build
-* [ ] Add frontend tests/linting
-* [ ] Add migration validation where appropriate
-* [ ] Add CI status checks
+* [-] Add backend build workflow (`.github/workflows/ci.yml`, 2026-10-27; first GitHub run pending)
+* [-] Add backend tests (same)
+* [-] Add frontend build (same)
+* [-] Add frontend tests/linting (Prettier check, e2e type check, unit tests, theme check; same)
+* [-] Add migration validation where appropriate (every e2e run applies all migrations to an empty database; same)
+* [ ] Add CI status checks (branch protection on GitHub, the developer's setting)
+* [ ] Add dependency vulnerability scanning and secret scanning (SECURITY §20)
 
 ## Quality Gates
 

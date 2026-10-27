@@ -3,12 +3,21 @@
 <app-top-bar class="top-bar" (menuOpen)="openDrawer()" />
 
 <aside class="sidebar" [class.collapsed]="collapsed()">
-  <app-sidebar [collapsed]="collapsed()" [showCollapseToggle]="true" (toggleCollapsed)="toggleCollapsed()" />
+  <app-sidebar
+    [collapsed]="collapsed()"
+    [showCollapseToggle]="true"
+    (toggleCollapsed)="toggleCollapsed()"
+  />
 </aside>
 
 <dialog #drawer class="drawer" aria-label="Main menu" (click)="onDrawerClick($event)">
   <div class="drawer-panel">
-    <button type="button" class="icon-button drawer-close" aria-label="Close menu" (click)="closeDrawer()">
+    <button
+      type="button"
+      class="icon-button drawer-close"
+      aria-label="Close menu"
+      (click)="closeDrawer()"
+    >
       <app-icon name="close" />
     </button>
     <app-sidebar (navigate)="closeDrawer()" />

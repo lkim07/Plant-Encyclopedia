@@ -1,31 +1,34 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>Plant Encyclopedia</title>
-  <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <meta name="theme-color" content="#F4F1EA">
-  <script>
-    // Picks the theme before the app starts, so the first paint has the right colours (no flash).
-    // Must match core/theme/theme.ts: the stored choice ("light" or "dark" only), else the device setting.
-    (function () {
-      var theme = null;
-      try {
-        var stored = localStorage.getItem('plant-encyclopedia.theme');
-        if (stored === 'light' || stored === 'dark') theme = stored;
-      } catch (e) {}
-      if (!theme) {
-        theme = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      }
-      document.documentElement.setAttribute('data-theme', theme);
-      var meta = document.querySelector('meta[name="theme-color"]');
-      if (meta) meta.setAttribute('content', theme === 'dark' ? '#0E1612' : '#F4F1EA');
-    })();
-  </script>
-</head>
-<body>
-  <app-root></app-root>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <title>Plant Encyclopedia</title>
+    <base href="/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <meta name="theme-color" content="#F4F1EA" />
+    <script>
+      // Picks the theme before the app starts, so the first paint has the right colours (no flash).
+      // Must match core/theme/theme.ts: the stored choice ("light" or "dark" only), else the device setting.
+      (function () {
+        var theme = null;
+        try {
+          var stored = localStorage.getItem('plant-encyclopedia.theme');
+          if (stored === 'light' || stored === 'dark') theme = stored;
+        } catch (e) {}
+        if (!theme) {
+          theme =
+            window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', theme);
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', theme === 'dark' ? '#0E1612' : '#F4F1EA');
+      })();
+    </script>
+  </head>
+  <body>
+    <app-root></app-root>
+  </body>
 </html>

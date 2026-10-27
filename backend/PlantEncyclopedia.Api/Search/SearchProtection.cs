@@ -81,8 +81,8 @@ public static class SearchProtection
     /// <summary>
     /// The client's IP address. IPv6 clients are grouped by their /64 network, because one
     /// subscriber usually controls a whole /64 and could otherwise rotate addresses to dodge the limit.
-    /// Forwarded headers (X-Forwarded-For) are deliberately not trusted until a reverse proxy is
-    /// configured with a known-proxy list; trusting them blindly would let clients fake their address.
+    /// Behind a reverse proxy this is the real client only when ForwardedHeaders is enabled for the proxy's
+    /// network (ForwardedHeadersSetup); X-Forwarded-For from any other address is ignored, so clients cannot fake it.
     /// </summary>
     internal static string ClientPartitionKey(HttpContext httpContext)
     {

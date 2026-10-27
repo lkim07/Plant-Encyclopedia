@@ -1,0 +1,93 @@
+# The whole app in Docker, for end-to-end tests and for trying it locally (design 2026-10-27):
+#   docker compose -f docker-compose.e2e.yml up --build --wait     then open https://localhost:8443
+#   docker compose -f docker-compose.e2e.yml down -v               removes it, database included
+# A throwaway stack: its own database (plant_encyclopedia_test, sample data + fake test shops), no outside services
+# (the API runs as "Testing", which switches GBIF, image import and Pl@ntNet off), a self-signed certificate. The
+# database port is not published, so it never touches the development database on 5433.
+name: plant-encyclopedia-e2e
+
+x-database: &database
+  ConnectionStrings__PlantEncyclopedia: Host=db;Port=5432;Database=plant_encyclopedia_test;Username=e2e;Password=e2e-throwaway
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: plant_encyclopedia_test
+      POSTGRES_USER: e2e
+      POSTGRES_PASSWORD: e2e-throwaway # this stack's throwaway database only
+    networks: [app]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U e2e -d plant_encyclopedia_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  # One-shot: migrations, sample data, test shops, and a folder the API can write account emails to.
+  db-setup:
+    build:
+      context: ./backend
+      target: migrator
+    environment:
+      <<: *database
+      ASPNETCORE_ENVIRONMENT: Testing
+      Accounts__PublicBaseUrl: https://localhost:8443
+      PGPASSWORD: e2e-throwaway
+    volumes:
+      - ./backend/dev-data/seed-dev-data.sql:/seed/1-seed-dev-data.sql:ro
+      - ./frontend/e2e/fixtures/retailers.sql:/seed/2-retailers.sql:ro
+      - ./.e2e/emails:/emails
+    working_dir: /usr/local/bin
+    entrypoint: ["sh", "-ec"]
+    command:
+      - |
+        efbundle --connection "$$ConnectionStrings__PlantEncyclopedia"
+        for f in /seed/*.sql; do psql -h db -U e2e -d plant_encyclopedia_test -v ON_ERROR_STOP=1 -q -f "$$f"; done
+        chmod 777 /emails
+    networks: [app]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build:
+      context: ./backend
+      target: runtime
+    environment:
+      <<: *database
+      ASPNETCORE_ENVIRONMENT: Testing
+      Accounts__PublicBaseUrl: https://localhost:8443
+      Accounts__EmailFolder: /emails
+      ForwardedHeaders__Enabled: "true"
+      ForwardedHeaders__KnownNetworks__0: 172.30.0.0/16
+    volumes:
+      - ./.e2e/emails:/emails
+    networks: [app]
+    depends_on:
+      db-setup:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080 && printf \"GET /health HTTP/1.0\r\n\r\n\" >&3 && head -1 <&3 | grep -q \" 200 \"'"]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+
+  web:
+    build: ./frontend
+    ports:
+      - "127.0.0.1:8443:443"
+    networks: [app]
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null --no-check-certificate https://127.0.0.1/health"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+networks:
+  app:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16

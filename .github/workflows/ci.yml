@@ -1,0 +1,88 @@
+# Builds and tests everything on every push and pull request (design 2026-10-27): the backend, the frontend, then the
+# whole app in Docker with the Playwright end-to-end suite. No secrets and no outside services are used.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet restore PlantEncyclopedia.sln
+      - run: dotnet build PlantEncyclopedia.sln --configuration Release --no-restore
+      # The database tests start a throwaway Postgres with Testcontainers (Docker is on the runner).
+      - run: dotnet test PlantEncyclopedia.sln --configuration Release --no-build
+
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npx prettier --check src e2e
+      - run: npx tsc -p e2e
+      - run: npx ng test --watch=false
+      - run: npm run check:theme
+      - run: npx ng build
+
+  e2e:
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Start the app in Docker
+        run: docker compose -f docker-compose.e2e.yml up --build --wait
+      - name: Install the test browser
+        working-directory: frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: End-to-end tests
+        working-directory: frontend
+        run: npm run e2e
+      - name: Keep the test report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+          retention-days: 7
+      - name: Show the app's logs
+        if: always()
+        run: docker compose -f docker-compose.e2e.yml logs --no-color
+      - name: Remove the stack
+        if: always()
+        run: docker compose -f docker-compose.e2e.yml down -v

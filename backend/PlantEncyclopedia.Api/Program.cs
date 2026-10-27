@@ -4,6 +4,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.FileProviders;
 using PlantEncyclopedia.Api.Accounts;
 using PlantEncyclopedia.Api.Categories;
+using PlantEncyclopedia.Api.Common;
 using PlantEncyclopedia.Api.Dev;
 using PlantEncyclopedia.Api.Errors;
 using PlantEncyclopedia.Api.Explore;
@@ -56,6 +57,7 @@ builder.Services.AddExternalPlantData(
     new GenusPlantGroupMap(builder.Configuration.GetSection("ExternalPlantData:GenusPlantGroups").Get<Dictionary<string, string>>()),
     images);
 
+builder.Services.AddTrustedProxies(builder.Configuration);
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddSearchProtection();
 builder.Services.AddAccounts(builder.Configuration, builder.Environment);
@@ -104,6 +106,7 @@ if (args.Contains("migrate-images-to-r2"))
 
 // GlobalExceptionHandler writes the response. The empty fallback is required by the middleware and
 // only runs if GlobalExceptionHandler does not handle the exception; it returns a bare 500 with no body.
+app.UseTrustedProxies();
 app.UseExceptionHandler(_ => { });
 app.UseHttpsRedirection();
 app.UseExternalSignInAddress();

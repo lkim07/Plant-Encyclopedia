@@ -376,7 +376,7 @@ With Cloudflare R2 storage (Phase 11d-3):
 * Object keys are built from GUIDs; keys containing `..`, a leading `/` or `\` are refused before any request.
 * The bucket is public for reading only, through its `r2.dev` address in Development. Before production, switch to a custom domain and review public access and cache rules.
 
-All limits are in memory and per instance. A shared store is needed before running several instances. Forwarded headers are not trusted until a proxy is configured. Searched text is never logged.
+All limits are in memory and per instance. A shared store is needed before running several instances. Forwarded headers are trusted only when `ForwardedHeaders:Enabled` is set, and only from the networks in `ForwardedHeaders:KnownNetworks` (D-075); from any other address they are ignored, so clients cannot fake their address or HTTPS. Searched text is never logged.
 
 ---
 
@@ -528,6 +528,12 @@ The pipeline should eventually include security-oriented checks where practical,
 * static analysis where appropriate
 
 Pull requests should not require developers to paste production credentials into logs or configuration files.
+
+### Implemented (D-075)
+
+* The workflow uses no secrets and has read-only repository permissions.
+* The end-to-end stack's database password is a fixed throwaway value for that stack only; the stack publishes only 127.0.0.1:8443.
+* Dependency and secret scanning are still to do (TODO).
 
 ---
 

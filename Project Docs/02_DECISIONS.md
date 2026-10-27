@@ -1768,6 +1768,30 @@ The developer wants a market-level look while keeping the layout. Plant-derived 
 
 ---
 
+## D-075 — End-to-End Tests in Docker, Checked by GitHub Actions
+
+**Status:** Accepted (2026-10-27; implemented 2026-10-27)
+
+### Decision
+
+* A Playwright suite in `frontend/e2e/` covers the main journeys and scans every page for accessibility (WCAG 2.1 A/AA) at phone and desktop width in both themes.
+* It runs against the whole app in Docker (`docker-compose.e2e.yml`): Postgres, the API, and the website on nginx over HTTPS with a throwaway certificate. The same file runs the app locally.
+* The stack uses no outside services and no secrets: the API runs as "Testing" (GBIF, image import and Pl@ntNet off), identification is stubbed in the browser, and Where to Buy uses six fake shops.
+* GitHub Actions (`.github/workflows/ci.yml`) builds and tests the backend and frontend on every push and pull request, then runs the suite against the stack. CI only: no deployment or registry yet.
+* Behind a proxy the API trusts `X-Forwarded-Proto` and `X-Forwarded-For` only from configured networks (`ForwardedHeaders`, off by default), so cookies stay Secure and rate limits see the real client.
+
+### Rationale
+
+The developer wants every push to prove the app still works end to end. Running the real production build behind a real proxy found a bug no other test could (fonts and plant images sharing `/media`).
+
+### Consequences
+
+* The stack is for this machine and CI runners only; production needs its own settings (certificate, email service, R2, the Production environment).
+* `prettier --check` covers all of `frontend/src` and `frontend/e2e`.
+* Design: `docs/superpowers/specs/2026-10-27-e2e-and-ci-design.md`; plan: `docs/superpowers/plans/2026-10-27-e2e-and-ci.md`.
+
+---
+
 # 17. Decision Principles
 
 When future decisions are unclear, use these principles in order:
