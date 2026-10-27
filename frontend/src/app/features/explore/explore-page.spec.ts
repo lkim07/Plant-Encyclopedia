@@ -7,7 +7,7 @@ import {
 import { Location } from '@angular/common';
 import { provideLocationMocks } from '@angular/common/testing';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter, Router } from '@angular/router';
+import { ActivationStart, provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { routes } from '../../app.routes';
 import { ExploreCard } from '../../core/api/explore-api';
@@ -264,9 +264,16 @@ describe('ExplorePage', () => {
       http.expectOne('/api/categories').flush({ data: [] });
       flushFeed(1, [card(1), card(2)], true);
       await settle(harness);
-      vi.spyOn(window, 'scrollY', 'get').mockReturnValue(640);
+      // As in a real browser: the page is scrolled down until the new page takes over, which resets it to the top
+      // before the old page is destroyed (found in the QA pass).
+      let scroll = 640;
+      vi.spyOn(window, 'scrollY', 'get').mockImplementation(() => scroll);
+      const reset = TestBed.inject(Router).events.subscribe((event) => {
+        if (event instanceof ActivationStart) scroll = 0;
+      });
 
       await harness.navigateByUrl(PLANT_URL);
+      reset.unsubscribe();
       http
         .expectOne(`/api/plants/${card(2).id}`)
         .flush(

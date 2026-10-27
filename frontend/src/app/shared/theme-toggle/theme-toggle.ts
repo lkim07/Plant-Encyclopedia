@@ -28,11 +28,26 @@ import { Icon } from '../icons/icon';
       display: inline-flex;
     }
 
+    /* In the expanded sidebar it looks like a nav item: icon and label in a row (.icon-button is a grid). */
     .labelled {
+      display: flex;
+      align-items: center;
       width: 100%;
       justify-content: flex-start;
       gap: var(--space-3);
       padding: var(--space-2);
+      white-space: nowrap;
+      transition: background-color var(--transition-fast);
+    }
+
+    .labelled:hover {
+      background: var(--color-surface-strong);
+    }
+
+    /* The same icon size as the nav items, so the labels line up. */
+    .labelled app-icon {
+      width: 1.75rem;
+      height: 1.75rem;
     }
   `,
 })

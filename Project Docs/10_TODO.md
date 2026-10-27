@@ -363,7 +363,7 @@ This vertical slice should validate the architecture before a large amount of fu
 * [x] Prevent duplicate plant/cultivar cards
 * [x] Support pagination/infinite scrolling
 * [x] Restore the Explore feed and scroll position on Back (UX §15; 7c)
-* [ ] Manually check Back to Explore in the browser (phone and desktop)
+* [x] Manually check Back to Explore in the browser (automated browser QA, 2026-10-27: desktop; a bug was fixed)
   - Priority: Medium
 
 ## Anonymous/New User Feed
@@ -436,7 +436,7 @@ Do not build a machine-learning recommendation system at this stage.
 * [x] Implement authorization (cookie authentication; 401 JSON for APIs)
 * [x] Protect authenticated endpoints (account endpoints, Favorites)
 * [x] Add authentication tests
-* [ ] Manually verify sign-up, confirmation, sign-in, sign-out and password reset in the browser
+* [-] Manually verify sign-up, confirmation, sign-in, sign-out and password reset in the browser (automated browser QA, 2026-10-27: sign-up and confirmation pass; sign-out and password reset still to check)
   - Priority: High
 * [ ] Real email service for confirmation and reset emails (e.g. Amazon SES or Resend)
   - Priority: Before public release
@@ -479,7 +479,7 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 * [x] Implement immediate removal
 * [x] Implement Undo snackbar
 * [x] Implement empty state
-* [ ] Manually verify bookmarks, the sign-in prompt, Undo, the empty state and Arrange mode (drag, long press, jiggle) in the browser (phone and desktop)
+* [-] Manually verify bookmarks, the sign-in prompt, Undo, the empty state and Arrange mode (drag, long press, jiggle) in the browser (phone and desktop) (automated browser QA, 2026-10-27: bookmarks, prompt, Arrange move buttons and Undo pass; drag, long press and jiggle still need a touch device)
 * [x] Implement Arrange mode
 
 ## Arrange Mode
@@ -690,7 +690,12 @@ Do not make authentication a prerequisite for unrelated anonymous discovery feat
 * [~] Separate nearby and online retailers (Online left out until there is a reliable source, D-073)
 * [x] Avoid unsupported live inventory claims
 * [~] Display approximate pricing with appropriate source/date information (no price source)
-* [ ] Check Where to Buy in a browser on a phone and desktop (permission prompt, chooser, list)
+* [-] Check Where to Buy in a browser on a phone and desktop (permission prompt, chooser, list) (automated browser QA, 2026-10-27: granted and refused location, town chooser, list; a real phone still to check)
+* [ ] Decide whether florists should rank below garden centres and nurseries for flowers that are shrubs (e.g. Dog rose downtown shows only florists, nearest first)
+  - Priority: Medium
+* [ ] Consider answering `GET /api/me` with `200 { "data": null }` when signed out, so browsers do not log an error on every page
+  - Why: Chrome logs every 401 response as a console error
+  - Priority: Low (changes the API contract)
   - Priority: High
 
 ---
@@ -929,9 +934,9 @@ Only after the core product works reliably:
 * [x] Refine typography (Nunito with Gowun Dodum for Korean)
 * [x] Replace emoji with outlined brown icons
 * [x] Light and dark themes with a switch, Martian Mono titles (D-074, 2026-10-27)
-* [ ] Check both themes and the new motion in a browser on a phone and desktop
+* [-] Check both themes and the new motion in a browser on a phone and desktop (automated browser QA, 2026-10-27: both themes on 13 pages, phone and desktop widths, axe clean; the feel of the motion still needs a person)
   - Priority: High
-* [ ] Full QA pass in a real browser across all journeys, both themes, desktop and phone (agreed next project)
+* [x] Full QA pass in a real browser across all journeys, both themes, desktop and phone (automated browser QA, 2026-10-27; see CURRENT_STATE for what was not covered)
   - Priority: High
 * [ ] Refine spacing
 * [ ] Refine image presentation
@@ -950,7 +955,7 @@ Only after the core product works reliably:
 ## Motion Review
 
 * [ ] Verify navigation never waits for animation (by design; check in the browser)
-* [-] Verify reduced-motion behavior (card fade-ins covered by tests; check the rest in the browser)
+* [x] Verify reduced-motion behavior (card fade-ins covered by tests; titles checked in the browser, automated browser QA, 2026-10-27)
 * [ ] Verify mobile performance
 * [ ] Measure with Lighthouse before and after the visual refresh
   - Priority: High (before treating Phase 22 motion as done)

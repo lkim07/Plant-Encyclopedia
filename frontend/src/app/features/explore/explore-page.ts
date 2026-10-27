@@ -10,7 +10,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { Router, RouterLink } from '@angular/router';
+import { NavigationStart, Router, RouterLink } from '@angular/router';
 import { catchError, map, Observable, of, startWith, Subject, Subscription, switchMap } from 'rxjs';
 import { CategorySummary } from '../../core/api/browse.model';
 import { CategoryApi } from '../../core/api/category-api';
@@ -63,6 +63,8 @@ export class ExplorePage {
   private readonly auth = inject(Auth);
   private readonly memory = inject(ExploreFeedMemory);
   private readonly router = inject(Router);
+  /** The scroll position when the last navigation started (saved with the feed). */
+  private scrollAtLeave = 0;
   private readonly retry$ = new Subject<void>();
   private feedSubscription?: Subscription;
 
@@ -84,6 +86,13 @@ export class ExplorePage {
     if (!restored) {
       this.loadFeed();
     }
+    // The position is taken when navigation starts: by the time this page is destroyed, the next page has already
+    // reset the scroll to the top.
+    this.router.events.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event) => {
+      if (event instanceof NavigationStart) {
+        this.scrollAtLeave = window.scrollY;
+      }
+    });
     this.destroyRef.onDestroy(() => this.saveFeed());
 
     // The title and category pills slide in once, the first time the categories arrive (when motion is welcome).
@@ -192,7 +201,7 @@ export class ExplorePage {
     return true;
   }
 
-  /** Remembers the loaded feed and scroll position when leaving Explore (the page has not scrolled yet). */
+  /** Remembers the loaded feed, and the scroll position from when navigation started, when leaving Explore. */
   private saveFeed(): void {
     const state = this.feed();
     this.memory.saved =
@@ -202,7 +211,7 @@ export class ExplorePage {
             page: state.page,
             hasNext: state.hasNext,
             feedAt: state.feedAt,
-            scrollY: window.scrollY,
+            scrollY: this.scrollAtLeave,
             userId: this.auth.user()?.id ?? null,
           }
         : null;

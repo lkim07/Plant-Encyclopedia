@@ -49,4 +49,11 @@ describe('ThemeToggle', () => {
 
     expect(button().textContent!.trim()).toBe('Dark theme');
   });
+
+  // Protects against: the icon stacked above its label in the sidebar (shared .icon-button is a grid; QA pass).
+  it('lays the icon and label out in a row like the nav items', async () => {
+    const { button } = await render(true);
+
+    expect(getComputedStyle(button()).display).toBe('flex');
+  });
 });
